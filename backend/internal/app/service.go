@@ -68,7 +68,7 @@ type Service struct {
 	workers                  *platform.Worker
 	updateManager            UpdateManager
 	// releaseLookup 只读版本查询的 GitHub Release 协议入口，默认走真实请求，测试可替换。
-	releaseLookup func(ctx context.Context, repository string) (*hostupdate.Release, error)
+	releaseLookup            func(ctx context.Context, repository string) (*hostupdate.Release, error)
 	readCachesOnce           sync.Once
 	concurrencyReadCache     *platform.BoundedReadCache[string, platform.RuntimeTaskPolicy]
 	textReplayReadCache      *platform.BoundedReadCache[textReplayCacheKey, *TextReplayResult]
