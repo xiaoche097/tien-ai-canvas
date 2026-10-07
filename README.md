@@ -12,8 +12,6 @@
 
 ## 核心能力
 
-
-
 * **自由画布**：节点、连线、框选、缩放、小地图、撤销重做、导入导出和只读分享。
 
 * **影视创作工作流**：剧本、角色、场景、风格板、参考素材、结构化分镜和 3D 导演台。
@@ -36,8 +34,6 @@
 
 ### 环境要求
 
-
-
 * [Bun](https://bun.sh/)：前端和文档站
 
 * [Go 1.25](https://go.dev/)：后端
@@ -45,8 +41,6 @@
 * Docker Compose：仅在使用容器开发或部署时需要
 
 ### 宿主机启动
-
-
 
 ```
 git clone https://github.com/ddcat-ai/open-ai-canvas.git
@@ -73,8 +67,6 @@ bun run dev
 
 Windows PowerShell 用户可在仓库根目录执行：
 
-
-
 ```
 .\scripts\start-local.ps1
 ```
@@ -83,16 +75,12 @@ Windows PowerShell 用户可在仓库根目录执行：
 
 源码热更新：
 
-
-
 ```
 LOCAL_UID=$(id -u) LOCAL_GID=$(id -g) \
   docker compose -f docker-compose.dev.yml up --build
 ```
 
 本地构建并运行 release 镜像：
-
-
 
 ```
 docker compose -f docker-compose.local.yml up -d --build
@@ -103,8 +91,6 @@ docker compose -f docker-compose.local.yml up -d --build
 更多本地开发说明（包括时间线字幕转写）见[本地开发文档](docs/content/docs/backend/local-development.mdx)。
 
 ## 架构概览
-
-
 
 ```
 浏览器（web/）
@@ -128,15 +114,11 @@ docker compose -f docker-compose.local.yml up -d --build
 
 适用于 Linux 云服务器。脚本会安装 Docker、拉取源码、生成受保护的 `.env`，并启动 PostgreSQL、Redis、后端和网页：
 
-
-
 ```
 curl -fsSL https://raw.githubusercontent.com/ddcat-ai/open-ai-canvas/main/scripts/install-server.sh | sudo bash
 ```
 
 默认访问 `http://服务器IP:3000`。更新或排查：
-
-
 
 ```
 cd /opt/open-ai-canvas
@@ -150,8 +132,6 @@ sudo docker compose --env-file .env \
 
 不需要源码时，可使用镜像部署脚本：
 
-
-
 ```
 curl -fsSL https://raw.githubusercontent.com/ddcat-ai/open-ai-canvas/main/scripts/install-server-image.sh \
   | sudo env CANVAS_IMAGE_TAG=v1.5.7.1 bash
@@ -160,8 +140,6 @@ curl -fsSL https://raw.githubusercontent.com/ddcat-ai/open-ai-canvas/main/script
 脚本会先按指定 Release 拉取镜像，再解析并写入 `CANVAS_BACKEND_IMAGE`、`CANVAS_WEB_IMAGE` 的 GHCR digest；生产 Compose 不接受缺失 digest 的默认镜像或 `latest`。更新流程、数据库迁移、备份和回退说明见[系统更新文档](docs/content/docs/backend/system-update.mdx)。
 
 ## 安全边界
-
-
 
 * 首次管理员注册应在受控网络完成，公网部署保持 `CANVAS_REGISTRATION_ENABLED=false`。
 
@@ -180,8 +158,6 @@ curl -fsSL https://raw.githubusercontent.com/ddcat-ai/open-ai-canvas/main/script
 ## 文档与验证
 
 ### 文档导航
-
-
 
 * [快速开始](docs/content/docs/overview/quick-start.mdx)
 
@@ -205,8 +181,6 @@ curl -fsSL https://raw.githubusercontent.com/ddcat-ai/open-ai-canvas/main/script
 
 按改动范围运行最小验证：
 
-
-
 ```
 # 前端
 cd web && bun run lint && bun run build
@@ -221,5 +195,4 @@ cd docs && bun run types:check
 ## 许可证和上游
 
 本项目采用 [MIT](LICENSE) 协议。境彻基于 [basketikun/infinite-canvas](https://github.com/basketikun/infinite-canvas) 的早期版本进行二次开发，上游作者和贡献者保留其对应代码的权利与署名。
-
 
