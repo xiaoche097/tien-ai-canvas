@@ -30,7 +30,8 @@ export type SystemUpdateRelease = {
 export type SystemUpdateCheck = {
     key: string;
     label: string;
-    status: "passed" | "pending" | "failed" | string;
+    // unavailable 表示这项能力在这套部署里不存在（未安装 Host Updater），不是检查失败。
+    status: "passed" | "pending" | "failed" | "unavailable" | string;
     detail?: string;
     blocking: boolean;
 };

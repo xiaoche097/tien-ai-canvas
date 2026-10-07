@@ -31,8 +31,17 @@ type githubRelease struct {
 	Prerelease  bool      `json:"prerelease"`
 }
 
-func (m *Manager) latestRelease(ctx context.Context) (*Release, error) {
-	url := "https://api.github.com/repos/" + m.config.Repository + "/releases?per_page=30"
+// LatestRelease 查询仓库最新的非草稿 v* Release。client 为 nil 时使用默认超时。
+// Manager 的更新检查与未安装 Host Updater 时的只读版本检查共用这份 GitHub 协议实现。
+func LatestRelease(ctx context.Context, client *http.Client, repository, token string) (*Release, error) {
+	if client == nil {
+		client = &http.Client{Timeout: 30 * time.Second}
+	}
+	repository = strings.TrimSpace(repository)
+	if repository == "" {
+		repository = DefaultRepository
+	}
+	url := "https://api.github.com/repos/" + repository + "/releases?per_page=30"
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
@@ -40,10 +49,10 @@ func (m *Manager) latestRelease(ctx context.Context) (*Release, error) {
 	request.Header.Set("Accept", "application/vnd.github+json")
 	request.Header.Set("User-Agent", "open-ai-canvas-host-updater")
 	request.Header.Set("X-GitHub-Api-Version", "2022-11-28")
-	if m.config.GitHubToken != "" {
-		request.Header.Set("Authorization", "Bearer "+m.config.GitHubToken)
+	if token != "" {
+		request.Header.Set("Authorization", "Bearer "+token)
 	}
-	response, err := m.httpClient.Do(request)
+	response, err := client.Do(request)
 	if err != nil {
 		return nil, fmt.Errorf("请求 GitHub Release：%w", err)
 	}
@@ -69,6 +78,10 @@ func (m *Manager) latestRelease(ctx context.Context) (*Release, error) {
 	sort.SliceStable(filtered, func(i, j int) bool { return CompareVersions(filtered[i].TagName, filtered[j].TagName) > 0 })
 	latest := filtered[0]
 	return &Release{Version: latest.TagName, Name: latest.Name, Body: latest.Body, URL: latest.HTMLURL, PublishedAt: latest.PublishedAt, Prerelease: latest.Prerelease}, nil
+}
+
+func (m *Manager) latestRelease(ctx context.Context) (*Release, error) {
+	return LatestRelease(ctx, m.httpClient, m.config.Repository, m.config.GitHubToken)
 }
 
 func (m *Manager) currentVersion() (string, error) {

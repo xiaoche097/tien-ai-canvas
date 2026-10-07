@@ -21,6 +21,9 @@ import (
 
 const maxReleaseResponseBytes = 4 << 20
 
+// DefaultRepository 是未显式配置时的上游仓库，NewManager 和未安装更新器的状态回退共用。
+const DefaultRepository = "ddcat-ai/open-ai-canvas"
+
 type Config struct {
 	Repository   string
 	InstallDir   string
@@ -70,7 +73,7 @@ type Manager struct {
 func NewManager(config Config) (*Manager, error) {
 	config.Repository = strings.TrimSpace(config.Repository)
 	if config.Repository == "" {
-		config.Repository = "ddcat-ai/open-ai-canvas"
+		config.Repository = DefaultRepository
 	}
 	if config.InstallDir == "" {
 		config.InstallDir = "/opt/open-ai-canvas"

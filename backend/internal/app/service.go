@@ -13,6 +13,7 @@ import (
 
 	"infinite-canvas/backend/internal/auth"
 	"infinite-canvas/backend/internal/canvas"
+	"infinite-canvas/backend/internal/hostupdate"
 	"infinite-canvas/backend/internal/kernel"
 	"infinite-canvas/backend/internal/model"
 	"infinite-canvas/backend/internal/payment"
@@ -66,6 +67,8 @@ type Service struct {
 	routeHealthBlocked       map[string]time.Time
 	workers                  *platform.Worker
 	updateManager            UpdateManager
+	// releaseLookup 只读版本查询的 GitHub Release 协议入口，默认走真实请求，测试可替换。
+	releaseLookup func(ctx context.Context, repository string) (*hostupdate.Release, error)
 	readCachesOnce           sync.Once
 	concurrencyReadCache     *platform.BoundedReadCache[string, platform.RuntimeTaskPolicy]
 	textReplayReadCache      *platform.BoundedReadCache[textReplayCacheKey, *TextReplayResult]

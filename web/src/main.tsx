@@ -1,10 +1,14 @@
 import "@fontsource-variable/inter";
 import "@fontsource-variable/jetbrains-mono";
 import { installChunkRecovery } from "@/lib/chunk-recovery";
+import { installRcTriggerInsetFix } from "@/lib/fix-rc-trigger-inset";
 import { bootstrapAppearance } from "@/services/appearance-bootstrap";
 import { isIsolatedPrevisRepro } from "@/lib/dev-repro";
 
 installChunkRecovery();
+
+// Fix Windows Chromium rc-trigger popup off-screen bug (inset shorthand overriding left/top).
+installRcTriggerInsetFix();
 
 // The public film entry checks its availability independently of workspace bootstrap.
 if (/^\/welcome\/?$/.test(window.location.pathname)) {

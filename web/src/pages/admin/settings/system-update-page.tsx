@@ -70,7 +70,7 @@ export default function SystemUpdatePage() {
     }, [load, status]);
 
     const operationActive = Boolean(status && activePhases.has(status.operation.phase));
-    const blockingCheckFailed = status?.checks.some((check) => check.blocking && check.status === "failed") ?? true;
+    const blockingCheckFailed = status?.checks.some((check) => check.blocking && (check.status === "failed" || check.status === "unavailable")) ?? true;
 
     const requestCheck = async () => {
         setChecking(true);
@@ -157,7 +157,7 @@ export default function SystemUpdatePage() {
             description="检查 GitHub Release，并在完成备份、迁移和健康验证后切换版本。"
             scroll
             actions={
-                <Button icon={<RefreshCw className="size-4" />} loading={checking} disabled={operationActive || !status?.supported} onClick={() => void requestCheck()}>
+                <Button icon={<RefreshCw className="size-4" />} loading={checking} disabled={operationActive} onClick={() => void requestCheck()}>
                     检查更新
                 </Button>
             }
@@ -165,6 +165,7 @@ export default function SystemUpdatePage() {
             <div className="admin-settings-stack admin-system-update">
                 {loadError && !status ? <UpdateAlert tone="error" title="无法读取更新状态" detail={loadError} /> : null}
                 {!status?.supported ? <UpdateAlert tone="warning" title="当前部署不支持后台在线更新" detail="请先在服务器安装 Host Updater，并重建 backend 容器挂载 Unix Socket。此状态下不会执行任何更新操作。" /> : null}
+                {status?.supported && !status.connected ? <UpdateAlert tone="error" title="Host Updater 当前不可连接" detail="在线更新与回退都会失败。请检查宿主机更新器服务、Socket 目录挂载和 CANVAS_UPDATER_TOKEN。" /> : null}
                 {reconnecting ? <UpdateAlert tone="warning" title="服务正在切换，等待重新连接" detail="更新器运行在宿主机，后台页面暂时断线不会中止更新。连接恢复后会继续显示最终结果。" /> : null}
                 {status?.operation.phase === "manual_intervention" ? <UpdateAlert
                     tone="error"
@@ -205,9 +206,11 @@ export default function SystemUpdatePage() {
                             </div>
                             {status?.updateAvailable && status.latestRelease ? (
                                 <p className="admin-system-update-hint">
-                                    {isReleaseVersion(status.currentVersion)
-                                        ? `可以从 ${status.currentVersion} 更新到 ${status.latestRelease.version}。`
-                                        : `当前镜像标签不是正式版本号，所以会显示成 ${status.currentVersion}。点开始更新后会切换到 ${status.latestRelease.version}。`}
+                                    {status.connected
+                                        ? isReleaseVersion(status.currentVersion)
+                                            ? `可以从 ${status.currentVersion} 更新到 ${status.latestRelease.version}。`
+                                            : `当前镜像标签不是正式版本号，所以会显示成 ${status.currentVersion}。点开始更新后会切换到 ${status.latestRelease.version}。`
+                                        : `上游已发布 ${status.latestRelease.version}，高于当前运行的 ${status.currentVersion}。当前部署不支持在线更新，请按部署方式手动升级。`}
                                 </p>
                             ) : null}
                             <dl className="admin-system-update-facts">
@@ -224,7 +227,7 @@ export default function SystemUpdatePage() {
                         </div>
                     </SettingsSectionCard>
 
-                    <SettingsSectionCard layout="stacked" icon={<ShieldCheck className="size-4" />} title="更新前检查" description="所有阻断项通过后才允许切换服务。" status={{ label: status?.connected ? "更新器已连接" : "更新器未连接", color: status?.connected ? "success" : "error" }}>
+                    <SettingsSectionCard layout="stacked" icon={<ShieldCheck className="size-4" />} title="更新前检查" description="所有阻断项通过后才允许切换服务。" status={updaterBadge(status)}>
                         <div className="admin-system-update-checks">
                             {(status?.checks || []).map((check) => <UpdateCheckRow key={check.key} check={check} />)}
                         </div>
@@ -271,9 +274,17 @@ function PhaseBadge({ phase }: { phase: UpdatePhase }) {
     return <AdminStatusBadge label={phaseLabels[phase]} tone={tone} />;
 }
 
+// 未安装 Host Updater 是这套部署的既定形态，不是连接故障；只有"装了却读不到状态"才报错。
+function updaterBadge(status: SystemUpdateStatus | null) {
+    if (status?.connected) return { label: "更新器已连接", color: "success" };
+    if (status?.supported) return { label: "更新器未连接", color: "error" };
+    return { label: "未安装更新器", color: "muted" };
+}
+
 function UpdateCheckRow({ check }: { check: SystemUpdateStatus["checks"][number] }) {
     const Icon = check.status === "passed" ? BadgeCheck : check.status === "failed" ? AlertTriangle : Circle;
-    return <div className="admin-system-update-check-row" data-status={check.status}><Icon className="size-4" /><div><strong>{check.label}</strong><p>{check.detail || "等待执行"}</p></div><span>{check.status === "passed" ? "通过" : check.status === "failed" ? "失败" : "待执行"}</span></div>;
+    const label = check.status === "passed" ? "通过" : check.status === "failed" ? "失败" : check.status === "unavailable" ? "不可用" : "待执行";
+    return <div className="admin-system-update-check-row" data-status={check.status}><Icon className="size-4" /><div><strong>{check.label}</strong><p>{check.detail || "等待执行"}</p></div><span>{label}</span></div>;
 }
 
 function UpdateAlert({ tone, title, detail, compact = false }: { tone: "warning" | "error"; title: string; detail: string; compact?: boolean }) {

@@ -11,6 +11,25 @@ description: Host Updater、Release 检查、数据库备份迁移、健康验�
 管理员浏览器 → Backend 管理 API → 带 Token 的 Unix Socket → Host Updater → Docker Compose
 ```
 
+## 未安装 Host Updater 的部署
+
+本地 Compose、源码运行等没有 Host Updater 的部署（后端未配置 `CANVAS_UPDATER_TOKEN`）不会执行任何更新操作。此时管理页表现为：
+
+- 运行版本、代码仓库来自后端构建信息，不依赖更新器，始终可读；
+- “开始更新”保持禁用，“检查更新”仍可点击——它只做一次 GitHub Releases 查询，用来回答“上游有没有更高版本”，不接触宿主机 Docker；
+- 查询结果只作为事实展示，不改变在线更新能力：状态里 `supported` 与 `connected` 仍为 `false`，Host Updater 检查项仍阻断更新。
+
+“未安装”与“装了却连不上”是两种状态，管理页必须能分开：
+
+| 情况 | `supported` | `connected` | Host Updater 检查项 | 管理页 |
+| --- | --- | --- | --- | --- |
+| 未安装 | `false` | `false` | `unavailable` | 顶部黄色提示；检查卡显示“未安装更新器”，不是错误 |
+| 已安装但不可连接 | `true` | `false` | `unavailable` | 顶部红色提示；检查卡显示“更新器未连接” |
+
+未安装属于部署形态，不按故障渲染；更新器装了却读不到状态才是真实故障，`supported` 保持 `true`，管理页据此提示排查更新器服务、Socket 目录挂载和 `CANVAS_UPDATER_TOKEN`。
+
+版本比较沿用 Host Updater 的语义（`sha-*`、`latest` 等非正式标签一律低于正式 Release），因此本地构建的 `dev` 版本会稳定显示为“有新版本可用”，而不是把自己判成最新。
+
 ## 安全更新顺序
 
 1. 从 GitHub Releases 读取包含预览版在内的最高语义版本，并与 `.env` 中固定的 `CANVAS_IMAGE_TAG` 比较。`sha-*` 这类非正式镜像标签一律视为低于正式 Release，避免把 `vsha-5509b17` 字典序比较成比 `v1.5.0` 更新。

@@ -18860,3 +18860,18 @@ html:not(.dark) .creation-home .creation-user-message-copy-wrap { box-shadow: 0 
     background: color-mix(in srgb, var(--popover-foreground) 10%, var(--popover)) !important;
     color: var(--popover-foreground) !important;
 }
+
+/* rc-trigger off-screen fix for Windows Chromium:
+   rc-trigger hides popups at left:-1000vw; top:-1000vh. On affected Chromium builds,
+   the browser serializes left/top/right/bottom into the `inset` shorthand, so when
+   rc-align tries to reset the popup to (0,0) via longhands, the reset silently fails.
+   It then measures the popup at -1000vh and computes a wildly wrong offset.
+   Force the popup to (0,0) while it carries the -1000vw hidden marker so rc-align
+   measures correctly. Once align finishes and writes the real position, the inline
+   style no longer contains -1000vw and this rule stops applying.
+   Only reset left/top — do NOT touch right/bottom, or we override the final
+   right-aligned positioning. */
+:where(.ant-popover, .ant-dropdown, .ant-dropdown-wrap, .ant-select-dropdown, .ant-tooltip, .ant-picker-dropdown, .ant-cascader-menus, .ant-mentions-dropdown)[style*="-1000vw"] {
+    left: 0 !important;
+    top: 0 !important;
+}
