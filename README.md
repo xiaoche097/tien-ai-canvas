@@ -1,4 +1,6 @@
-![境彻 logo](web/public/logo.svg)
+<p align="center">
+  <img src="web/public/jingche-logo.png" alt="境彻 logo" width="128">
+</p>
 
 境彻是一个开源的 AI 影视与短剧创作工作台：用自由画布组织创作，用结构化工作流管理剧本、角色、场景和分镜，并通过统一的任务系统完成图片、视频、音频与文本生成。
 
