@@ -1,0 +1,401 @@
+/* 顶部横向导航（创作/创意中心/工作空间/应用市场/资讯 + 右侧图标区）与应用市场/资讯页样式。 */
+
+.app-workspace-topbar.app-workspace-topnav {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px;
+}
+
+/* 左侧：移动端菜单按钮 + 品牌 */
+.app-workspace-topnav-left {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+    justify-self: start;
+}
+
+.app-workspace-topnav-brand {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    margin-left: 4px;
+    padding: 6px 8px;
+    border-radius: var(--r-md);
+    color: color-mix(in srgb, var(--foreground) 82%, transparent);
+    transition:
+        background-color var(--motion-instant) ease-out,
+        color var(--motion-instant) ease-out;
+}
+
+.app-workspace-topnav-brand:hover {
+    background: var(--surface-hover);
+    color: var(--foreground);
+}
+
+/* 五大类目：页面水平居中。未激活为纯文字，激活为胶囊按钮 + 上下黑白渐变描边 + 实心图标 */
+.app-workspace-topnav-items {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 10px;
+    justify-self: center;
+}
+
+.app-workspace-topnav-item {
+    position: relative;
+    display: inline-flex;
+    height: 48px;
+    align-items: center;
+    gap: 7px;
+    padding: 0 17px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    color: rgb(255 255 255 / 68%);
+    font-size: 16.8px;
+    font-weight: 450;
+    line-height: 1;
+    white-space: nowrap;
+    transition:
+        color var(--motion-instant) ease-out,
+        background-color var(--motion-instant) ease-out,
+        box-shadow var(--motion-instant) ease-out;
+}
+
+.app-workspace-topnav-item > svg {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 auto;
+    stroke-width: 1.6;
+    transition:
+        transform var(--motion-instant) ease-out,
+        fill var(--motion-instant) ease-out;
+}
+
+.app-workspace-topnav-item:hover {
+    color: #fff;
+    background-color: rgb(255 255 255 / 5%);
+}
+
+.app-workspace-topnav-item:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--workspace-accent) 46%, transparent);
+    outline-offset: 2px;
+}
+
+.app-workspace-topnav-item.is-active {
+    color: #fff;
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--workspace-nav) 87%, #fff 7%), color-mix(in srgb, var(--workspace-nav) 94%, #000 3%)) padding-box,
+        linear-gradient(180deg, rgb(255 255 255 / 52%), rgb(255 255 255 / 10%) 42%, rgb(255 255 255 / 4%) 56%, rgb(0 0 0 / 52%)) border-box;
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 8%),
+        inset 0 -1px 0 rgb(0 0 0 / 22%),
+        0 1px 6px rgb(0 0 0 / 20%);
+}
+
+/* 选中后图标由空心变实心（lucide path 自带 fill="none"，需作用到子元素） */
+.app-workspace-topnav-item.is-active > svg {
+    stroke-width: 1.2;
+    transform: scale(1.06);
+}
+
+.app-workspace-topnav-item.is-active > svg,
+.app-workspace-topnav-item.is-active > svg * {
+    fill: currentColor;
+}
+
+.app-workspace-topnav-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 2px;
+    justify-self: end;
+}
+
+/* 移动端遮罩与抽屉 */
+.app-workspace-topnav-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: calc(var(--z-toolbar) - 1);
+    background: rgb(0 0 0 / 45%);
+}
+
+.app-workspace-topnav-mobile {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 12px;
+    left: 12px;
+    z-index: var(--z-toolbar);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px;
+    border: 1px solid var(--workspace-border);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--workspace-nav) 96%, transparent);
+    backdrop-filter: blur(22px) saturate(120%);
+    -webkit-backdrop-filter: blur(22px) saturate(120%);
+    box-shadow: 0 16px 40px rgb(0 0 0 / 28%);
+}
+
+.app-workspace-topnav-mobile-item {
+    display: flex;
+    height: 40px;
+    align-items: center;
+    gap: 10px;
+    padding: 0 12px;
+    border-radius: var(--r-md);
+    color: color-mix(in srgb, var(--foreground) 68%, transparent);
+    font-size: var(--fs-body);
+    transition:
+        background-color var(--motion-instant) ease-out,
+        color var(--motion-instant) ease-out;
+}
+
+.app-workspace-topnav-mobile-item:hover {
+    background: var(--surface-hover);
+    color: var(--foreground);
+}
+
+.app-workspace-topnav-mobile-item.is-active {
+    color: var(--foreground);
+    font-weight: 550;
+}
+
+.app-workspace-topnav-mobile-divider {
+    height: 1px;
+    margin: 6px 8px;
+    background: var(--workspace-border);
+}
+
+@media (max-width: 1023px) {
+    .app-workspace-topnav-items {
+        display: none;
+    }
+    .app-workspace-topnav-brand {
+        margin-left: 0;
+    }
+}
+
+/* 应用市场页（技能 + 插件） */
+.apps-page {
+    display: flex;
+    height: 100%;
+    min-height: 0;
+    flex-direction: column;
+    padding: 0 24px 24px;
+}
+
+.apps-page-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 24px 0 16px;
+}
+
+.apps-page-icon {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--workspace-accent) 12%, transparent);
+    color: var(--workspace-accent);
+}
+
+.apps-page-title {
+    margin: 0;
+    color: var(--foreground);
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.apps-page-subtitle {
+    margin: 2px 0 0;
+    color: color-mix(in srgb, var(--foreground) 52%, transparent);
+    font-size: 13px;
+}
+
+.apps-page-tabs {
+    display: flex;
+    min-height: 0;
+    flex: 1 1 auto;
+    flex-direction: column;
+}
+
+.apps-page-tabs .ant-tabs-content-holder {
+    min-height: 0;
+    flex: 1 1 auto;
+}
+
+.apps-page-tabs .ant-tabs-body,
+.apps-page-tabs .ant-tabs-content,
+.apps-page-tabs .ant-tabs-tabpane {
+    min-height: 0;
+}
+
+.apps-page-tabs .ant-tabs-content {
+    max-height: calc(100dvh - 230px);
+    overflow: auto;
+}
+
+/* 资讯占位页 */
+.news-page {
+    display: flex;
+    height: 100%;
+    min-height: 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 24px;
+    text-align: center;
+}
+
+.news-page-icon {
+    display: grid;
+    width: 56px;
+    height: 56px;
+    place-items: center;
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--workspace-accent) 12%, transparent);
+    color: var(--workspace-accent);
+}
+
+.news-page-title {
+    margin: 0;
+    color: var(--foreground);
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.news-page-subtitle {
+    margin: 0;
+    max-width: 420px;
+    color: color-mix(in srgb, var(--foreground) 52%, transparent);
+    font-size: 13px;
+    line-height: 1.65;
+}
+
+/* 创作引导标题：左侧 agent 头像（深浅随主题）+ 文案 */
+.creation-agent-avatar {
+    display: grid;
+    width: 52px;
+    height: 52px;
+    flex: 0 0 auto;
+    place-items: center;
+    overflow: hidden;
+    border-radius: 50%;
+    box-shadow: 0 4px 16px rgb(0 0 0 / 24%);
+}
+
+.creation-agent-avatar img {
+    display: none;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.creation-agent-avatar img.is-dark {
+    display: block;
+}
+
+.dark .creation-agent-avatar img.is-dark {
+    display: none;
+}
+
+.dark .creation-agent-avatar img.is-light {
+    display: block;
+}
+
+.app-user-workspace .creation-home-heading {
+    display: flex;
+    width: min(100%, 960px) !important;
+    flex-direction: row;
+    align-items: center;
+    align-self: flex-start;
+    justify-content: flex-start;
+    gap: 14px;
+    margin: 0 auto 24px !important;
+    text-align: left !important;
+}
+
+.app-user-workspace .creation-home-heading-copy {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Canvas Agent 引导入口：左侧圆形 agent 图标（深浅随主题） */
+.creation-agent-orb {
+    display: grid;
+    width: 88px;
+    height: 88px;
+    place-items: center;
+    overflow: hidden;
+    border-radius: 50%;
+}
+
+.creation-agent-orb img {
+    display: none;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.creation-agent-orb img.is-dark {
+    display: block;
+}
+
+.dark .creation-agent-orb img.is-dark {
+    display: none;
+}
+
+.dark .creation-agent-orb img.is-light {
+    display: block;
+}
+
+/* 创作输入框：文字贴框最左（移除空的第一列） */
+.app-user-workspace .creation-chat-writing-surface,
+.app-user-workspace .creation-chat-composer.is-empty .creation-chat-writing-surface {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+}
+
+/* 模式选项卡：左对齐 + 整体缩小 15% */
+@media (min-width: 801px) {
+    .app-user-workspace .creation-launchpad > .creation-mode-capsule {
+        margin: 0 0 16px !important;
+        height: 37px !important;
+        gap: 3px !important;
+        padding: 3px !important;
+    }
+
+    .app-user-workspace .creation-launchpad > .creation-mode-capsule .creation-chat-control {
+        height: 31px !important;
+        min-height: 31px !important;
+        min-width: 78px !important;
+        padding: 0 17px !important;
+        font-size: 12px !important;
+    }
+
+    .app-user-workspace .creation-launchpad > .creation-mode-capsule .creation-chat-control svg {
+        width: 14px !important;
+        height: 14px !important;
+    }
+}
+
+.creation-chat-mention-editor {
+    text-align: left;
+}
+
+.creation-chat-mention-editor::placeholder {
+    text-align: left;
+}

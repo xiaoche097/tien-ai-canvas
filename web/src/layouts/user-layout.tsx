@@ -9,6 +9,7 @@ import { getWorkspaceAntThemeConfig } from "@/lib/app-theme";
 import { useWorkspaceButtonFeedback } from "@/hooks/use-workspace-button-feedback";
 import "@/styles/workspace-product.css";
 import "@/styles/workspace-menus.css";
+import "@/styles/workspace-topnav.css";
 
 const workspaceTheme = getWorkspaceAntThemeConfig();
 
