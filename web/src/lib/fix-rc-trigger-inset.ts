@@ -16,48 +16,49 @@
  * Covers Popover, Dropdown, Select, Tooltip, DatePicker, Cascader, Mentions.
  */
 
-const POPUP_SELECTOR =
-  '.ant-popover, .ant-dropdown, .ant-dropdown-wrap, .ant-select-dropdown, .ant-tooltip, .ant-picker-dropdown, .ant-cascader-menus, .ant-mentions-dropdown';
+const POPUP_SELECTOR = ".ant-popover, .ant-dropdown, .ant-dropdown-wrap, .ant-select-dropdown, .ant-tooltip, .ant-picker-dropdown, .ant-cascader-menus, .ant-mentions-dropdown";
 
 function isHidden(el: HTMLElement): boolean {
-  const cs = getComputedStyle(el);
-  return cs.display === 'none' || cs.visibility === 'hidden' || el.hasAttribute('aria-hidden');
+    const cs = getComputedStyle(el);
+    return cs.display === "none" || cs.visibility === "hidden" || el.hasAttribute("aria-hidden");
 }
 
 function clearInlinePosition(el: HTMLElement) {
-  // Clear position-related inline styles so next alignment starts clean.
-  el.style.top = '';
-  el.style.left = '';
-  el.style.right = '';
-  el.style.bottom = '';
-  el.style.inset = '';
-  el.style.margin = '';
+    // Clear position-related inline styles so next alignment starts clean.
+    el.style.top = "";
+    el.style.left = "";
+    el.style.right = "";
+    el.style.bottom = "";
+    el.style.inset = "";
+    el.style.margin = "";
 }
 
 export function installRcTriggerInsetFix() {
-  if (typeof window === 'undefined') return;
-  if ((window as any).__rcTriggerInsetInstalled) return;
-  (window as any).__rcTriggerInsetInstalled = true;
+    if (typeof window === "undefined") return;
+    // Non-browser environments (tests, SSR) may provide window without MutationObserver.
+    if (typeof MutationObserver === "undefined") return;
+    if ((window as any).__rcTriggerInsetInstalled) return;
+    (window as any).__rcTriggerInsetInstalled = true;
 
-  const observer = new MutationObserver((mutations) => {
-    for (const m of mutations) {
-      const el = m.target as HTMLElement;
-      if (!el || !el.matches || !el.matches(POPUP_SELECTOR)) continue;
-      if (isHidden(el)) {
-        clearInlinePosition(el);
-      }
-    }
-  });
+    const observer = new MutationObserver((mutations) => {
+        for (const m of mutations) {
+            const el = m.target as HTMLElement;
+            if (!el || !el.matches || !el.matches(POPUP_SELECTOR)) continue;
+            if (isHidden(el)) {
+                clearInlinePosition(el);
+            }
+        }
+    });
 
-  observer.observe(document.body, {
-    attributes: true,
-    attributeFilter: ['style', 'class', 'aria-hidden'],
-    subtree: true,
-  });
+    observer.observe(document.body, {
+        attributes: true,
+        attributeFilter: ["style", "class", "aria-hidden"],
+        subtree: true,
+    });
 
-  // Clean up any popups already in a hidden state.
-  document.querySelectorAll(POPUP_SELECTOR).forEach((el) => {
-    const h = el as HTMLElement;
-    if (isHidden(h)) clearInlinePosition(h);
-  });
+    // Clean up any popups already in a hidden state.
+    document.querySelectorAll(POPUP_SELECTOR).forEach((el) => {
+        const h = el as HTMLElement;
+        if (isHidden(h)) clearInlinePosition(h);
+    });
 }
