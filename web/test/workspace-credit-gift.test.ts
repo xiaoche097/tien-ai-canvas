@@ -12,7 +12,8 @@ describe("workspace credit gift mark", () => {
         const account = readFileSync(resolve(import.meta.dir, "../src/components/layout/workspace-account-card.tsx"), "utf8");
         expect(topBar).not.toContain("app-workspace-topbar-credit-pill");
         expect(topBar).toContain("<WorkspaceAccountMenu />");
-        expect(account).toContain("WorkspaceCreditGiftMark");
+        expect(account).toContain("useWalletBalance(user?.id, creditsEnabled)");
+        expect(account).toContain("onClick={onWallet}");
         expect(topBar).not.toContain("Coins");
         expect(canvas).toContain('<WorkspaceCreditGiftMark className="is-compact" />');
         expect(canvas).not.toContain("Coins");

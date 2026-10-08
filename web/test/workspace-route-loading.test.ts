@@ -74,7 +74,6 @@ describe("workspace route loading", () => {
         expect(detail).toContain("新建画布");
     });
 
-
     test("keeps project asset refresh scoped to the latest user and project", () => {
         const editor = source("../src/pages/projects/detail/editor.tsx");
 
@@ -105,7 +104,7 @@ describe("workspace route loading", () => {
         expect(projectDetail).toContain('import("@/services/user-data-sync")');
         expect(projectDetail).not.toContain('import { createCanvasProjectWithRemoteSync } from "@/services/user-data-sync"');
         expect(workflow).not.toContain('from "@/lib/video-poster"');
-        expect(workflow).toContain('if (playing) return <video');
+        expect(workflow).toContain("if (playing) return <video");
     });
 
     test("uses a quiet workspace skeleton for initial hydration", () => {
@@ -131,6 +130,7 @@ describe("workspace wallet entry", () => {
         const palette = source("../src/components/layout/workspace-command-palette.tsx");
         const canvasTopBar = source("../src/pages/canvas/canvas-project-top-bar.tsx");
         const topBar = source("../src/components/layout/workspace-top-bar.tsx");
+        const accountMenu = source("../src/components/layout/workspace-account-menu.tsx");
         const css = source("../src/styles/globals.css");
 
         expect(router).toContain('path: "/wallet"');
@@ -138,13 +138,14 @@ describe("workspace wallet entry", () => {
         expect(router).not.toContain("WalletPage");
         expect(router).not.toContain("loadWalletPage");
         expect(modules).not.toContain("pages/wallet");
-        expect(host).toContain("pathname !== \"/wallet\"");
+        expect(host).toContain('pathname !== "/wallet"');
         expect(host).toContain("openWorkspaceWallet");
-        expect(palette).toContain('run: () => openWorkspaceWallet()');
+        expect(palette).toContain("run: () => openWorkspaceWallet()");
         expect(palette).not.toContain('"/wallet"');
         expect(canvasTopBar).toContain("openWorkspaceWallet()");
         expect(canvasTopBar).not.toContain('to="/wallet"');
-        expect(topBar).toContain("openWorkspaceWallet()");
+        expect(topBar).toContain("<WorkspaceAccountMenu />");
+        expect(accountMenu).toContain("openWorkspaceWallet()");
         expect(css).not.toContain(".wallet-library-page");
         expect(css).not.toContain(".wallet-market-page");
     });
