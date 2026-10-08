@@ -12,3 +12,5 @@ bun.lock
 *.gif
 *.webp
 *.svg
+# Historical slices of globals.css can start inside a rule; format the complete source.
+src/styles/globals-[1-5].css
