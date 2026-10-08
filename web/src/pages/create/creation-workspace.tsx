@@ -617,14 +617,7 @@ export function CreationModeTabs({
     const indicator = (pressed: boolean) => (pressed ? <motion.span layoutId={`creation-mode-indicator-${orientation}`} className="creation-mode-indicator" aria-hidden transition={reducedMotion ? { duration: 0 } : aceternityMotion.spring.dock} /> : null);
     return (
         <LayoutGroup id={`creation-mode-tabs-${orientation}`}>
-            <div
-                className="creation-mode-tabs"
-                role="group"
-                aria-label="创作模式"
-                data-active-mode={agentActive ? "agent" : mode}
-                data-orientation={orientation}
-                style={orientation === "vertical" ? { gridTemplateColumns: "minmax(0, 1fr)" } : undefined}
-            >
+            <div className="creation-mode-tabs" role="group" aria-label="创作模式" data-active-mode={agentActive ? "agent" : mode} data-orientation={orientation} style={orientation === "vertical" ? { gridTemplateColumns: "minmax(0, 1fr)" } : undefined}>
                 {items.map((item) => (
                     <button key={item.mode} type="button" className="creation-mode-button" data-mode={item.mode} aria-pressed={!agentActive && item.mode === mode} aria-label={`${item.label}生成`} onClick={() => onModeChange(item.mode)}>
                         {indicator(!agentActive && item.mode === mode)}

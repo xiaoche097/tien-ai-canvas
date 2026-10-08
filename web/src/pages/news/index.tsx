@@ -1,17 +1,4 @@
-import {
-    ArrowUpRight,
-    CalendarDays,
-    CalendarRange,
-    Clock,
-    ExternalLink,
-    Flame,
-    Newspaper,
-    RefreshCw,
-    Search,
-    Sparkles,
-    TimerReset,
-    X,
-} from "lucide-react";
+import { ArrowUpRight, CalendarDays, CalendarRange, Clock, ExternalLink, Flame, Newspaper, RefreshCw, Search, Sparkles, TimerReset, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { PageHeader, WorkspacePage } from "@/components/layout/workspace-page";
@@ -36,10 +23,7 @@ import { cn } from "@/lib/utils";
 /* ------------------------------------------------------------------ */
 /* 轻量异步数据 Hook：按 deps 变化 + nonce 重取，卸载即作废             */
 /* ------------------------------------------------------------------ */
-function useAsyncData<T>(
-    fetcher: () => Promise<T>,
-    deps: ReadonlyArray<unknown>,
-): { data: T | null; loading: boolean; error: string | null; reload: () => void } {
+function useAsyncData<T>(fetcher: () => Promise<T>, deps: ReadonlyArray<unknown>): { data: T | null; loading: boolean; error: string | null; reload: () => void } {
     const [data, setData] = useState<T | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -142,23 +126,11 @@ function CategoryChip({ category }: { category?: AihotCategory }) {
 /* ------------------------------------------------------------------ */
 
 /** 封面图经 weserv.nl 图片代理转发：源站 og:image 直连在部分网络下会挂起，代理可稳定回源 */
-const coverViaProxy = (url: string) =>
-    `https://images.weserv.nl/?url=${encodeURIComponent(url.replace(/^https?:\/\//, ""))}`;
+const coverViaProxy = (url: string) => `https://images.weserv.nl/?url=${encodeURIComponent(url.replace(/^https?:\/\//, ""))}`;
 
-function CoverCard({
-    item,
-    rank,
-    onOpenStory,
-}: {
-    item: AihotItem;
-    rank?: number;
-    onOpenStory?: (publicId: string, title: string) => void;
-}) {
+function CoverCard({ item, rank, onOpenStory }: { item: AihotItem; rank?: number; onOpenStory?: (publicId: string, title: string) => void }) {
     const storyId = publicIdFromStoryLink(item.links?.story);
-    const time =
-        formatAihotTime(item.latestAt) ||
-        formatAihotTime(item.publishedAt) ||
-        formatAihotTime(item.discoveredAt);
+    const time = formatAihotTime(item.latestAt) || formatAihotTime(item.publishedAt) || formatAihotTime(item.discoveredAt);
     const [cover, setCover] = useState<string | null>(null);
     const imgRef = useRef<HTMLImageElement | null>(null);
 
@@ -187,27 +159,9 @@ function CoverCard({
 
     return (
         <article className={cn("news-cover-card", rank != null && "is-rank")}>
-            <a
-                className="news-cover"
-                href={item.links?.aihot ?? "#"}
-                target="_blank"
-                rel="noreferrer"
-                aria-label={item.title}
-            >
-                {cover ? (
-                    <img
-                        ref={imgRef}
-                        className="news-cover-img"
-                        src={coverViaProxy(cover)}
-                        alt=""
-                        referrerPolicy="no-referrer"
-                        onError={() => setCover(null)}
-                    />
-                ) : null}
-                <span
-                    className={cn("news-cover-grad", item.category && `is-${item.category}`)}
-                    aria-hidden
-                >
+            <a className="news-cover" href={item.links?.aihot ?? "#"} target="_blank" rel="noreferrer" aria-label={item.title}>
+                {cover ? <img ref={imgRef} className="news-cover-img" src={coverViaProxy(cover)} alt="" referrerPolicy="no-referrer" onError={() => setCover(null)} /> : null}
+                <span className={cn("news-cover-grad", item.category && `is-${item.category}`)} aria-hidden>
                     {!cover ? <span className="news-cover-fallback-label">{catLabel}</span> : null}
                 </span>
                 {rank != null ? (
@@ -246,11 +200,7 @@ function CoverCard({
                             </a>
                         ) : null}
                         {storyId && onOpenStory ? (
-                            <button
-                                type="button"
-                                className="news-link"
-                                onClick={() => onOpenStory(storyId, item.title ?? "")}
-                            >
+                            <button type="button" className="news-link" onClick={() => onOpenStory(storyId, item.title ?? "")}>
                                 来龙去脉
                             </button>
                         ) : null}
@@ -264,20 +214,9 @@ function CoverCard({
 /* ------------------------------------------------------------------ */
 /* 新闻卡片（日报/周报/月报 分栏列表）                                   */
 /* ------------------------------------------------------------------ */
-function NewsCard({
-    item,
-    rank,
-    onOpenStory,
-}: {
-    item: AihotItem;
-    rank?: number;
-    onOpenStory?: (publicId: string, title: string) => void;
-}) {
+function NewsCard({ item, rank, onOpenStory }: { item: AihotItem; rank?: number; onOpenStory?: (publicId: string, title: string) => void }) {
     const storyId = publicIdFromStoryLink(item.links?.story);
-    const time =
-        formatAihotTime(item.latestAt) ||
-        formatAihotTime(item.publishedAt) ||
-        formatAihotTime(item.discoveredAt);
+    const time = formatAihotTime(item.latestAt) || formatAihotTime(item.publishedAt) || formatAihotTime(item.discoveredAt);
 
     return (
         <article className={cn("news-card", rank != null && "is-rank")}>
@@ -319,11 +258,7 @@ function NewsCard({
                             </a>
                         ) : null}
                         {storyId && onOpenStory ? (
-                            <button
-                                type="button"
-                                className="news-link"
-                                onClick={() => onOpenStory(storyId, item.title ?? "")}
-                            >
+                            <button type="button" className="news-link" onClick={() => onOpenStory(storyId, item.title ?? "")}>
                                 来龙去脉
                             </button>
                         ) : null}
@@ -338,13 +273,10 @@ function NewsCard({
 /* 热点 Tab：Top10                                                     */
 /* ------------------------------------------------------------------ */
 function HotTab({ onOpenStory, refreshKey }: { onOpenStory: (id: string, title: string) => void; refreshKey: number }) {
-    const { data, loading, error, reload } = useAsyncData(
-        async () => {
-            const top = await callMcpTool<{ count?: number; items?: AihotItem[] }>("aihot_get_hot_topics", { limit: 10 });
-            return Array.isArray(top) ? (top as unknown as AihotItem[]) : top?.items ?? [];
-        },
-        [refreshKey],
-    );
+    const { data, loading, error, reload } = useAsyncData(async () => {
+        const top = await callMcpTool<{ count?: number; items?: AihotItem[] }>("aihot_get_hot_topics", { limit: 10 });
+        return Array.isArray(top) ? (top as unknown as AihotItem[]) : (top?.items ?? []);
+    }, [refreshKey]);
 
     if (loading) return <LoadingCards count={5} />;
     if (error) return <ErrorState message={error} onRetry={reload} />;
@@ -352,9 +284,7 @@ function HotTab({ onOpenStory, refreshKey }: { onOpenStory: (id: string, title: 
 
     return (
         <div>
-            <p className="news-section-title">
-                当前 AIHOT 热点 Top {data.length} · 多个独立信源同时讨论的事件
-            </p>
+            <p className="news-section-title">当前 AIHOT 热点 Top {data.length} · 多个独立信源同时讨论的事件</p>
             <div className="news-grid mt-3">
                 {data.map((item, i) => (
                     <CoverCard key={item.id ?? i} item={item} rank={i + 1} onOpenStory={onOpenStory} />
@@ -383,13 +313,7 @@ function formatPostTime(iso?: string | null): string {
 
 /** 事件归属日期：确认/发生/预计窗口起始/创建，取第一个有效日期 */
 function eventDay(ev: AihotCodexEvent): string {
-    return (
-        ev.confirmedAt?.slice(0, 10) ??
-        ev.occurredOn?.slice(0, 10) ??
-        ev.schedule?.from?.slice(0, 10) ??
-        ev.createdAt?.slice(0, 10) ??
-        ""
-    );
+    return ev.confirmedAt?.slice(0, 10) ?? ev.occurredOn?.slice(0, 10) ?? ev.schedule?.from?.slice(0, 10) ?? ev.createdAt?.slice(0, 10) ?? "";
 }
 
 type DayMark = "done" | "pending" | "wait";
@@ -406,10 +330,7 @@ function markFor(ev: AihotCodexEvent, today: string): DayMark {
 }
 
 function CodexTab({ refreshKey }: { refreshKey: number }) {
-    const { data, loading, error, reload } = useAsyncData(
-        async () => fetchCodexMonitor(),
-        [refreshKey],
-    );
+    const { data, loading, error, reload } = useAsyncData(async () => fetchCodexMonitor(), [refreshKey]);
     const [selectedId, setSelectedId] = useState<string | null>(null);
 
     if (loading) return <LoadingCards count={4} />;
@@ -435,12 +356,8 @@ function CodexTab({ refreshKey }: { refreshKey: number }) {
     const mReset = summary.match(/近\s*90\s*天\s*额度重置\s*(\d+)\s*次/);
     const mCard = summary.match(/发\s*重置卡\s*(\d+)\s*次/);
     const mLast = summary.match(/上一次(?:确认的)?\s*额度重置\s*在\s*(\d{4}-\d{2}-\d{2})/);
-    const directEvents = events.filter(
-        (e) => e.type === "direct_reset" || `${e.displayLabel ?? ""}${e.label ?? ""}`.includes("额度重置"),
-    );
-    const creditEvents = events.filter(
-        (e) => e.type === "reset_credit" || `${e.displayLabel ?? ""}${e.label ?? ""}`.includes("重置卡"),
-    );
+    const directEvents = events.filter((e) => e.type === "direct_reset" || `${e.displayLabel ?? ""}${e.label ?? ""}`.includes("额度重置"));
+    const creditEvents = events.filter((e) => e.type === "reset_credit" || `${e.displayLabel ?? ""}${e.label ?? ""}`.includes("重置卡"));
     const resetCount = mReset ? Number(mReset[1]) : directEvents.length;
     const cardCount = mCard ? Number(mCard[1]) : creditEvents.length;
 
@@ -455,10 +372,7 @@ function CodexTab({ refreshKey }: { refreshKey: number }) {
             gaps.push((new Date(ordered[i]).getTime() - new Date(ordered[i - 1]).getTime()) / 86_400_000);
         }
         gaps.sort((a, b) => a - b);
-        medianDays =
-            gaps.length % 2 === 1
-                ? gaps[Math.floor(gaps.length / 2)]
-                : (gaps[gaps.length / 2 - 1] + gaps[gaps.length / 2]) / 2;
+        medianDays = gaps.length % 2 === 1 ? gaps[Math.floor(gaps.length / 2)] : (gaps[gaps.length / 2 - 1] + gaps[gaps.length / 2]) / 2;
         medianDays = Math.round(medianDays * 10) / 10;
     }
     const lastReset = mLast?.[1] ?? ordered[ordered.length - 1]?.slice(0, 10) ?? null;
@@ -503,25 +417,14 @@ function CodexTab({ refreshKey }: { refreshKey: number }) {
                     </span>
                     <div className="min-w-0">
                         <h2 className="text-base font-semibold text-foreground">Codex 用量重置监控</h2>
-                        <p className="mt-0.5 text-xs text-foreground/50">
-                            额度重置与重置卡发放：什么时候生效、给谁、Tibo 原话
-                        </p>
+                        <p className="mt-0.5 text-xs text-foreground/50">额度重置与重置卡发放：什么时候生效、给谁、Tibo 原话</p>
                     </div>
                 </div>
                 <div className="news-monitor-head-side">
                     <span className="news-monitor-tz" title="AIHOT 统一换算">
                         全部为北京时间 · UTC+8
                     </span>
-                    {reset.monitor?.status ? (
-                        <span
-                            className={cn(
-                                "news-chip",
-                                reset.monitor.status === "healthy" ? "is-ok" : "is-warn",
-                            )}
-                        >
-                            {reset.monitor.status === "healthy" ? "监控正常" : reset.monitor.status}
-                        </span>
-                    ) : null}
+                    {reset.monitor?.status ? <span className={cn("news-chip", reset.monitor.status === "healthy" ? "is-ok" : "is-warn")}>{reset.monitor.status === "healthy" ? "监控正常" : reset.monitor.status}</span> : null}
                 </div>
             </div>
 
@@ -541,9 +444,7 @@ function CodexTab({ refreshKey }: { refreshKey: number }) {
                         上一次重置卡发放：{formatDayZh(creditEvents[0]?.confirmedAt ?? creditEvents[0]?.createdAt) || "暂无"}
                         确认 · 更新于 {formatAihotTime(reset.checkedAt)}
                     </p>
-                    <p className="mt-1 text-xs leading-5 text-foreground/40">
-                        确认帖日期不代表精确到账时间。不预测尚未宣布的下一次重置。Tibo 一旦宣布，这里会显示预计生效时间与原帖。
-                    </p>
+                    <p className="mt-1 text-xs leading-5 text-foreground/40">确认帖日期不代表精确到账时间。不预测尚未宣布的下一次重置。Tibo 一旦宣布，这里会显示预计生效时间与原帖。</p>
                 </div>
             </div>
 
@@ -575,7 +476,9 @@ function CodexTab({ refreshKey }: { refreshKey: number }) {
                             <h3 className="text-sm font-medium text-foreground">重置日历</h3>
                             <p className="mt-0.5 text-xs text-foreground/45">点日期查看当天的重置、发卡和 Tibo 原帖</p>
                         </div>
-                        <span className="news-chip">{calY} 年 {calM} 月</span>
+                        <span className="news-chip">
+                            {calY} 年 {calM} 月
+                        </span>
                     </div>
                     <p className="mt-1 text-xs text-foreground/55">
                         本月 {monthDirect} 次额度重置 · {monthCredit} 次发重置卡
@@ -593,12 +496,7 @@ function CodexTab({ refreshKey }: { refreshKey: number }) {
                                 <button
                                     key={i}
                                     type="button"
-                                    className={cn(
-                                        "news-monitor-cal-cell",
-                                        !c.inMonth && "is-out",
-                                        isToday && "is-today",
-                                        hasMark && "has-mark",
-                                    )}
+                                    className={cn("news-monitor-cal-cell", !c.inMonth && "is-out", isToday && "is-today", hasMark && "has-mark")}
                                     aria-label={hasMark ? `${c.dateKey}，${c.marks.length} 条记录` : c.dateKey}
                                     onClick={() => {
                                         if (!hasMark) return;
@@ -649,24 +547,12 @@ function CodexTab({ refreshKey }: { refreshKey: number }) {
                                                 {eventDay(selected) === today ? <span className="text-foreground/45"> · 今天</span> : null}
                                             </p>
                                             <p className="mt-1 text-xs text-foreground/45">
-                                                {selected.confirmedAt ? (
-                                                    <>确认帖 {formatPostTime(selected.confirmedAt)}（不是精确到账时间）</>
-                                                ) : (
-                                                    (selected.estimate?.label ?? selected.schedule?.label ?? "预计生效时间未公布")
-                                                )}
+                                                {selected.confirmedAt ? <>确认帖 {formatPostTime(selected.confirmedAt)}（不是精确到账时间）</> : (selected.estimate?.label ?? selected.schedule?.label ?? "预计生效时间未公布")}
                                             </p>
                                         </div>
-                                        <span className={cn("news-chip", mark === "done" ? "is-ok" : mark === "pending" ? "is-warn" : "is-info")}>
-                                            {mark === "done"
-                                                ? "Tibo 已确认"
-                                                : mark === "pending"
-                                                  ? "应已生效"
-                                                  : "已宣布，等待生效"}
-                                        </span>
+                                        <span className={cn("news-chip", mark === "done" ? "is-ok" : mark === "pending" ? "is-warn" : "is-info")}>{mark === "done" ? "Tibo 已确认" : mark === "pending" ? "应已生效" : "已宣布，等待生效"}</span>
                                     </div>
-                                    <p className="mt-2 text-base font-semibold text-foreground">
-                                        {selected.title ?? selected.displayLabel ?? selected.label ?? "Codex 重置"}
-                                    </p>
+                                    <p className="mt-2 text-base font-semibold text-foreground">{selected.title ?? selected.displayLabel ?? selected.label ?? "Codex 重置"}</p>
                                     <p className="mt-1 text-sm text-foreground/65">
                                         适用范围：
                                         {pres?.audienceZh || selected.scope || "未说明"}
@@ -686,12 +572,7 @@ function CodexTab({ refreshKey }: { refreshKey: number }) {
                                                     </p>
                                                     <p className="text-xs text-foreground/45">{post.stage ?? "更新"}</p>
                                                 </div>
-                                                <a
-                                                    className="news-link ml-auto shrink-0"
-                                                    href={post.url ?? "#"}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                >
+                                                <a className="news-link ml-auto shrink-0" href={post.url ?? "#"} target="_blank" rel="noreferrer">
                                                     在 X 查看
                                                     <ArrowUpRight className="size-3.5" aria-hidden />
                                                 </a>
@@ -704,17 +585,11 @@ function CodexTab({ refreshKey }: { refreshKey: number }) {
                                             ) : null}
                                             <div className="news-monitor-tweet-foot">
                                                 <span>{formatPostTime(post.publishedAt)}</span>
-                                                {post.context && post.context.length > 0 ? (
-                                                    <span className="text-foreground/45">
-                                                        引用 {post.context.length} 条原帖
-                                                    </span>
-                                                ) : null}
+                                                {post.context && post.context.length > 0 ? <span className="text-foreground/45">引用 {post.context.length} 条原帖</span> : null}
                                             </div>
                                         </article>
                                     ))}
-                                    {posts.length === 0 ? (
-                                        <p className="mt-3 text-xs text-foreground/45">暂无 Tibo 原帖数据</p>
-                                    ) : null}
+                                    {posts.length === 0 ? <p className="mt-3 text-xs text-foreground/45">暂无 Tibo 原帖数据</p> : null}
                                 </div>
                             );
                         })()
@@ -736,18 +611,15 @@ function LatestTab({ refreshKey, onOpenStory }: { refreshKey: number; onOpenStor
     const [page, setPage] = useState(0);
     const PAGE_SIZE = 9;
 
-    const { data, loading, error, reload } = useAsyncData(
-        async () => {
-            const res = await callMcpTool<{ items?: AihotItem[] } | AihotItem[]>("aihot_get_latest", {
-                mode: "selected",
-                window,
-                ...(category ? { category } : {}),
-                limit: 20,
-            });
-            return Array.isArray(res) ? (res as unknown as AihotItem[]) : res?.items ?? [];
-        },
-        [refreshKey, category, window],
-    );
+    const { data, loading, error, reload } = useAsyncData(async () => {
+        const res = await callMcpTool<{ items?: AihotItem[] } | AihotItem[]>("aihot_get_latest", {
+            mode: "selected",
+            window,
+            ...(category ? { category } : {}),
+            limit: 20,
+        });
+        return Array.isArray(res) ? (res as unknown as AihotItem[]) : (res?.items ?? []);
+    }, [refreshKey, category, window]);
 
     const items = data ?? [];
     const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
@@ -833,11 +705,7 @@ function LatestTab({ refreshKey, onOpenStory }: { refreshKey: number; onOpenStor
 /* ------------------------------------------------------------------ */
 /* 日报 / 周报 / 月报                                                  */
 /* ------------------------------------------------------------------ */
-function ReportView({
-    report,
-}: {
-    report: AihotDailyReport | AihotPeriodReport | null;
-}) {
+function ReportView({ report }: { report: AihotDailyReport | AihotPeriodReport | null }) {
     if (!report) return null;
     const lead = (report as AihotDailyReport).lead;
     const headline = (report as AihotPeriodReport).headline;
@@ -847,7 +715,7 @@ function ReportView({
 
     return (
         <div>
-            {(lead?.title || headline) ? (
+            {lead?.title || headline ? (
                 <div className="news-lead">
                     <span className="news-chip">头条</span>
                     <h3 className="mt-2 text-lg font-semibold leading-7 text-foreground">{lead?.title ?? headline}</h3>
@@ -870,24 +738,12 @@ function ReportView({
                     <h3 className="news-section-title">快讯</h3>
                     <ul className="mt-2 flex flex-col rounded-xl border border-[var(--workspace-border)] bg-[var(--workspace-surface)]">
                         {flashes.map((f, i) => (
-                            <li
-                                key={f.id ?? i}
-                                className="flex min-w-0 items-baseline gap-3 border-b border-[var(--workspace-border)] px-4 py-3 last:border-b-0"
-                            >
-                                <span className="shrink-0 font-mono text-xs text-foreground/45">
-                                    {formatAihotTime(f.publishedAt)}
-                                </span>
-                                <a
-                                    className="min-w-0 flex-1 truncate text-sm text-foreground/82 hover:text-foreground"
-                                    href={f.links?.aihot ?? "#"}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                >
+                            <li key={f.id ?? i} className="flex min-w-0 items-baseline gap-3 border-b border-[var(--workspace-border)] px-4 py-3 last:border-b-0">
+                                <span className="shrink-0 font-mono text-xs text-foreground/45">{formatAihotTime(f.publishedAt)}</span>
+                                <a className="min-w-0 flex-1 truncate text-sm text-foreground/82 hover:text-foreground" href={f.links?.aihot ?? "#"} target="_blank" rel="noreferrer">
                                     {f.title}
                                 </a>
-                                {f.source?.name ? (
-                                    <span className="hidden shrink-0 text-xs text-foreground/40 sm:block">{f.source.name}</span>
-                                ) : null}
+                                {f.source?.name ? <span className="hidden shrink-0 text-xs text-foreground/40 sm:block">{f.source.name}</span> : null}
                             </li>
                         ))}
                     </ul>
@@ -898,21 +754,16 @@ function ReportView({
 }
 
 function DailyTab({ refreshKey }: { refreshKey: number }) {
-    const { data, loading, error, reload } = useAsyncData(
-        async () => {
-            const res = await callMcpTool<{ report?: AihotDailyReport } | AihotDailyReport>("aihot_get_daily", {});
-            return (res as { report?: AihotDailyReport }).report ?? (res as AihotDailyReport);
-        },
-        [refreshKey],
-    );
+    const { data, loading, error, reload } = useAsyncData(async () => {
+        const res = await callMcpTool<{ report?: AihotDailyReport } | AihotDailyReport>("aihot_get_daily", {});
+        return (res as { report?: AihotDailyReport }).report ?? (res as AihotDailyReport);
+    }, [refreshKey]);
     if (loading) return <LoadingCards count={4} />;
     if (error) return <ErrorState message={error} onRetry={reload} />;
     if (!data) return <EmptyState text="日报暂不可用" />;
     return (
         <div>
-            <p className="text-xs text-foreground/45">
-                日报 {data.date ?? ""} · 每日 08:00 发布，收录北京时间上一日 08:00 至当日 08:00 的动态
-            </p>
+            <p className="text-xs text-foreground/45">日报 {data.date ?? ""} · 每日 08:00 发布，收录北京时间上一日 08:00 至当日 08:00 的动态</p>
             <div className="mt-1">
                 <ReportView report={data} />
             </div>
@@ -921,25 +772,17 @@ function DailyTab({ refreshKey }: { refreshKey: number }) {
 }
 
 function PeriodTab({ kind, refreshKey }: { kind: "weekly" | "monthly"; refreshKey: number }) {
-    const { data, loading, error, reload } = useAsyncData(
-        async () => {
-            const res = await callMcpTool<{ report?: AihotPeriodReport } | AihotPeriodReport>(
-                kind === "weekly" ? "aihot_get_weekly" : "aihot_get_monthly",
-                {},
-            );
-            return (res as { report?: AihotPeriodReport }).report ?? (res as AihotPeriodReport);
-        },
-        [refreshKey, kind],
-    );
+    const { data, loading, error, reload } = useAsyncData(async () => {
+        const res = await callMcpTool<{ report?: AihotPeriodReport } | AihotPeriodReport>(kind === "weekly" ? "aihot_get_weekly" : "aihot_get_monthly", {});
+        return (res as { report?: AihotPeriodReport }).report ?? (res as AihotPeriodReport);
+    }, [refreshKey, kind]);
     if (loading) return <LoadingCards count={4} />;
     if (error) return <ErrorState message={error} onRetry={reload} />;
     if (!data) return <EmptyState text={`${kind === "weekly" ? "周报" : "月报"}暂不可用`} />;
     const period = kind === "weekly" ? data.week : data.month;
     return (
         <div>
-            <p className="text-xs text-foreground/45">
-                {kind === "weekly" ? `周报 · ${period ?? ""}` : `月报 · ${period ?? ""}`}
-            </p>
+            <p className="text-xs text-foreground/45">{kind === "weekly" ? `周报 · ${period ?? ""}` : `月报 · ${period ?? ""}`}</p>
             <div className="mt-1">
                 <ReportView report={data} />
             </div>
@@ -999,13 +842,7 @@ function SearchResults({
 /* ------------------------------------------------------------------ */
 /* 故事详情抽屉（aihot_get_story）                                     */
 /* ------------------------------------------------------------------ */
-function StoryDrawer({
-    story,
-    onClose,
-}: {
-    story: { id: string; title: string; data: AihotStory | null; loading: boolean; error: string | null };
-    onClose: () => void;
-}) {
+function StoryDrawer({ story, onClose }: { story: { id: string; title: string; data: AihotStory | null; loading: boolean; error: string | null }; onClose: () => void }) {
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
             if (e.key === "Escape") onClose();
@@ -1024,8 +861,7 @@ function StoryDrawer({
                         <p className="truncate text-sm font-medium text-foreground">{story.title}</p>
                         {s ? (
                             <p className="mt-0.5 text-xs text-foreground/50">
-                                {s.sourceCount ?? 0} 家来源 · 时间线 {s.reportCount ?? 0} 条
-                                {s.status ? ` · ${s.status}` : ""}
+                                {s.sourceCount ?? 0} 家来源 · 时间线 {s.reportCount ?? 0} 条{s.status ? ` · ${s.status}` : ""}
                             </p>
                         ) : null}
                     </div>
@@ -1074,9 +910,7 @@ function StoryDrawer({
                                                         {r.source?.name ? ` · ${r.source.name}` : ""}
                                                     </p>
                                                     <p className="mt-1 text-sm font-medium leading-5 text-foreground/88">{r.title}</p>
-                                                    {r.summary ? (
-                                                        <p className="mt-1 text-sm leading-6 text-foreground/65">{r.summary}</p>
-                                                    ) : null}
+                                                    {r.summary ? <p className="mt-1 text-sm leading-6 text-foreground/65">{r.summary}</p> : null}
                                                 </div>
                                             </li>
                                         ))}
@@ -1107,12 +941,7 @@ function StoryDrawer({
                                     <ul className="flex flex-col gap-1.5">
                                         {s.related.map((r, i) => (
                                             <li key={r.publicId ?? i}>
-                                                <a
-                                                    className="news-related-link"
-                                                    href={r.links?.aihot ?? "#"}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                >
+                                                <a className="news-related-link" href={r.links?.aihot ?? "#"} target="_blank" rel="noreferrer">
                                                     {r.title}
                                                     <ArrowUpRight className="size-3.5" aria-hidden />
                                                 </a>
@@ -1168,10 +997,7 @@ export default function NewsPage() {
                 if (alive) setStory((prev) => (prev ? { ...prev, data: (res as { story?: AihotStory }).story ?? null, loading: false } : prev));
             })
             .catch((e: unknown) => {
-                if (alive)
-                    setStory((prev) =>
-                        prev ? { ...prev, error: e instanceof Error ? e.message : String(e), loading: false } : prev,
-                    );
+                if (alive) setStory((prev) => (prev ? { ...prev, error: e instanceof Error ? e.message : String(e), loading: false } : prev));
             });
         return () => {
             alive = false;
@@ -1193,14 +1019,11 @@ export default function NewsPage() {
             limit: 20,
         })
             .then((res) => {
-                const items = Array.isArray(res) ? (res as unknown as AihotItem[]) : res?.items ?? [];
+                const items = Array.isArray(res) ? (res as unknown as AihotItem[]) : (res?.items ?? []);
                 if (alive) setSearchState((prev) => (prev.q ? { ...prev, data: items, loading: false } : prev));
             })
             .catch((e: unknown) => {
-                if (alive)
-                    setSearchState((prev) =>
-                        prev.q ? { ...prev, error: e instanceof Error ? e.message : String(e), loading: false } : prev,
-                    );
+                if (alive) setSearchState((prev) => (prev.q ? { ...prev, error: e instanceof Error ? e.message : String(e), loading: false } : prev));
             });
         return () => {
             alive = false;
@@ -1249,13 +1072,7 @@ export default function NewsPage() {
                                     </button>
                                 ) : null}
                             </div>
-                            <button
-                                type="button"
-                                className="news-icon-btn"
-                                aria-label="刷新"
-                                title="刷新"
-                                onClick={() => setRefreshKey((k) => k + 1)}
-                            >
+                            <button type="button" className="news-icon-btn" aria-label="刷新" title="刷新" onClick={() => setRefreshKey((k) => k + 1)}>
                                 <RefreshCw className="size-4" aria-hidden />
                             </button>
                         </>
@@ -1263,16 +1080,7 @@ export default function NewsPage() {
                 />
 
                 <section className="news-hero" aria-label="资讯头条">
-                    <video
-                        className="news-hero-video"
-                        src="/news-hero.mp4"
-                        autoPlay
-                        muted
-                        loop
-                        playsInline
-                        preload="metadata"
-                        aria-hidden
-                    />
+                    <video className="news-hero-video" src="/news-hero.mp4" autoPlay muted loop playsInline preload="metadata" aria-hidden />
                     <span className="news-hero-scrim" aria-hidden />
                     <span className="news-hero-vignette" aria-hidden />
                     <div className="news-hero-body">
@@ -1288,13 +1096,7 @@ export default function NewsPage() {
                             {TABS.map((tab) => {
                                 const Icon = tab.icon;
                                 return (
-                                    <button
-                                        key={tab.id}
-                                        type="button"
-                                        aria-current={activeTab === tab.id ? "page" : undefined}
-                                        className={cn("news-tab", activeTab === tab.id && "is-active")}
-                                        onClick={() => setActiveTab(tab.id)}
-                                    >
+                                    <button key={tab.id} type="button" aria-current={activeTab === tab.id ? "page" : undefined} className={cn("news-tab", activeTab === tab.id && "is-active")} onClick={() => setActiveTab(tab.id)}>
                                         <Icon className="size-4" aria-hidden />
                                         <span>{tab.label}</span>
                                     </button>
@@ -1330,9 +1132,7 @@ export default function NewsPage() {
                     </div>
                 )}
 
-                <p className="mt-6 text-xs text-foreground/35">
-                    内容由 AIHOT 自动聚合自外部公开信源，仅供资讯参考；重要事实请以原文链接为准。
-                </p>
+                <p className="mt-6 text-xs text-foreground/35">内容由 AIHOT 自动聚合自外部公开信源，仅供资讯参考；重要事实请以原文链接为准。</p>
             </div>
 
             {story ? <StoryDrawer story={story} onClose={() => setStory(null)} /> : null}

@@ -48,7 +48,15 @@ export function AppWorkspaceShell({ children }: { children: ReactNode }) {
     return (
         <>
             <WorkspaceTopBarExtensionProvider>
-                <div className={cn("app-workspace-shell flex h-dvh min-h-0 w-full flex-col overflow-hidden", spatialWorkbench && "is-spatial", creationWorkspace && "is-creation-workspace", newsWorkspace && "is-news-workspace", showGlobalTopBar && "is-bottom-nav")}>
+                <div
+                    className={cn(
+                        "app-workspace-shell flex h-dvh min-h-0 w-full flex-col overflow-hidden",
+                        spatialWorkbench && "is-spatial",
+                        creationWorkspace && "is-creation-workspace",
+                        newsWorkspace && "is-news-workspace",
+                        showGlobalTopBar && "is-bottom-nav",
+                    )}
+                >
                     {showGlobalTopBar ? <BannerAnnouncementsSlider /> : null}
 
                     {showGlobalTopBar ? <WorkspaceTopBar /> : null}
