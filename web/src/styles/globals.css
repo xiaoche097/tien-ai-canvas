@@ -1955,7 +1955,8 @@
         padding: 0;
     }
 
-    .app-workspace-shell:not(.is-spatial) .app-workspace-stage {
+    .app-workspace-shell:not(.is-spatial) .app-workspace-stage,
+    .app-workspace-shell.is-news-workspace .app-workspace-stage {
         border: 0;
         border-radius: 0;
         box-shadow: none;
@@ -14330,7 +14331,7 @@ html:not(.dark) .creation-history-drawer-root {
     .creation-empty-workspace > .creation-empty-suggest { margin-top: 20px; }
 }
 
-/* ===== 素材库 · 重构（影策影视资产） =====
+/* ===== 素材库 · 重构（境彻影视资产） =====
    与画布库共用 studio-band 毛玻璃页头与 frame 外壳；类型化封面、accent 反白筛选、
    批量操作条、banner+欢迎卡空态、资产档案抽屉。全局保持黑白单色。 */
 .assets-library-page .assets-header-meta { gap: 6px; }
@@ -14878,6 +14879,7 @@ html.dark .ai-message-codeblock-pre .shiki span { color: var(--shiki-dark) !impo
 .creation-thread-toolbar {
     display: flex;
     flex: 1 1 auto;
+    flex-wrap: wrap;
     min-width: 0;
     align-items: center;
     justify-content: space-between;
@@ -14889,7 +14891,7 @@ html.dark .ai-message-codeblock-pre .shiki span { color: var(--shiki-dark) !impo
     padding: var(--space-3) 0;
     margin: 0 auto;
 }
-.creation-toolbar-actions { display: inline-flex; align-items: center; gap: var(--space-1); }
+.creation-toolbar-actions { display: inline-flex; align-items: center; gap: var(--space-1); margin-left: auto; }
 .creation-toolbar-action {
     display: inline-flex;
     min-height: var(--space-8);
@@ -14899,7 +14901,8 @@ html.dark .ai-message-codeblock-pre .shiki span { color: var(--shiki-dark) !impo
     border: 1px solid transparent;
     border-radius: var(--r-md);
     background: transparent;
-    color: var(--creation-muted);
+    color: var(--creation-text);
+    white-space: nowrap;
     padding: 0 var(--space-2);
     cursor: pointer;
     transition: background-color var(--motion-state) ease, color var(--motion-state) ease;

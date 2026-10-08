@@ -25,7 +25,7 @@
   "id": "image-tools",
   "name": "Image Tools",
   "version": "1.0.0",
-  "author": "影策",
+  "author": "境彻",
   "description": "图片去背景与图层拆分工具协议插件。",
   "permissions": [
     "generation.run",

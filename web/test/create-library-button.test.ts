@@ -34,7 +34,7 @@ describe("creation library button", () => {
         expect(dockSource).not.toContain('aria-label="从本机上传附件"');
         expect(source).toContain("onClick={props.onOpenLibrary}");
         expect(source).toContain("creation-reference-add-button");
-        expect(source).toContain('showSelectedPrice={false} showOptionPrices variant="creation"');
+        expect(compactSource(source)).toContain('showSelectedPrice={false} showOptionPrices variant="creation"');
         expect(source).toContain("creation-submit-cost");
     });
 
@@ -168,14 +168,17 @@ describe("creation homepage default mode", () => {
 });
 
 describe("creation thread chrome", () => {
-    test("docks the conversation toolbar into the workspace top bar and keeps a compact thread composer", () => {
+    test("keeps history and new creation visible without a workspace top-bar mount", () => {
         const workspace = readCreateWorkspaceSource();
         const topBar = readFileSync(resolve(import.meta.dir, "../src/components/layout/workspace-top-bar.tsx"), "utf8");
         const product = readFileSync(resolve(import.meta.dir, "../src/styles/workspace-product.css"), "utf8");
 
-        expect(workspace).toContain("useWorkspaceTopBarMount");
-        expect(workspace).toContain("createPortal(toolbar, mount)");
-        expect(topBar).toContain("WorkspaceTopBarExtensionSlot");
+        expect(workspace).not.toContain("useWorkspaceTopBarMount");
+        expect(workspace).not.toContain("createPortal(toolbar, mount)");
+        expect(workspace).toContain('<header className="creation-thread-toolbar">');
+        expect(workspace).toContain("<span>新建创作</span>");
+        expect(workspace).toContain("<span>历史对话</span>");
+        expect(topBar).not.toContain("WorkspaceTopBarExtensionSlot");
         expect(product).toContain(".creation-chat-dock .creation-mode-tabs");
         expect(product).not.toContain("creation-composer-mode-row");
     });

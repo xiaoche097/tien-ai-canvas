@@ -1,7 +1,19 @@
 import { expect, test } from "bun:test";
-import { refreshPublicAppearance } from "../src/services/appearance-bootstrap";
+import { bootstrapAppearance, refreshPublicAppearance } from "../src/services/appearance-bootstrap";
 import { DEFAULT_CANVAS_APPEARANCE } from "../src/lib/canvas/agent-appearance";
 import { commitPublicAppearance, normalizePublicAppearance, useAppearanceStore } from "../src/stores/use-appearance-store";
+
+test("offline startup resolves the Jingche identity for the welcome page and Agent", async () => {
+    const appearance = await bootstrapAppearance(async () => {
+        throw new Error("backend unavailable");
+    });
+    expect(appearance.brandName).toBe("境彻");
+    expect(appearance.seoTitle).toBe("境彻");
+    expect(appearance.seoDescription).toContain("境彻");
+    expect(appearance.footerCopyright).toContain("境彻");
+    expect(appearance.canvas?.agentName).toBe("境彻");
+    expect(useAppearanceStore.getState().resolved).toBe(true);
+});
 
 test("appearance refresh synchronizes a changed Agent name", async () => {
     const saved = normalizePublicAppearance({ canvas: { ...DEFAULT_CANVAS_APPEARANCE, agentName: "星河助手" } });

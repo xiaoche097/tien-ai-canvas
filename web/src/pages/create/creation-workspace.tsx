@@ -1,9 +1,7 @@
 import { ImageSizePicker } from "@/components/image-size-picker";
 import { imageResolutionUsesQuality } from "@/lib/image-size-presets";
-import { createPortal } from "react-dom";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode, type RefObject } from "react";
 import { Button, Popover } from "antd";
-import { useWorkspaceTopBarMount } from "@/components/layout/workspace-top-bar-extension";
 import { Tooltip } from "@/components/ui/base/tooltip";
 import { Reorder, LayoutGroup, motion, useReducedMotion } from "motion/react";
 import { ArrowUp, Brain, ChevronDown, ChevronLeft, ChevronRight, Clapperboard, Clock3, Film, History, Image as ImageIcon, LoaderCircle, Maximize2, MessageSquareText, Minimize2, Plus, SlidersHorizontal, Trash2, WandSparkles, Waves, X } from "lucide-react";
@@ -67,8 +65,7 @@ export function CreationWorkspaceToolbar({
         window.addEventListener("mousedown", onPointerDown);
         return () => window.removeEventListener("mousedown", onPointerDown);
     }, [railOpen]);
-    const mount = useWorkspaceTopBarMount();
-    const toolbar = (
+    return (
         <header className="creation-thread-toolbar">
             <div className="creation-toolbar-shots" ref={railRef}>
                 <button type="button" className="creation-rail-trigger" aria-expanded={railOpen} aria-haspopup="listbox" onClick={() => setRailOpen((open) => !open)}>
@@ -123,19 +120,18 @@ export function CreationWorkspaceToolbar({
                 <Tooltip title="新建创作">
                     <button type="button" aria-label="新建创作" className="creation-toolbar-action" onClick={onNewConversation}>
                         <Plus />
+                        <span>新建创作</span>
                     </button>
                 </Tooltip>
                 <Tooltip title="历史对话">
                     <button type="button" aria-label="查看历史对话" className="creation-toolbar-action" onClick={onOpenHistory}>
                         <History />
+                        <span>历史对话</span>
                     </button>
                 </Tooltip>
             </div>
         </header>
     );
-    if (mount) return createPortal(toolbar, mount);
-    if (mount === null) return null;
-    return toolbar;
 }
 
 type ComposerProps = {
@@ -627,7 +623,7 @@ export function CreationModeTabs({
                 aria-label="创作模式"
                 data-active-mode={agentActive ? "agent" : mode}
                 data-orientation={orientation}
-                style={{ gridTemplateColumns: orientation === "vertical" ? "minmax(0, 1fr)" : `repeat(${onAgentSelect ? 4 : 3}, minmax(0, 1fr))` }}
+                style={orientation === "vertical" ? { gridTemplateColumns: "minmax(0, 1fr)" } : undefined}
             >
                 {items.map((item) => (
                     <button key={item.mode} type="button" className="creation-mode-button" data-mode={item.mode} aria-pressed={!agentActive && item.mode === mode} aria-label={`${item.label}生成`} onClick={() => onModeChange(item.mode)}>

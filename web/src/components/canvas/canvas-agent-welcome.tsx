@@ -12,7 +12,7 @@ export function AgentWelcome({ appearance, nodeCount, onChooseSkill, onDraftProm
     return (
         <section className="agent-welcome" aria-label="开始 Agent 创作">
             <div className="agent-welcome-intro">
-                <span className="agent-welcome-orb" aria-hidden="true" />
+                <img className="agent-welcome-logo" src="/jingche-agent-light.png" alt="" aria-hidden="true" />
                 <h2>{agentCopy(appearance.welcomeTitle, appearance.agentName)}</h2>
                 <p>{agentCopy(appearance.welcomeDescription, appearance.agentName)}</p>
             </div>

@@ -22,6 +22,11 @@ export default defineConfig({
     },
     server: {
         proxy: {
+            "/api/mcp": {
+                target: "https://aihot.news",
+                changeOrigin: true,
+                headers: { Origin: "http://localhost:3001", Cookie: "", Authorization: "" },
+            },
             "/api": {
                 target: apiProxyTarget,
                 changeOrigin: true,

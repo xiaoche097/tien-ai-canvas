@@ -14,15 +14,13 @@ const WorkspaceCommandPalette = lazy(() => import("@/components/layout/workspace
 export function AppWorkspaceShell({ children }: { children: ReactNode }) {
     const { pathname } = useLocation();
     const navigate = useNavigate();
-    const [mobileNavOpen, setMobileNavOpen] = useState(false);
     const [paletteOpen, setPaletteOpen] = useState(false);
 
     const hideChrome = pathname.startsWith("/admin") || /^\/canvas\/[^/]+/.test(pathname);
     const showGlobalTopBar = !hideChrome;
     const spatialWorkbench = isSpatialWorkbenchPath(pathname);
     const creationWorkspace = pathname === "/";
-
-    const toggleMobileNav = () => setMobileNavOpen((current) => !current);
+    const newsWorkspace = pathname === "/news";
 
     // ⌘K / Ctrl+K 全局呼出搜索面板。
     useEffect(() => {
@@ -50,12 +48,10 @@ export function AppWorkspaceShell({ children }: { children: ReactNode }) {
     return (
         <>
             <WorkspaceTopBarExtensionProvider>
-                <div className={cn("app-workspace-shell flex h-dvh min-h-0 w-full flex-col overflow-hidden", spatialWorkbench && "is-spatial", creationWorkspace && "is-creation-workspace")}>
-                    {!hideChrome && mobileNavOpen ? <button type="button" className="app-workspace-topnav-scrim lg:hidden" aria-label="收起导航" onClick={() => setMobileNavOpen(false)} /> : null}
-
+                <div className={cn("app-workspace-shell flex h-dvh min-h-0 w-full flex-col overflow-hidden", spatialWorkbench && "is-spatial", creationWorkspace && "is-creation-workspace", newsWorkspace && "is-news-workspace", showGlobalTopBar && "is-bottom-nav")}>
                     {showGlobalTopBar ? <BannerAnnouncementsSlider /> : null}
 
-                    {showGlobalTopBar ? <WorkspaceTopBar mobileOpen={mobileNavOpen} onToggleMobile={toggleMobileNav} /> : null}
+                    {showGlobalTopBar ? <WorkspaceTopBar /> : null}
 
                     <div className="app-workspace-stage relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
                         <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">{children}</div>

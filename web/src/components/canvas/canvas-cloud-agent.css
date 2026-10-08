@@ -604,18 +604,12 @@
     text-align: center;
 }
 
-.agent-welcome-orb {
+.agent-welcome-logo {
     display: inline-block;
-    width: 52px;
-    height: 52px;
+    width: var(--space-20);
+    height: var(--space-20);
     margin-bottom: var(--space-5);
-    border-radius: 50%;
-    background:
-        radial-gradient(circle at 32% 24%, var(--color-neutral-0), transparent 36%), radial-gradient(circle at 70% 80%, var(--palette-node-audio), transparent 64%),
-        radial-gradient(circle at 35% 65%, color-mix(in srgb, var(--agent-accent) 65%, var(--color-neutral-0)), var(--agent-accent));
-    box-shadow:
-        inset -4px -6px 14px color-mix(in srgb, var(--agent-accent) 28%, transparent),
-        0 8px 32px color-mix(in srgb, var(--agent-accent) 14%, transparent);
+    object-fit: contain;
 }
 
 .agent-welcome-intro h2 {

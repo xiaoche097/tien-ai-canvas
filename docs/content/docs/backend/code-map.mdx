@@ -144,7 +144,7 @@ HTTP 请求 -> handler -> service（稳定导入面 / 别名）-> app（组合�
 
 - 旧版 `canvas-agent/` 和 Codex App/MCP 插件已删除；Agent 运行统一由后端云端控制面承载。
 - `docs/content/docs/`：产品、操作、开发和进度文档。
-- `docker-compose.local.yml`：本地前后端编排；`nginx.conf`：生产静态资源和 API 代理。
+- `docker-compose.local.yml`：本地前后端编排；`nginx.conf`：生产静态资源和 API 代理。`/api/mcp` 单独转发至 AIHOT 公共资讯接口，使用上游允许的 Origin 并校验 TLS，不转发账户 Cookie 或 Authorization；Vite 开发代理保持同样约定。
 
 ## 修改原则
 
