@@ -1,8 +1,8 @@
 package prompts
 
 import (
-	"infinite-canvas/backend/internal/model"
-	"infinite-canvas/backend/internal/tools"
+	"yingce/backend/internal/model"
+	"yingce/backend/internal/tools"
 )
 
 const canvasImagePresetPrefix = "canvas_image_preset_"

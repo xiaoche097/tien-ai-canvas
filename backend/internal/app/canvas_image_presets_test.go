@@ -7,11 +7,11 @@ import (
 	"strings"
 	"testing"
 
-	"infinite-canvas/backend/internal/database"
-	"infinite-canvas/backend/internal/model"
-	"infinite-canvas/backend/internal/prompts"
-	"infinite-canvas/backend/internal/repository"
-	"infinite-canvas/backend/internal/tools"
+	"yingce/backend/internal/database"
+	"yingce/backend/internal/model"
+	"yingce/backend/internal/prompts"
+	"yingce/backend/internal/repository"
+	"yingce/backend/internal/tools"
 )
 
 func newCanvasImagePresetTestService(t *testing.T) (*Service, *gorm.DB) {

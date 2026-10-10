@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"strings"
 
-	"infinite-canvas/backend/internal/buildinfo"
-	"infinite-canvas/backend/internal/hostupdate"
-	"infinite-canvas/backend/internal/model"
+	"yingce/backend/internal/buildinfo"
+	"yingce/backend/internal/hostupdate"
+	"yingce/backend/internal/model"
 )
 
 type UpdateManager interface {

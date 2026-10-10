@@ -1,8 +1,7 @@
 import { Popover } from "antd";
 import { Switch } from "@/components/ui/base/switch";
-import { ChevronDown, LogIn, Moon, Sun } from "lucide-react";
+import { ChevronDown, CircleUserRound, Moon, Sun } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router";
 
 import { AppChangelogButton } from "@/components/layout/app-changelog-modal";
 import { WorkspaceAccountCard } from "./workspace-account-card";
@@ -26,42 +25,57 @@ export function WorkspaceAccountMenu() {
     }
 
     return user ? (
-        <><Popover
-            trigger={["hover", "click"]}
-            mouseEnterDelay={0.15}
-            mouseLeaveDelay={0.2}
-            placement="bottomRight"
-            arrow={false}
-            rootClassName="workspace-account-popover"
-            open={menuOpen}
-            onOpenChange={setMenuOpen}
-            content={(
-                <div className="workspace-topbar-account-menu">
-                    <WorkspaceAccountCard onNavigate={() => setMenuOpen(false)} onWallet={() => { setMenuOpen(false); openWorkspaceWallet(); }}>
+        <>
+            <Popover
+                trigger={["hover", "click"]}
+                mouseEnterDelay={0.15}
+                mouseLeaveDelay={0.2}
+                placement="bottomRight"
+                arrow={false}
+                rootClassName="workspace-account-popover"
+                open={menuOpen}
+                onOpenChange={setMenuOpen}
+                content={
+                    <div className="workspace-topbar-account-menu">
+                        <WorkspaceAccountCard
+                            onNavigate={() => setMenuOpen(false)}
+                            onWallet={() => {
+                                setMenuOpen(false);
+                                openWorkspaceWallet();
+                            }}
+                        >
+                            <div className="workspace-topbar-account-section">
+                                <AppChangelogButton
+                                    className="flex h-8 w-full items-center gap-2 rounded px-2 text-[var(--fs-label)] text-foreground/58 hover:bg-surface-hover hover:text-foreground [&_svg]:size-3.5"
+                                    showLabel
+                                    showVersion
+                                    versionClassName="ml-auto text-[var(--fs-micro)] tabular-nums text-foreground/32"
+                                />
+                            </div>
 
-                        <div className="workspace-topbar-account-section">
-                            <AppChangelogButton className="flex h-8 w-full items-center gap-2 rounded px-2 text-[var(--fs-label)] text-foreground/58 hover:bg-surface-hover hover:text-foreground [&_svg]:size-3.5" showLabel showVersion versionClassName="ml-auto text-[var(--fs-micro)] tabular-nums text-foreground/32" />
-                        </div>
-
-                        <div className="workspace-topbar-account-theme">
-                            {theme === "dark" ? <Moon className="size-3.5 text-foreground/45" /> : <Sun className="size-3.5 text-foreground/45" />}
-                            <span className="ml-2 flex-1 text-xs text-foreground/65">深色模式</span>
-                            <Switch size="sm" checked={theme === "dark"} onChange={(checked) => setTheme(checked ? "dark" : "light")} aria-label="深色模式" />
-                        </div>
-                    </WorkspaceAccountCard>
-                </div>
-            )}
-        >
-            <button type="button" className="app-workspace-account-trigger" aria-label="账户菜单" aria-expanded={menuOpen} aria-haspopup="dialog" title={displayName}>
-                <span className="app-workspace-account-initial" aria-hidden="true">{initial}</span>
-                <span className="app-workspace-account-name">{displayName}</span>
-                <ChevronDown className="app-workspace-account-chevron" aria-hidden="true" />
-                <UserAvatar user={user} className="app-workspace-account-avatar" />
-            </button>
-        </Popover></>
+                            <div className="workspace-topbar-account-theme">
+                                {theme === "dark" ? <Moon className="size-3.5 text-foreground/45" /> : <Sun className="size-3.5 text-foreground/45" />}
+                                <span className="ml-2 flex-1 text-xs text-foreground/65">深色模式</span>
+                                <Switch size="sm" checked={theme === "dark"} onChange={(checked) => setTheme(checked ? "dark" : "light")} aria-label="深色模式" />
+                            </div>
+                        </WorkspaceAccountCard>
+                    </div>
+                }
+            >
+                <button type="button" className="app-workspace-account-trigger" aria-label="账户菜单" aria-expanded={menuOpen} aria-haspopup="dialog" title={displayName}>
+                    <span className="app-workspace-account-initial" aria-hidden="true">
+                        {initial}
+                    </span>
+                    <span className="app-workspace-account-name">{displayName}</span>
+                    <ChevronDown className="app-workspace-account-chevron" aria-hidden="true" />
+                    <UserAvatar user={user} className="app-workspace-account-avatar" />
+                </button>
+            </Popover>
+        </>
     ) : (
-        <Link to="/login" className="app-workspace-topbar-icon-button" aria-label="登录" title="登录">
-            <LogIn />
-        </Link>
+        <span className="inline-flex items-center gap-1.5 px-1.5 text-xs text-foreground/55" role="img" aria-label="游客模式" title="游客模式">
+            <CircleUserRound className="size-5" />
+            <span className="hidden sm:inline">游客</span>
+        </span>
     );
 }

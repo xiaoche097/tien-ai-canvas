@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"strings"
 
-	"infinite-canvas/backend/internal/kernel"
-	"infinite-canvas/backend/internal/model"
+	"yingce/backend/internal/kernel"
+	"yingce/backend/internal/model"
 )
 
 var toolMentionPattern = regexp.MustCompile(`@\[tool:(style|motion|nine_grid|effect):(\d+):[^:\]]+:[^\]]+\]`)
