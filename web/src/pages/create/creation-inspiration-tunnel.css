@@ -14,6 +14,12 @@
     justify-content: flex-start;
 }
 
+@media (min-width: 1024px) and (min-height: 800px) {
+    .creation-home .creation-empty-workspace {
+        --creation-home-top-space: clamp(calc(var(--space-6) + var(--space-1)), calc(12dvh - var(--space-8)), var(--space-24));
+    }
+}
+
 .creation-home .creation-empty-workspace > * {
     flex-shrink: 0;
 }
@@ -63,7 +69,8 @@
     isolation: isolate;
     container-type: inline-size;
     width: 100%;
-    flex: 1 0 auto;
+    flex: 0 0 auto;
+    margin-top: var(--space-6);
     overflow: hidden;
 }
 

@@ -1220,15 +1220,6 @@ export default function CreatePage() {
                                     <h1>今天我们来做点什么？</h1>
                                 </div>
                             </div>
-                            <CreationInspirationTunnel
-                                mode={mode}
-                                onStartPrompt={(nextMode, prompt) => {
-                                    setAgentMode(false);
-                                    selectMode(nextMode);
-                                    setPrompt(prompt);
-                                    window.requestAnimationFrame(() => composerFocusRef.current?.focus());
-                                }}
-                            />
                             <section ref={launchpadRef} className="creation-launchpad" aria-label="开始创作">
                                 <div className={cn("creation-composer-stage is-home-mode", agentMode && "is-agent-mode")}>
                                     <CreationModeTabs
@@ -1262,6 +1253,15 @@ export default function CreatePage() {
                                     }}
                                 />
                             </section>
+                            <CreationInspirationTunnel
+                                mode={mode}
+                                onStartPrompt={(nextMode, prompt) => {
+                                    setAgentMode(false);
+                                    selectMode(nextMode);
+                                    setPrompt(prompt);
+                                    window.requestAnimationFrame(() => composerFocusRef.current?.focus());
+                                }}
+                            />
                             {inspirationSourcesVisible ? (
                                 <div className="creation-inspiration-credit">
                                     <details>
