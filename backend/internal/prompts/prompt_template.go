@@ -69,7 +69,7 @@ type CompiledPrompt struct {
 }
 
 func promptDefinitions() []PromptOperationDefinition {
-	definitions := defaultPromptDefinitions()
+	definitions := append(defaultPromptDefinitions(), imagePresetPromptDefinitions()...)
 	for index := range definitions {
 		definitions[index].OutputContract = promptOutputContract(definitions[index].Operation)
 	}
@@ -345,6 +345,9 @@ func validatePromptTemplateContent(definition PromptOperationDefinition, name st
 }
 
 func validatePromptPlaceholders(definition PromptOperationDefinition, content string) error {
+	if strings.HasPrefix(definition.Operation, canvasImagePresetPrefix) && strings.Contains(content, "@[tool:") {
+		return kernel.BadAuthRequest("画布图片预设模板不能包含嵌套工具标签")
+	}
 	allowed := make(map[string]bool, len(definition.Variables))
 	for _, variable := range definition.Variables {
 		allowed[variable.Placeholder] = true

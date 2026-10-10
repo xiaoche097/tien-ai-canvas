@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"infinite-canvas/backend/internal/kernel"
+	"infinite-canvas/backend/internal/model"
 )
 
 var toolMentionPattern = regexp.MustCompile(`@\[tool:(style|motion|nine_grid|effect):(\d+):[^:\]]+:[^\]]+\]`)
@@ -13,6 +14,11 @@ var toolMentionPattern = regexp.MustCompile(`@\[tool:(style|motion|nine_grid|eff
 // ResolveToolMentionTokens validates every tool before expanding it. Labels and
 // icons are presentation only; neither grants access to a private tool.
 func (s *Service) ResolveToolMentionTokens(userID, mode, prompt string) (string, error) {
+	return s.ResolveToolMentionTokensWithPromptResolver(userID, mode, prompt, nil)
+}
+
+// The resolver runs after ownership, enabled state and generation mode checks.
+func (s *Service) ResolveToolMentionTokensWithPromptResolver(userID, mode, prompt string, resolve func(*model.Tool) (string, error)) (string, error) {
 	if !strings.Contains(prompt, "@[tool:") {
 		return prompt, nil
 	}
@@ -42,10 +48,17 @@ func (s *Service) ResolveToolMentionTokens(userID, mode, prompt string) (string,
 		if (imageTool && mode != "image") || (!imageTool && mode != "video") {
 			return "", kernel.BadAuthRequest("工具不适用于当前生成类型")
 		}
-		if strings.TrimSpace(tool.Prompt) == "" || strings.Contains(tool.Prompt, "@[tool:") {
+		content := tool.Prompt
+		if resolve != nil {
+			content, err = resolve(&tool)
+			if err != nil {
+				return "", err
+			}
+		}
+		if strings.TrimSpace(content) == "" || strings.Contains(content, "@[tool:") {
 			return "", kernel.BadAuthRequest("工具提示词为空或包含嵌套工具标签")
 		}
-		prompts[match[0]] = tool.Prompt
+		prompts[match[0]] = content
 	}
 	return toolMentionPattern.ReplaceAllStringFunc(prompt, func(token string) string { return prompts[token] }), nil
 }

@@ -79,6 +79,7 @@ description: 从产品功能快速定位主要代码入口
 | 云端 Agent 运行与事件 API | `web/src/services/api/agent.ts`、`web/src/components/canvas/canvas-cloud-agent-panel.tsx` |
 | Agent 画布上下文、操作与历史 | `web/src/lib/canvas/canvas-context-discovery.ts`、`canvas-operation-contract.ts`、`web/src/pages/canvas/use-canvas-operation-history.ts` |
 | 官方提示词目录与客户端起始稿 | `backend/internal/prompts/`、`web/src/lib/prompts/` |
+| 画布图片预设模板 | `backend/internal/tools/image_presets.go` 复用原种子提示词，`backend/internal/prompts/image_presets.go` 定义九种模板，`backend/internal/app/tools_bridge.go` 在工具授权后接入模板编译 |
 
 ## 前端 HTTP 与产品壳
 
@@ -144,7 +145,7 @@ HTTP 请求 -> handler -> service（稳定导入面 / 别名）-> app（组合�
 
 - 旧版 `canvas-agent/` 和 Codex App/MCP 插件已删除；Agent 运行统一由后端云端控制面承载。
 - `docs/content/docs/`：产品、操作、开发和进度文档。
-- `docker-compose.local.yml`：本地前后端编排；`nginx.conf`：生产静态资源和 API 代理。`/api/mcp` 单独转发至 AIHOT 公共资讯接口，使用上游允许的 Origin 并校验 TLS，不转发账户 Cookie 或 Authorization；Vite 开发代理保持同样约定。
+- `docker-compose.local.yml`：本地前后端编排；`nginx.conf`：生产静态资源和 API 代理。`/api/mcp` 单独转发至 AIHOT 公共资讯接口，通过 Docker 内置 DNS 每 30 秒重新解析上游域名，避免宿主机代理的 Fake-IP 映射变化后仍连接旧地址；使用上游允许的 Origin 并校验 TLS，不转发账户 Cookie 或 Authorization；Vite 开发代理保持相同的上游请求约定。
 
 ## 修改原则
 

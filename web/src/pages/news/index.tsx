@@ -1,7 +1,7 @@
 import { ArrowUpRight, CalendarDays, CalendarRange, Clock, ExternalLink, Flame, Newspaper, RefreshCw, Search, Sparkles, TimerReset, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { PageHeader, WorkspacePage } from "@/components/layout/workspace-page";
+import { WorkspacePage } from "@/components/layout/workspace-page";
 import {
     AIHOT_CATEGORY_LABELS,
     callMcpTool,
@@ -1034,64 +1034,21 @@ export default function NewsPage() {
     const onOpenStory = useCallback((id: string, title: string) => openStory(id, title), [openStory]);
 
     return (
-        <WorkspacePage className="news-page">
+        <WorkspacePage className="news-page" fluid>
             <div className="w-full">
-                <PageHeader
-                    title="资讯"
-                    description={`${brandName} · AI 前沿情报聚合，内容来自 AIHOT，仅作资讯参考`}
-                    meta={
-                        <span className="news-chip" title="数据来源">
-                            AIHOT
-                        </span>
-                    }
-                    actions={
-                        <>
-                            <div className="news-search">
-                                <Search className="size-4 text-foreground/45" aria-hidden />
-                                <input
-                                    type="search"
-                                    value={query}
-                                    placeholder="搜索模型 / 产品 / 话题…"
-                                    aria-label="搜索资讯"
-                                    onChange={(e) => setQuery(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === "Enter") runSearch(query);
-                                    }}
-                                />
-                                {searching ? (
-                                    <button
-                                        type="button"
-                                        className="news-search-clear"
-                                        aria-label="清除搜索"
-                                        onClick={() => {
-                                            setQuery("");
-                                            setSearchState((prev) => ({ q: "", data: null, loading: false, error: null, nonce: prev.nonce }));
-                                        }}
-                                    >
-                                        <X className="size-3.5" aria-hidden />
-                                    </button>
-                                ) : null}
-                            </div>
-                            <button type="button" className="news-icon-btn" aria-label="刷新" title="刷新" onClick={() => setRefreshKey((k) => k + 1)}>
-                                <RefreshCw className="size-4" aria-hidden />
-                            </button>
-                        </>
-                    }
-                />
-
                 <section className="news-hero" aria-label="资讯头条">
                     <video className="news-hero-video" src="/news-hero.mp4" autoPlay muted loop playsInline preload="metadata" aria-hidden />
                     <span className="news-hero-scrim" aria-hidden />
                     <span className="news-hero-vignette" aria-hidden />
                     <div className="news-hero-body">
                         <p className="news-hero-kicker">AIHOT · 多源聚合 · 每日更新</p>
-                        <h2 className="news-hero-title">洞见 AI 前沿，先人一步</h2>
+                        <h1 className="news-hero-title">洞见 AI 前沿，先人一步</h1>
                         <p className="news-hero-sub">模型 · 产品 · 行业 · 论文 · 技巧，跨信源交叉验证</p>
                     </div>
                 </section>
 
-                {!searching ? (
-                    <div className="news-body">
+                <div className="news-body news-toolbar">
+                    {!searching ? (
                         <nav className="news-tabs" aria-label="资讯栏目">
                             {TABS.map((tab) => {
                                 const Icon = tab.icon;
@@ -1103,8 +1060,41 @@ export default function NewsPage() {
                                 );
                             })}
                         </nav>
+                    ) : (
+                        <h2 className="news-search-heading">资讯搜索</h2>
+                    )}
+                    <div className="news-toolbar-actions">
+                        <div className="news-search">
+                            <Search className="size-4 text-foreground/45" aria-hidden />
+                            <input
+                                type="search"
+                                value={query}
+                                placeholder="搜索模型 / 产品 / 话题…"
+                                aria-label="搜索资讯"
+                                onChange={(e) => setQuery(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") runSearch(query);
+                                }}
+                            />
+                            {searching ? (
+                                <button
+                                    type="button"
+                                    className="news-search-clear"
+                                    aria-label="清除搜索"
+                                    onClick={() => {
+                                        setQuery("");
+                                        setSearchState((prev) => ({ q: "", data: null, loading: false, error: null, nonce: prev.nonce }));
+                                    }}
+                                >
+                                    <X className="size-3.5" aria-hidden />
+                                </button>
+                            ) : null}
+                        </div>
+                        <button type="button" className="news-icon-btn" aria-label="刷新" title="刷新" onClick={() => setRefreshKey((k) => k + 1)}>
+                            <RefreshCw className="size-4" aria-hidden />
+                        </button>
                     </div>
-                ) : null}
+                </div>
 
                 {searching ? (
                     <div className="news-body">
@@ -1132,7 +1122,7 @@ export default function NewsPage() {
                     </div>
                 )}
 
-                <p className="mt-6 text-xs text-foreground/35">内容由 AIHOT 自动聚合自外部公开信源，仅供资讯参考；重要事实请以原文链接为准。</p>
+                <p className="news-body mt-6 pb-6 text-xs text-foreground/35">{brandName} · 内容由 AIHOT 自动聚合自外部公开信源，仅供资讯参考；重要事实请以原文链接为准。</p>
             </div>
 
             {story ? <StoryDrawer story={story} onClose={() => setStory(null)} /> : null}

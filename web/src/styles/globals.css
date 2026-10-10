@@ -18196,7 +18196,7 @@ html:not(.dark) .creation-home .creation-user-message-copy-wrap { box-shadow: 0 
     overflow: visible;
     padding-inline: 20px !important;
     border-bottom: 0 !important;
-    background: color-mix(in srgb, var(--user-page-bg) 92%, transparent) !important;
+    background: var(--workspace-topbar-background, color-mix(in srgb, var(--user-page-bg) 92%, transparent)) !important;
     color: var(--user-ink) !important;
 }
 .app-user-workspace .app-workspace-topbar-breadcrumb { color: var(--user-ink-muted) !important; }

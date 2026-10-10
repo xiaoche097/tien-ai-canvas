@@ -67,7 +67,7 @@ const protocolSectionMeta = [
     { key: "payment", label: "支付协议", description: "支付、查单、关单与对账", icon: CreditCard },
 ] as const;
 
-export default function PluginsPage() {
+export default function PluginsPage({ embedded = false }: { embedded?: boolean } = {}) {
     const { message } = App.useApp();
     const navigate = useNavigate();
     const brandName = useAppearanceStore((state) => state.appearance.brandName);
@@ -241,9 +241,11 @@ export default function PluginsPage() {
             <div ref={scrollContainerRef} className="app-workspace-scroll min-h-0 flex-1 overflow-y-auto">
                 <div className="plugins-page-layout">
                     <aside className="plugins-sidebar" aria-label="插件分类">
-                        <div className="plugins-sidebar-heading">
-                            <PageHeader title="插件中心" description="连接模型、素材与工作流，拓展你的创作工具。" />
-                        </div>
+                        {!embedded && (
+                            <div className="plugins-sidebar-heading">
+                                <PageHeader title="插件中心" description="连接模型、素材与工作流，拓展你的创作工具。" />
+                            </div>
+                        )}
                         <nav className="plugins-sidebar-nav">
                             <button type="button" className={`plugins-sidebar-item${categoryFilter === "all" ? " is-active" : ""}`} aria-current={categoryFilter === "all" ? "page" : undefined} onClick={() => selectCategory("all")}>
                                 <span className="plugins-sidebar-item-label">
@@ -280,21 +282,30 @@ export default function PluginsPage() {
                         </nav>
                     </aside>
                     <div className="plugins-page-content">
-                        <CollectionToolbar label="插件筛选" trailing={<div className="plugins-toolbar-actions">
-                                <Button icon={<RefreshCw className="size-4" />} loading={backendPluginsLoading} onClick={() => void reloadBackendPlugins()}>
-                                    刷新插件
-                                </Button>
-                                {user?.role === "admin" ? (
-                                    <Button type="primary" onClick={() => navigate("/admin/plugins")}>
-                                        管理员插件管理
+                        <CollectionToolbar
+                            label="插件筛选"
+                            active={Boolean(search.trim() || categoryFilter !== "all" || statusFilter !== "all" || trustFilter !== "all")}
+                            onReset={() => {
+                                setSearch("");
+                                selectCategory("all");
+                                setStatusFilter("all");
+                                setTrustFilter("all");
+                            }}
+                            trailing={
+                                <div className="plugins-toolbar-actions">
+                                    <Button icon={<RefreshCw className="size-4" />} loading={backendPluginsLoading} onClick={() => void reloadBackendPlugins()}>
+                                        刷新插件
                                     </Button>
-                                ) : null}
-                            </div>}>
+                                    {user?.role === "admin" ? <Button onClick={() => navigate("/admin/plugins")}>管理员插件管理</Button> : null}
+                                </div>
+                            }
+                        >
                             <Input
                                 className="plugins-search"
                                 prefix={<Search className="size-4 text-foreground/38" aria-hidden="true" />}
                                 value={search}
                                 allowClear
+                                aria-label="搜索插件名称、描述或作者"
                                 placeholder="搜索插件名称、描述或作者"
                                 onChange={(event) => setSearch(event.target.value)}
                             />
@@ -371,7 +382,7 @@ export default function PluginsPage() {
                                                                         </span>
                                                                         <div className="min-w-0 flex-1">
                                                                             <div className="plugin-card-title-row">
-                                                                                <h3>{plugin.manifest.name}</h3>
+                                                                                <h3 title={plugin.manifest.name}>{plugin.manifest.name}</h3>
                                                                                 <span className="plugin-version">v{plugin.manifest.version}</span>
                                                                             </div>
                                                                             <div className="plugin-card-labels">
@@ -393,16 +404,22 @@ export default function PluginsPage() {
 
                                                                     <p className="plugin-card-description">{plugin.manifest.description}</p>
 
-                                                                    <div className="plugin-card-meta">
-                                                                        <span>
-                                                                            <CalendarDays className="size-3.5" />
-                                                                            发布 {formatPluginDate(plugin.manifest.publishedAt)}
-                                                                        </span>
-                                                                        <span>
-                                                                            <Clock3 className="size-3.5" />
-                                                                            更新 {formatPluginDate(plugin.manifest.updatedAt)}
-                                                                        </span>
-                                                                    </div>
+                                                                    {(plugin.manifest.publishedAt || plugin.manifest.updatedAt) && (
+                                                                        <div className="plugin-card-meta">
+                                                                            {plugin.manifest.publishedAt && (
+                                                                                <span>
+                                                                                    <CalendarDays className="size-3.5" />
+                                                                                    发布 {formatPluginDate(plugin.manifest.publishedAt)}
+                                                                                </span>
+                                                                            )}
+                                                                            {plugin.manifest.updatedAt && (
+                                                                                <span>
+                                                                                    <Clock3 className="size-3.5" />
+                                                                                    更新 {formatPluginDate(plugin.manifest.updatedAt)}
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
 
                                                                     <div className="plugin-card-tags">
                                                                         {(plugin.manifest.surfaces || []).map((surface) => (

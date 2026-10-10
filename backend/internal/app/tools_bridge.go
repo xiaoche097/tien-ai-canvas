@@ -2,6 +2,7 @@ package app
 
 import (
 	"infinite-canvas/backend/internal/model"
+	"infinite-canvas/backend/internal/prompts"
 	"infinite-canvas/backend/internal/tools"
 	"strings"
 )
@@ -69,7 +70,17 @@ func (s *Service) DeleteTool(userID string, toolID int64) error {
 
 // ResolveToolMentionTokens 将 prompt 中的 @[tool:type:ID:label:icon] 令牌替换为对应工具的提示词文本。
 func (s *Service) ResolveToolMentionTokens(userID, mode, prompt string) (string, error) {
-	return s.toolDomain().ResolveToolMentionTokens(userID, mode, prompt)
+	return s.toolDomain().ResolveToolMentionTokensWithPromptResolver(userID, mode, prompt, func(tool *model.Tool) (string, error) {
+		operation, managed := prompts.CanvasImagePresetOperation(tool)
+		if !managed {
+			return tool.Prompt, nil
+		}
+		compiled, err := s.promptDomain().CompilePrompt(userID, operation, nil)
+		if err != nil {
+			return "", err
+		}
+		return compiled.Content, nil
+	})
 }
 
 func (s *Service) EnsureBuiltinTools() error {

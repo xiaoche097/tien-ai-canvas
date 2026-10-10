@@ -4,6 +4,7 @@ import { Store } from "lucide-react";
 import PluginsPage from "@/pages/plugins";
 import SkillsPage from "@/pages/skills";
 import { useUserStore } from "@/stores/use-user-store";
+import "./apps.css";
 
 /** 应用市场：技能与插件合并在一个入口，页内分区展示，旧路由 /skills、/plugins 保留直达。 */
 export default function AppsPage() {
@@ -20,7 +21,11 @@ export default function AppsPage() {
                     <p className="apps-page-subtitle">技能与插件集中管理，扩展你的创作能力</p>
                 </div>
             </div>
-            <Tabs className="apps-page-tabs" defaultActiveKey="skills" items={[{ key: "skills", label: "技能", children: <SkillsPage /> }, ...(pluginCenterEnabled ? [{ key: "plugins", label: "插件", children: <PluginsPage /> }] : [])]} />
+            <Tabs
+                className="apps-page-tabs"
+                defaultActiveKey="skills"
+                items={[{ key: "skills", label: "技能", children: <SkillsPage embedded /> }, ...(pluginCenterEnabled ? [{ key: "plugins", label: "插件", children: <PluginsPage embedded /> }] : [])]}
+            />
         </div>
     );
 }
