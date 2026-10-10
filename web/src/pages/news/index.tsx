@@ -1,22 +1,10 @@
 import { ArrowUpRight, CalendarDays, CalendarRange, Clock, ExternalLink, Flame, Newspaper, RefreshCw, Search, Sparkles, TimerReset, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { EditorialEdition, HotBoard, latestSections } from "./news-editorial";
+
 import { WorkspacePage } from "@/components/layout/workspace-page";
-import {
-    AIHOT_CATEGORY_LABELS,
-    callMcpTool,
-    fetchCodexMonitor,
-    formatAihotTime,
-    publicIdFromStoryLink,
-    resolveCoverImage,
-    type AihotCategory,
-    type AihotCodexEvent,
-    type AihotCodexReset,
-    type AihotDailyReport,
-    type AihotItem,
-    type AihotPeriodReport,
-    type AihotStory,
-} from "@/lib/news-mcp";
+import { callMcpTool, fetchCodexMonitor, formatAihotTime, publicIdFromStoryLink, type AihotCategory, type AihotCodexEvent, type AihotCodexReset, type AihotDailyReport, type AihotItem, type AihotPeriodReport, type AihotStory } from "@/lib/news-mcp";
 import { useAppearanceStore } from "@/stores/use-appearance-store";
 import { cn } from "@/lib/utils";
 
@@ -115,163 +103,6 @@ function EmptyState({ text }: { text: string }) {
     );
 }
 
-function CategoryChip({ category }: { category?: AihotCategory }) {
-    if (!category) return null;
-    const label = AIHOT_CATEGORY_LABELS[category] ?? category;
-    return <span className="news-chip">{label}</span>;
-}
-
-/* ------------------------------------------------------------------ */
-/* 封面卡片（热点 / 最新 / 搜索结果共用，TapNow 式网格）                 */
-/* ------------------------------------------------------------------ */
-
-/** 封面图经 weserv.nl 图片代理转发：源站 og:image 直连在部分网络下会挂起，代理可稳定回源 */
-const coverViaProxy = (url: string) => `https://images.weserv.nl/?url=${encodeURIComponent(url.replace(/^https?:\/\//, ""))}`;
-
-function CoverCard({ item, rank, onOpenStory }: { item: AihotItem; rank?: number; onOpenStory?: (publicId: string, title: string) => void }) {
-    const storyId = publicIdFromStoryLink(item.links?.story);
-    const time = formatAihotTime(item.latestAt) || formatAihotTime(item.publishedAt) || formatAihotTime(item.discoveredAt);
-    const [cover, setCover] = useState<string | null>(null);
-    const imgRef = useRef<HTMLImageElement | null>(null);
-
-    useEffect(() => {
-        let alive = true;
-        setCover(null);
-        resolveCoverImage(item.links?.original).then((img) => {
-            if (alive) setCover(img);
-        });
-        return () => {
-            alive = false;
-        };
-    }, [item.links?.original]);
-
-    /* 直连挂起兜底：代理后若 12s 仍未解码成功（既不 load 也不 error），降级为渐变底 */
-    useEffect(() => {
-        if (!cover) return;
-        const timer = window.setTimeout(() => {
-            const el = imgRef.current;
-            if (!el || !el.complete || el.naturalWidth === 0) setCover(null);
-        }, 12000);
-        return () => window.clearTimeout(timer);
-    }, [cover]);
-
-    const catLabel = item.category ? (AIHOT_CATEGORY_LABELS[item.category] ?? item.category) : "资讯";
-
-    return (
-        <article className={cn("news-cover-card", rank != null && "is-rank")}>
-            <a className="news-cover" href={item.links?.aihot ?? "#"} target="_blank" rel="noreferrer" aria-label={item.title}>
-                {cover ? <img ref={imgRef} className="news-cover-img" src={coverViaProxy(cover)} alt="" referrerPolicy="no-referrer" onError={() => setCover(null)} /> : null}
-                <span className={cn("news-cover-grad", item.category && `is-${item.category}`)} aria-hidden>
-                    {!cover ? <span className="news-cover-fallback-label">{catLabel}</span> : null}
-                </span>
-                {rank != null ? (
-                    <span className={cn("news-cover-rank", rank <= 3 && "is-top")} aria-label={`第 ${rank} 名`}>
-                        {rank}
-                    </span>
-                ) : null}
-                <span className="news-cover-scrim" aria-hidden />
-                <div className="news-cover-meta">
-                    <CategoryChip category={item.category} />
-                    {time ? (
-                        <span className="news-cover-time">
-                            <Clock className="size-3" aria-hidden />
-                            {time}
-                        </span>
-                    ) : null}
-                </div>
-            </a>
-            <div className="news-cover-body">
-                <h3 className="news-card-title news-cover-title">
-                    <a href={item.links?.aihot ?? "#"} target="_blank" rel="noreferrer">
-                        {item.title}
-                    </a>
-                </h3>
-                <div className="news-cover-footer">
-                    {item.source?.name ? (
-                        <span className="news-cover-source" title={item.source.name}>
-                            {item.source.name}
-                        </span>
-                    ) : null}
-                    <div className="news-card-actions">
-                        {item.links?.original ? (
-                            <a className="news-link" href={item.links.original} target="_blank" rel="noreferrer">
-                                原文
-                                <ArrowUpRight className="size-3.5" aria-hidden />
-                            </a>
-                        ) : null}
-                        {storyId && onOpenStory ? (
-                            <button type="button" className="news-link" onClick={() => onOpenStory(storyId, item.title ?? "")}>
-                                来龙去脉
-                            </button>
-                        ) : null}
-                    </div>
-                </div>
-            </div>
-        </article>
-    );
-}
-
-/* ------------------------------------------------------------------ */
-/* 新闻卡片（日报/周报/月报 分栏列表）                                   */
-/* ------------------------------------------------------------------ */
-function NewsCard({ item, rank, onOpenStory }: { item: AihotItem; rank?: number; onOpenStory?: (publicId: string, title: string) => void }) {
-    const storyId = publicIdFromStoryLink(item.links?.story);
-    const time = formatAihotTime(item.latestAt) || formatAihotTime(item.publishedAt) || formatAihotTime(item.discoveredAt);
-
-    return (
-        <article className={cn("news-card", rank != null && "is-rank")}>
-            {rank != null ? (
-                <div className={cn("news-card-rank", rank <= 3 && "is-top")} aria-label={`第 ${rank} 名`}>
-                    {rank}
-                </div>
-            ) : null}
-            <div className="min-w-0 flex-1">
-                <div className="news-card-meta">
-                    <CategoryChip category={item.category} />
-                    {item.source?.name ? <span className="news-card-source">{item.source.name}</span> : null}
-                    {time ? (
-                        <span className="news-card-time">
-                            <Clock className="size-3" aria-hidden />
-                            {time}
-                        </span>
-                    ) : null}
-                    {item.sourceCount != null ? (
-                        <span className="news-card-sources">
-                            <ExternalLink className="size-3" aria-hidden />
-                            {item.sourceCount} 家来源
-                        </span>
-                    ) : null}
-                </div>
-                <h3 className="news-card-title">
-                    <a href={item.links?.aihot ?? "#"} target="_blank" rel="noreferrer">
-                        {item.title}
-                    </a>
-                </h3>
-                {item.summary ? <p className="news-card-summary">{item.summary}</p> : null}
-                {item.reason ? <p className="news-card-reason">推荐理由：{item.reason}</p> : null}
-                {(item.links?.original || storyId) && (
-                    <div className="news-card-actions">
-                        {item.links?.original ? (
-                            <a className="news-link" href={item.links.original} target="_blank" rel="noreferrer">
-                                查看原文
-                                <ArrowUpRight className="size-3.5" aria-hidden />
-                            </a>
-                        ) : null}
-                        {storyId && onOpenStory ? (
-                            <button type="button" className="news-link" onClick={() => onOpenStory(storyId, item.title ?? "")}>
-                                来龙去脉
-                            </button>
-                        ) : null}
-                    </div>
-                )}
-            </div>
-        </article>
-    );
-}
-
-/* ------------------------------------------------------------------ */
-/* 热点 Tab：Top10                                                     */
-/* ------------------------------------------------------------------ */
 function HotTab({ onOpenStory, refreshKey }: { onOpenStory: (id: string, title: string) => void; refreshKey: number }) {
     const { data, loading, error, reload } = useAsyncData(async () => {
         const top = await callMcpTool<{ count?: number; items?: AihotItem[] }>("aihot_get_hot_topics", { limit: 10 });
@@ -282,16 +113,7 @@ function HotTab({ onOpenStory, refreshKey }: { onOpenStory: (id: string, title: 
     if (error) return <ErrorState message={error} onRetry={reload} />;
     if (!data || data.length === 0) return <EmptyState text="暂时没有热点数据" />;
 
-    return (
-        <div>
-            <p className="news-section-title">当前 AIHOT 热点 Top {data.length} · 多个独立信源同时讨论的事件</p>
-            <div className="news-grid mt-3">
-                {data.map((item, i) => (
-                    <CoverCard key={item.id ?? i} item={item} rank={i + 1} onOpenStory={onOpenStory} />
-                ))}
-            </div>
-        </div>
-    );
+    return <HotBoard items={data} onOpenStory={onOpenStory} />;
 }
 
 /* ------------------------------------------------------------------ */
@@ -628,8 +450,8 @@ function LatestTab({ refreshKey, onOpenStory }: { refreshKey: number; onOpenStor
     const goPage = (next: number) => {
         setPage(Math.max(0, Math.min(totalPages - 1, next)));
         requestAnimationFrame(() => {
-            const grid = document.querySelector(".news-grid");
-            grid?.scrollIntoView({ behavior: "smooth", block: "start" });
+            const grid = document.querySelector(".news-edition");
+            grid?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
         });
     };
 
@@ -678,11 +500,7 @@ function LatestTab({ refreshKey, onOpenStory }: { refreshKey: number; onOpenStor
                 <EmptyState text="当前筛选条件下暂无资讯" />
             ) : (
                 <>
-                    <div className="news-grid mt-3">
-                        {visible.map((item, i) => (
-                            <CoverCard key={item.id ?? i} item={item} onOpenStory={onOpenStory} />
-                        ))}
-                    </div>
+                    <EditorialEdition title="AI 最新" period={window === "24h" ? "过去 24 小时" : "过去 7 天"} sections={latestSections(visible)} onOpenStory={onOpenStory} />
                     {totalPages > 1 ? (
                         <nav className="news-pager" aria-label="分页">
                             <button type="button" className="news-pager-button" aria-label="上一页" disabled={safePage === 0} onClick={() => goPage(safePage - 1)}>
@@ -705,88 +523,48 @@ function LatestTab({ refreshKey, onOpenStory }: { refreshKey: number; onOpenStor
 /* ------------------------------------------------------------------ */
 /* 日报 / 周报 / 月报                                                  */
 /* ------------------------------------------------------------------ */
-function ReportView({ report }: { report: AihotDailyReport | AihotPeriodReport | null }) {
-    if (!report) return null;
-    const lead = (report as AihotDailyReport).lead;
-    const headline = (report as AihotPeriodReport).headline;
-    const overview = (report as AihotPeriodReport).overview;
-    const flashes = (report as AihotDailyReport).flashes;
-    const sections = report.sections ?? [];
-
-    return (
-        <div>
-            {lead?.title || headline ? (
-                <div className="news-lead">
-                    <span className="news-chip">头条</span>
-                    <h3 className="mt-2 text-lg font-semibold leading-7 text-foreground">{lead?.title ?? headline}</h3>
-                    {lead?.leadParagraph ? <p className="mt-2 text-sm leading-6 text-foreground/70">{lead.leadParagraph}</p> : null}
-                    {overview ? <p className="mt-2 text-sm leading-6 text-foreground/70">{overview}</p> : null}
-                </div>
-            ) : null}
-            {sections.map((section, si) => (
-                <section key={section.label ?? si} className="mt-5">
-                    <h3 className="news-section-title">{section.label}</h3>
-                    <div className="mt-2 flex flex-col gap-3">
-                        {(section.items ?? []).map((item, i) => (
-                            <NewsCard key={item.id ?? i} item={item} />
-                        ))}
-                    </div>
-                </section>
-            ))}
-            {flashes && flashes.length > 0 ? (
-                <section className="mt-5">
-                    <h3 className="news-section-title">快讯</h3>
-                    <ul className="mt-2 flex flex-col rounded-xl border border-[var(--workspace-border)] bg-[var(--workspace-surface)]">
-                        {flashes.map((f, i) => (
-                            <li key={f.id ?? i} className="flex min-w-0 items-baseline gap-3 border-b border-[var(--workspace-border)] px-4 py-3 last:border-b-0">
-                                <span className="shrink-0 font-mono text-xs text-foreground/45">{formatAihotTime(f.publishedAt)}</span>
-                                <a className="min-w-0 flex-1 truncate text-sm text-foreground/82 hover:text-foreground" href={f.links?.aihot ?? "#"} target="_blank" rel="noreferrer">
-                                    {f.title}
-                                </a>
-                                {f.source?.name ? <span className="hidden shrink-0 text-xs text-foreground/40 sm:block">{f.source.name}</span> : null}
-                            </li>
-                        ))}
-                    </ul>
-                </section>
-            ) : null}
-        </div>
-    );
-}
-
-function DailyTab({ refreshKey }: { refreshKey: number }) {
+function ReportTab({ kind, refreshKey, onOpenStory }: { kind: "daily" | "weekly" | "monthly"; refreshKey: number; onOpenStory: (id: string, title: string) => void }) {
+    const [period, setPeriod] = useState("");
+    const field = kind === "daily" ? "date" : kind === "weekly" ? "week" : "month";
+    const title = kind === "daily" ? "AI 日报" : kind === "weekly" ? "AI 周报" : "AI 月报";
     const { data, loading, error, reload } = useAsyncData(async () => {
-        const res = await callMcpTool<{ report?: AihotDailyReport } | AihotDailyReport>("aihot_get_daily", {});
-        return (res as { report?: AihotDailyReport }).report ?? (res as AihotDailyReport);
-    }, [refreshKey]);
-    if (loading) return <LoadingCards count={4} />;
-    if (error) return <ErrorState message={error} onRetry={reload} />;
-    if (!data) return <EmptyState text="日报暂不可用" />;
-    return (
-        <div>
-            <p className="text-xs text-foreground/45">日报 {data.date ?? ""} · 每日 08:00 发布，收录北京时间上一日 08:00 至当日 08:00 的动态</p>
-            <div className="mt-1">
-                <ReportView report={data} />
+        const res = await callMcpTool<{ report?: AihotDailyReport | AihotPeriodReport } | AihotDailyReport | AihotPeriodReport>(`aihot_get_${kind}`, period ? { [field]: period } : {});
+        return (res as { report?: AihotDailyReport | AihotPeriodReport }).report ?? (res as AihotDailyReport | AihotPeriodReport);
+    }, [refreshKey, kind, period]);
+    const archive = {
+        value: period || (kind === "daily" ? (data as AihotDailyReport)?.date : kind === "weekly" ? (data as AihotPeriodReport)?.week : (data as AihotPeriodReport)?.month) || "",
+        type: field as "date" | "week" | "month",
+        onChange: setPeriod,
+    };
+    if (loading || error || !data)
+        return (
+            <div className="news-editorial news-report-pending">
+                <label>
+                    选择期刊 <input aria-label="选择期刊" type={archive.type} value={archive.value} onChange={(e) => setPeriod(e.target.value)} />
+                </label>
+                <button type="button" onClick={() => setPeriod("")}>
+                    最新一期
+                </button>
+                {loading ? <LoadingCards count={4} /> : error ? <ErrorState message={error} onRetry={reload} /> : <EmptyState text="本期暂不可用" />}
             </div>
-        </div>
-    );
-}
-
-function PeriodTab({ kind, refreshKey }: { kind: "weekly" | "monthly"; refreshKey: number }) {
-    const { data, loading, error, reload } = useAsyncData(async () => {
-        const res = await callMcpTool<{ report?: AihotPeriodReport } | AihotPeriodReport>(kind === "weekly" ? "aihot_get_weekly" : "aihot_get_monthly", {});
-        return (res as { report?: AihotPeriodReport }).report ?? (res as AihotPeriodReport);
-    }, [refreshKey, kind]);
-    if (loading) return <LoadingCards count={4} />;
-    if (error) return <ErrorState message={error} onRetry={reload} />;
-    if (!data) return <EmptyState text={`${kind === "weekly" ? "周报" : "月报"}暂不可用`} />;
-    const period = kind === "weekly" ? data.week : data.month;
+        );
+    const daily = data as AihotDailyReport;
+    const periodic = data as AihotPeriodReport;
+    const sections = data.sections ?? [];
+    const headline = daily.lead?.title ?? periodic.headline;
+    const match = sections.flatMap((section) => section.items ?? []).find((item) => item.title === headline);
+    const lead = headline ? { ...match, title: headline, summary: daily.lead?.leadParagraph ?? periodic.overview ?? match?.summary, links: match?.links ?? data.links } : undefined;
     return (
-        <div>
-            <p className="text-xs text-foreground/45">{kind === "weekly" ? `周报 · ${period ?? ""}` : `月报 · ${period ?? ""}`}</p>
-            <div className="mt-1">
-                <ReportView report={data} />
-            </div>
-        </div>
+        <EditorialEdition
+            title={title}
+            period={kind === "daily" ? daily.date : periodic.periodStart && periodic.periodEnd ? `${periodic.periodStart} — ${periodic.periodEnd}` : periodic.week || periodic.month}
+            generatedAt={data.generatedAt}
+            lead={lead}
+            sections={sections}
+            flashes={daily.flashes}
+            onOpenStory={onOpenStory}
+            archive={archive}
+        />
     );
 }
 
@@ -829,11 +607,7 @@ function SearchResults({
             ) : !data || data.length === 0 ? (
                 <EmptyState text="没有找到相关资讯，换个关键词试试" />
             ) : (
-                <div className="news-grid mt-3">
-                    {data.map((item, i) => (
-                        <CoverCard key={item.id ?? i} item={item} onOpenStory={onOpenStory} />
-                    ))}
-                </div>
+                <EditorialEdition title="AI 搜索" period={q} sections={latestSections(data)} onOpenStory={onOpenStory} />
             )}
         </div>
     );
@@ -1115,9 +889,9 @@ export default function NewsPage() {
                     <div className="news-body mt-3">
                         {activeTab === "hot" ? <HotTab onOpenStory={onOpenStory} refreshKey={refreshKey} /> : null}
                         {activeTab === "latest" ? <LatestTab refreshKey={refreshKey} onOpenStory={onOpenStory} /> : null}
-                        {activeTab === "daily" ? <DailyTab refreshKey={refreshKey} /> : null}
-                        {activeTab === "weekly" ? <PeriodTab kind="weekly" refreshKey={refreshKey} /> : null}
-                        {activeTab === "monthly" ? <PeriodTab kind="monthly" refreshKey={refreshKey} /> : null}
+                        {activeTab === "daily" ? <ReportTab key="daily" kind="daily" refreshKey={refreshKey} onOpenStory={onOpenStory} /> : null}
+                        {activeTab === "weekly" ? <ReportTab key="weekly" kind="weekly" refreshKey={refreshKey} onOpenStory={onOpenStory} /> : null}
+                        {activeTab === "monthly" ? <ReportTab key="monthly" kind="monthly" refreshKey={refreshKey} onOpenStory={onOpenStory} /> : null}
                         {activeTab === "codex" ? <CodexTab refreshKey={refreshKey} /> : null}
                     </div>
                 )}

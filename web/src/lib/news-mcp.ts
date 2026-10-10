@@ -334,6 +334,7 @@ function writeCoverCache(cache: Record<string, CoverCacheEntry>) {
 /** 并发队列：同一时刻最多 3 个 microlink 请求，避免免费额度被打爆 */
 let coverInflight = 0;
 const coverQueue: { url: string; resolve: (v: string | null) => void }[] = [];
+const pendingCovers = new Map<string, Promise<string | null>>();
 
 async function pumpCoverQueue(): Promise<void> {
     while (coverInflight < 3 && coverQueue.length > 0) {
@@ -369,7 +370,7 @@ async function fetchMicrolinkCover(url: string): Promise<string | null> {
  * 解析文章封面图（og:image / 首图）。
  * - 命中本地缓存直接返回；
  * - 未命中走 microlink（并发 ≤3），成功缓存 7 天、失败缓存 1 小时；
- * - 任何失败都返回 null，由调用方用渐变兜底。
+ * - 同一文章的头条和列表共享正在进行的请求；失败返回 null，由调用方展示文字兜底。
  */
 export function resolveCoverImage(originalUrl?: string): Promise<string | null> {
     if (!originalUrl) return Promise.resolve(null);
@@ -379,16 +380,21 @@ export function resolveCoverImage(originalUrl?: string): Promise<string | null> 
         const ttl = hit.url ? COVER_OK_TTL : COVER_FAIL_TTL;
         if (Date.now() - hit.at < ttl) return Promise.resolve(hit.url);
     }
-    return new Promise<string | null>((resolve) => {
+    const pending = pendingCovers.get(originalUrl);
+    if (pending) return pending;
+    const request = new Promise<string | null>((resolve) => {
         coverQueue.push({
             url: originalUrl,
             resolve: (img) => {
                 const next = readCoverCache();
                 next[originalUrl] = { url: img, at: Date.now() };
                 writeCoverCache(next);
+                pendingCovers.delete(originalUrl);
                 resolve(img);
             },
         });
         void pumpCoverQueue();
     });
+    pendingCovers.set(originalUrl, request);
+    return request;
 }
