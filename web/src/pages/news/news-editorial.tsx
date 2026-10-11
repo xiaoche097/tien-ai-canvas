@@ -1,5 +1,6 @@
 import { ArrowUpRight, ImageIcon } from "lucide-react";
 import { useEffect, useState } from "react";
+import { ReportCalendar, ReportNavigation, type ReportNavigationProps } from "./report-navigation";
 import { AIHOT_CATEGORY_LABELS, callMcpTool, formatAihotTime, publicIdFromStoryLink, resolveCoverImage, type AihotItem, type AihotReportSection, type AihotStory } from "@/lib/news-mcp";
 import "./news-editorial.css";
 
@@ -189,7 +190,7 @@ export function EditorialEdition({
     sections,
     flashes = [],
     onOpenStory,
-    archive,
+    reportControls,
 }: {
     title: string;
     period?: string;
@@ -198,7 +199,7 @@ export function EditorialEdition({
     sections: AihotReportSection[];
     flashes?: AihotItem[];
     onOpenStory?: OpenStory;
-    archive?: { value: string; type: "date" | "week" | "month"; onChange: (value: string) => void };
+    reportControls?: ReportNavigationProps;
 }) {
     const items = sections.flatMap((section) => section.items ?? []);
     const sources = new Set(items.map((item) => item.source?.name).filter(Boolean));
@@ -207,16 +208,7 @@ export function EditorialEdition({
     return (
         <div className="news-editorial news-edition">
             <aside className="news-edition-archive" aria-label="期刊导航">
-                <span className="news-editorial-eyebrow">{archive ? "往期阅读" : "浏览版面"}</span>
-                {archive ? (
-                    <>
-                        <label htmlFor={`${idPrefix}-date`}>选择{archive.type === "date" ? "日期" : archive.type === "week" ? "周次" : "月份"}</label>
-                        <input id={`${idPrefix}-date`} type={archive.type} value={archive.value} onChange={(e) => archive.onChange(e.target.value)} />
-                        <button type="button" className="news-edition-current" onClick={() => archive.onChange("")}>
-                            回到最新一期
-                        </button>
-                    </>
-                ) : null}
+                {reportControls ? <ReportNavigation {...reportControls} /> : <span className="news-editorial-eyebrow">浏览版面</span>}
                 <nav aria-label="版面目录">
                     {sections.map((section, i) => (
                         <a key={section.label ?? i} href={`#${idPrefix}-${i}`}>
@@ -239,10 +231,14 @@ export function EditorialEdition({
                         <h2>{title}</h2>
                         <p>AIHOT · 境彻资讯</p>
                     </div>
-                    <div className="news-edition-date">
-                        <strong>{period || "最新一期"}</strong>
-                        {generatedAt ? <time>更新于 {formatAihotTime(generatedAt)}</time> : null}
-                    </div>
+                    {reportControls ? (
+                        <ReportCalendar {...reportControls} />
+                    ) : (
+                        <div className="news-edition-date">
+                            <strong>{period || "最新一期"}</strong>
+                            {generatedAt ? <time>更新于 {formatAihotTime(generatedAt)}</time> : null}
+                        </div>
+                    )}
                 </header>
                 <div className="news-edition-stats">
                     <span>

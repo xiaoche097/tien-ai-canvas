@@ -1,7 +1,8 @@
-import { ArrowUpRight, CalendarDays, CalendarRange, Clock, ExternalLink, Flame, Newspaper, RefreshCw, Search, Sparkles, TimerReset, X } from "lucide-react";
+import { ArrowUpRight, CalendarDays, CalendarRange, Clock, ExternalLink, Flame, RefreshCw, Search, Sparkles, TimerReset, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { EditorialEdition, HotBoard, latestSections } from "./news-editorial";
+import { ReportCalendar, ReportNavigation, type ReportKind } from "./report-navigation";
 
 import { WorkspacePage } from "@/components/layout/workspace-page";
 import { callMcpTool, fetchCodexMonitor, formatAihotTime, publicIdFromStoryLink, type AihotCategory, type AihotCodexEvent, type AihotCodexReset, type AihotDailyReport, type AihotItem, type AihotPeriodReport, type AihotStory } from "@/lib/news-mcp";
@@ -52,14 +53,12 @@ function useAsyncData<T>(fetcher: () => Promise<T>, deps: ReadonlyArray<unknown>
 /* ------------------------------------------------------------------ */
 /* 通用小部件                                                          */
 /* ------------------------------------------------------------------ */
-type TabId = "hot" | "latest" | "daily" | "weekly" | "monthly" | "codex";
+type TabId = "hot" | "latest" | "reports" | "codex";
 
 const TABS: { id: TabId; label: string; icon: typeof Flame }[] = [
     { id: "hot", label: "热点", icon: Flame },
     { id: "latest", label: "最新", icon: Clock },
-    { id: "daily", label: "日报", icon: CalendarDays },
-    { id: "weekly", label: "周报", icon: CalendarRange },
-    { id: "monthly", label: "月报", icon: Newspaper },
+    { id: "reports", label: "期刊", icon: CalendarDays },
     { id: "codex", label: "重置监控", icon: TimerReset },
 ];
 
@@ -523,29 +522,37 @@ function LatestTab({ refreshKey, onOpenStory }: { refreshKey: number; onOpenStor
 /* ------------------------------------------------------------------ */
 /* 日报 / 周报 / 月报                                                  */
 /* ------------------------------------------------------------------ */
-function ReportTab({ kind, refreshKey, onOpenStory }: { kind: "daily" | "weekly" | "monthly"; refreshKey: number; onOpenStory: (id: string, title: string) => void }) {
-    const [period, setPeriod] = useState("");
+function ReportTab({ refreshKey, onOpenStory }: { refreshKey: number; onOpenStory: (id: string, title: string) => void }) {
+    const [kind, setKind] = useState<ReportKind>("daily");
+    const [periods, setPeriods] = useState<Record<ReportKind, string>>({ daily: "", weekly: "", monthly: "" });
+    const period = periods[kind];
+    const setPeriod = (value: string) => setPeriods((previous) => ({ ...previous, [kind]: value }));
     const field = kind === "daily" ? "date" : kind === "weekly" ? "week" : "month";
     const title = kind === "daily" ? "AI 日报" : kind === "weekly" ? "AI 周报" : "AI 月报";
     const { data, loading, error, reload } = useAsyncData(async () => {
         const res = await callMcpTool<{ report?: AihotDailyReport | AihotPeriodReport } | AihotDailyReport | AihotPeriodReport>(`aihot_get_${kind}`, period ? { [field]: period } : {});
         return (res as { report?: AihotDailyReport | AihotPeriodReport }).report ?? (res as AihotDailyReport | AihotPeriodReport);
     }, [refreshKey, kind, period]);
-    const archive = {
+    const reportControls = {
+        kind,
+        onKindChange: setKind,
         value: period || (kind === "daily" ? (data as AihotDailyReport)?.date : kind === "weekly" ? (data as AihotPeriodReport)?.week : (data as AihotPeriodReport)?.month) || "",
-        type: field as "date" | "week" | "month",
+        date: (data as AihotDailyReport)?.date || (data as AihotPeriodReport)?.periodStart,
         onChange: setPeriod,
     };
     if (loading || error || !data)
         return (
-            <div className="news-editorial news-report-pending">
-                <label>
-                    选择期刊 <input aria-label="选择期刊" type={archive.type} value={archive.value} onChange={(e) => setPeriod(e.target.value)} />
-                </label>
-                <button type="button" onClick={() => setPeriod("")}>
-                    最新一期
-                </button>
-                {loading ? <LoadingCards count={4} /> : error ? <ErrorState message={error} onRetry={reload} /> : <EmptyState text="本期暂不可用" />}
+            <div className="news-editorial news-edition">
+                <aside className="news-edition-archive" aria-label="期刊导航">
+                    <ReportNavigation {...reportControls} />
+                </aside>
+                <div className="news-edition-paper" aria-busy={loading}>
+                    <header className="news-edition-masthead">
+                        <h2>{title}</h2>
+                        <ReportCalendar {...reportControls} />
+                    </header>
+                    {loading ? <LoadingCards count={4} /> : error ? <ErrorState message={error} onRetry={reload} /> : <EmptyState text="本期暂不可用" />}
+                </div>
             </div>
         );
     const daily = data as AihotDailyReport;
@@ -563,7 +570,7 @@ function ReportTab({ kind, refreshKey, onOpenStory }: { kind: "daily" | "weekly"
             sections={sections}
             flashes={daily.flashes}
             onOpenStory={onOpenStory}
-            archive={archive}
+            reportControls={reportControls}
         />
     );
 }
@@ -889,9 +896,7 @@ export default function NewsPage() {
                     <div className="news-body mt-3">
                         {activeTab === "hot" ? <HotTab onOpenStory={onOpenStory} refreshKey={refreshKey} /> : null}
                         {activeTab === "latest" ? <LatestTab refreshKey={refreshKey} onOpenStory={onOpenStory} /> : null}
-                        {activeTab === "daily" ? <ReportTab key="daily" kind="daily" refreshKey={refreshKey} onOpenStory={onOpenStory} /> : null}
-                        {activeTab === "weekly" ? <ReportTab key="weekly" kind="weekly" refreshKey={refreshKey} onOpenStory={onOpenStory} /> : null}
-                        {activeTab === "monthly" ? <ReportTab key="monthly" kind="monthly" refreshKey={refreshKey} onOpenStory={onOpenStory} /> : null}
+                        {activeTab === "reports" ? <ReportTab refreshKey={refreshKey} onOpenStory={onOpenStory} /> : null}
                         {activeTab === "codex" ? <CodexTab refreshKey={refreshKey} /> : null}
                     </div>
                 )}

@@ -268,6 +268,140 @@
     padding-right: var(--space-6);
     border-right: 1px solid var(--workspace-border);
 }
+.news-report-switch {
+    display: flex;
+    padding: var(--space-1);
+    border: 1px solid var(--workspace-border);
+    border-radius: var(--r-full);
+    background: var(--user-surface-muted);
+    margin-bottom: var(--space-6);
+}
+.news-report-switch button {
+    flex: 1;
+    min-width: 0;
+    padding: var(--space-2) var(--space-1);
+    border: 0;
+    border-radius: var(--r-full);
+    background: transparent;
+    color: var(--news-editorial-muted);
+    font-size: 12px;
+    cursor: pointer;
+}
+.news-report-switch button[aria-pressed="true"] {
+    background: var(--user-surface);
+    color: var(--news-editorial-ink);
+    box-shadow: inset 0 0 0 1px var(--workspace-border);
+}
+.news-report-calendar {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    width: 344px;
+    max-width: 100%;
+    flex-shrink: 0;
+    border: 1px solid var(--workspace-border);
+    border-radius: var(--r-lg);
+    background: var(--user-surface-muted);
+    overflow: hidden;
+}
+.news-report-calendar-date {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-2);
+    border-right: 1px solid var(--workspace-border);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+.news-report-calendar-date strong {
+    font-size: 56px;
+    line-height: 1;
+    font-weight: 600;
+    letter-spacing: -0.05em;
+}
+.news-report-calendar-date > span:first-child,
+.news-report-calendar-date small {
+    color: var(--news-editorial-muted);
+}
+.news-report-calendar-month {
+    min-width: 0;
+    padding: var(--space-3);
+}
+.news-report-calendar-month header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-1);
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: var(--space-2);
+}
+.news-report-calendar button {
+    border: 0;
+    background: transparent;
+    color: var(--news-editorial-ink);
+    cursor: pointer;
+    border-radius: var(--r-full);
+    padding: 0;
+    height: 28px;
+    min-width: 0;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+}
+.news-report-calendar-month header button {
+    width: 28px;
+    display: grid;
+    place-items: center;
+}
+.news-report-calendar button svg {
+    width: 14px;
+    height: 14px;
+}
+.news-report-calendar button:hover:not(:disabled):not([aria-pressed="true"]) {
+    background: var(--user-surface);
+}
+.news-report-calendar button:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+.news-report-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: var(--space-1);
+    text-align: center;
+}
+.news-report-calendar-grid > span {
+    color: var(--news-editorial-muted);
+    font-size: 10px;
+    line-height: 24px;
+}
+.news-report-calendar-grid button[aria-pressed="true"] {
+    background: var(--news-editorial-ink);
+    color: var(--user-surface);
+}
+.news-report-calendar-grid button[aria-current="date"] {
+    box-shadow: inset 0 0 0 1px var(--news-editorial-ink);
+}
+.news-report-calendar[data-kind="monthly"] .news-report-calendar-grid button[aria-pressed="true"] {
+    background: var(--user-surface);
+    color: var(--news-editorial-ink);
+    box-shadow: inset 0 0 0 1px var(--workspace-border);
+}
+@media (min-width: 601px) and (max-width: 1200px) {
+    .news-edition-masthead:has(.news-report-calendar) {
+        flex-wrap: wrap;
+    }
+}
+@media (max-width: 600px) {
+    .news-report-calendar {
+        grid-template-columns: 88px minmax(0, 1fr);
+    }
+    .news-report-calendar-date strong {
+        font-size: 44px;
+    }
+}
 .news-edition-archive label {
     display: block;
     font-size: 12px;
