@@ -52,6 +52,7 @@ const PluginsPage = lazy(() => import("@/pages/plugins"));
 const EagleLibraryPage = lazy(() => import("@/pages/plugins/eagle"));
 const TasksPage = lazy(() => import("@/pages/tasks"));
 const ProjectsPage = lazy(loadProjectsPage);
+const CommerceStudioPage = lazy(() => import("@/pages/projects/commerce"));
 const ProjectDetailPage = lazy(loadProjectDetailPage);
 const SettingsPage = lazy(() => import("@/pages/settings"));
 const TestVoiceRecording = lazy(() => import("@/pages/test-voice-recording"));
@@ -168,6 +169,10 @@ export const router = createBrowserRouter([
                         <RequireFeature feature="shortDramaEnabled">{deferred(<ProjectDetailPage />)}</RequireFeature>
                     </RequireAuth>
                 ),
+            },
+            {
+                path: "/projects/commerce-studio",
+                element: <RequireAuth><RequireFeature feature="shortDramaEnabled">{deferred(<CommerceStudioPage />)}</RequireFeature></RequireAuth>,
             },
             {
                 path: "/projects/:projectId/:view",

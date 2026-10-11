@@ -1950,12 +1950,13 @@
         background: var(--workspace-page);
     }
 
-    /* 画布编辑器与运营后台（hideChrome 契约）：保持全屏连体，不套圆角卡片 */
+    /* 全屏编辑器、后台及顶部导航内容区保持连体，避免圆角露出下层背景。 */
     .app-workspace-shell:not(.is-spatial) {
         padding: 0;
     }
 
     .app-workspace-shell:not(.is-spatial) .app-workspace-stage,
+    .app-workspace-shell.is-bottom-nav .app-workspace-stage,
     .app-workspace-shell.is-news-workspace .app-workspace-stage {
         border: 0;
         border-radius: 0;

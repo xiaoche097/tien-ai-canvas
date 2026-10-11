@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { appearanceLogoURL, useAppearanceStore } from "@/stores/use-appearance-store";
 import type { ThemeName } from "@/stores/use-theme-store";
 import { useActiveTheme } from "@/stores/canvas/use-canvas-theme-store";
+import "./brand-logo-effects.css";
 
 type BrandLogoProps = {
     className?: string;
@@ -35,7 +36,7 @@ export function BrandLogo({ className, fallback, alt = "", theme = "auto" }: Bra
     );
 }
 
-export function BrandLogoFrame({ className, logoClassName, fallback, alt = "", theme = "auto" }: BrandLogoProps & { logoClassName?: string }) {
+export function BrandLogoFrame({ className, logoClassName, fallback, alt = "", theme = "auto", polish = false }: BrandLogoProps & { logoClassName?: string; polish?: boolean }) {
     const frameEnabled = useAppearanceStore((state) => state.appearance.logoFrameEnabled);
     const unframedStyle: CSSProperties | undefined = frameEnabled
         ? undefined
@@ -47,7 +48,7 @@ export function BrandLogoFrame({ className, logoClassName, fallback, alt = "", t
               color: "inherit",
           };
     return (
-        <span className={cn("brand-logo-frame", className)} data-logo-frame-enabled={frameEnabled} style={unframedStyle}>
+        <span className={cn("brand-logo-frame", polish && "brand-logo-polish", className)} data-logo-frame-enabled={frameEnabled} style={unframedStyle}>
             <BrandLogo className={logoClassName} fallback={fallback} alt={alt} theme={theme} />
         </span>
     );

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
-import { useReducedMotion } from "motion/react";
+import { useCreativeReducedMotion } from "./creative-motion";
 import type { CreativeApplication } from "./creative-apps";
 
 function ApplicationVideo({ application, paused }: { application: CreativeApplication; paused: boolean }) {
@@ -38,9 +38,9 @@ function ApplicationVideo({ application, paused }: { application: CreativeApplic
     );
 }
 
-export function CreativeAppCarousel({ applications, onOpen }: { applications: CreativeApplication[]; onOpen: (application: CreativeApplication) => void }) {
+export function CreativeAppCarousel({ applications, onOpen, onPlaybackChange }: { applications: CreativeApplication[]; onOpen: (application: CreativeApplication) => void; onPlaybackChange?: (paused: boolean) => void }) {
     const track = useRef<HTMLDivElement>(null);
-    const reducedMotion = useReducedMotion();
+    const reducedMotion = useCreativeReducedMotion();
     const [paused, setPaused] = useState(false);
     const [held, setHeld] = useState(false);
     const [page, setPage] = useState(0);
@@ -90,7 +90,16 @@ export function CreativeAppCarousel({ applications, onOpen }: { applications: Cr
         >
             <header className="creative-center-section-head">
                 <h2>最新上线</h2>
-                <button type="button" className="creative-center-icon-button" aria-label={paused || reducedMotion ? "播放应用预览" : "暂停应用预览"} disabled={Boolean(reducedMotion)} onClick={() => setPaused((value) => !value)}>
+                <button
+                    type="button"
+                    className="creative-center-icon-button"
+                    aria-label={paused || reducedMotion ? "播放应用预览" : "暂停应用预览"}
+                    disabled={Boolean(reducedMotion)}
+                    onClick={() => {
+                        setPaused(!paused);
+                        onPlaybackChange?.(!paused);
+                    }}
+                >
                     {paused || reducedMotion ? <Play aria-hidden /> : <Pause aria-hidden />}
                 </button>
             </header>

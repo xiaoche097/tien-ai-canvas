@@ -32,7 +32,7 @@ export function WorkspaceTopBar() {
         <header className="app-workspace-topbar app-workspace-topnav">
             <div className="app-workspace-topnav-left">
                 <Link to="/" className="app-workspace-topnav-brand" aria-label={`${brandName}首页`} title={brandName}>
-                    <BrandLogoFrame className="grid size-9 shrink-0 place-items-center rounded-[var(--r-sm)] shadow-sm" logoClassName="size-[22px] object-contain" alt="" fallback={<WandSparkles className="size-5" strokeWidth={2.2} />} />
+                    <BrandLogoFrame polish className="grid size-9 shrink-0 place-items-center rounded-[var(--r-sm)] shadow-sm" logoClassName="size-[22px] object-contain" alt="" fallback={<WandSparkles className="size-5" strokeWidth={2.2} />} />
                     <span className="truncate text-[20px] leading-none font-semibold">{brandName}</span>
                 </Link>
             </div>

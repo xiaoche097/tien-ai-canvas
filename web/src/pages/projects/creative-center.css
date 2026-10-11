@@ -20,6 +20,85 @@
     font-size: 13px;
     color: var(--user-ink-muted);
 }
+.creative-studio-header {
+    --studio-fold-base: color-mix(in srgb, var(--user-surface) 85%, var(--user-ink));
+    --studio-fold-shadow: color-mix(in srgb, var(--user-surface) 50%, var(--user-ink));
+    --studio-fold-highlight: color-mix(in srgb, var(--user-surface) 96%, var(--user-ink));
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-6);
+    padding: var(--space-6) var(--space-8);
+    min-height: 164px;
+    overflow: hidden;
+    border: 1px solid var(--workspace-border);
+    border-radius: var(--user-radius-card);
+    background: var(--user-surface);
+    isolation: isolate;
+}
+.creative-studio-heading {
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+}
+.dark .creative-studio-header {
+    --studio-fold-shadow: color-mix(in srgb, var(--user-surface) 96%, var(--user-ink));
+    --studio-fold-highlight: color-mix(in srgb, var(--user-surface) 55%, var(--user-ink));
+}
+.creative-studio-surface {
+    position: relative;
+    flex: 0 1 600px;
+    height: 116px;
+    overflow: hidden;
+    border-radius: var(--user-radius-card);
+    pointer-events: none;
+    background: repeating-linear-gradient(135deg, var(--studio-fold-highlight) 0%, var(--studio-fold-base) 12%, var(--studio-fold-shadow) 21%, var(--studio-fold-highlight) 30%);
+    mask-image: linear-gradient(to right, transparent, black 20%, black 80%, transparent);
+}
+.creative-studio-surface::before {
+    content: "";
+    position: absolute;
+    inset: -30%;
+    background: repeating-linear-gradient(135deg, var(--studio-fold-highlight) 0%, var(--studio-fold-base) 12%, var(--studio-fold-shadow) 21%, var(--studio-fold-highlight) 30%);
+    animation: creative-studio-light 18s ease-in-out infinite alternate;
+    animation-play-state: paused;
+}
+.creative-studio-surface[data-surface-mode="animated"]::before {
+    animation-play-state: running;
+}
+@keyframes creative-studio-light {
+    from {
+        transform: translate3d(-5%, -2%, 0) rotate(-4deg);
+    }
+    to {
+        transform: translate3d(5%, 2%, 0) rotate(4deg);
+    }
+}
+@media (max-width: 767px) {
+    .creative-studio-header {
+        padding: var(--space-5);
+        min-height: 132px;
+    }
+    .creative-studio-heading {
+        flex-shrink: 1;
+    }
+    .creative-studio-surface {
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 42%;
+        height: auto;
+        opacity: 0.2;
+        z-index: -1;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .creative-studio-surface::before {
+        animation: none;
+    }
+}
 .creative-center-section-head {
     display: flex;
     align-items: center;

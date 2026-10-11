@@ -1,0 +1,15 @@
+Platform favicons are used only to identify the selected marketplace.
+Trademarks and images belong to their respective owners. These assets do not imply affiliation.
+
+taobao.png: https://img.alicdn.com/tps/i3/T1OjaVFl4dXXa.JOZB-114-114.png
+1688.ico: https://www.1688.com/favicon.ico
+pdd.png: https://www.pinduoduo.com/favicon.png
+jd.ico: https://storage.360buyimg.com/retail-mall/mall-common-component/favicon.ico
+douyin.ico: https://www.douyin.com/favicon.ico
+amazon.ico: https://www.amazon.com/favicon.ico
+ebay.ico: https://www.ebay.com/favicon.ico
+shein.png: https://open.sheincorp.cn/favicon.ico
+shopee.png: https://deo.shopeemobile.com/shopee/shopee-mobilemall-live-sg/assets/icon_favicon_1_32.9cd61b2e90c0f104.png
+lazada.png: https://lazada-com.oss-ap-southeast-1.aliyuncs.com/static/image/new-lazada-logo-small.png
+
+Unavailable icons use the platform name as text, rather than an invented logo.

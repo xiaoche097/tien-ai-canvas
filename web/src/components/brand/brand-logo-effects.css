@@ -1,0 +1,34 @@
+.brand-logo-frame.brand-logo-polish[data-logo-frame-enabled="true"] {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+}
+.brand-logo-polish[data-logo-frame-enabled="true"]::after {
+    content: "";
+    position: absolute;
+    inset: -50%;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0;
+    transform: translateX(-85%) rotate(-20deg);
+    background: linear-gradient(90deg, transparent 30%, color-mix(in srgb, var(--user-ink) 20%, transparent) 45%, color-mix(in srgb, var(--user-surface) 70%, transparent) 50%, transparent 65%);
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .app-workspace-topnav-brand:is(:hover, :focus-visible) .brand-logo-polish::after {
+        animation: brand-logo-polish-sweep 1100ms ease-out both;
+    }
+}
+@keyframes brand-logo-polish-sweep {
+    0% {
+        opacity: 0;
+        transform: translateX(-85%) rotate(-20deg);
+    }
+    20%,
+    65% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(85%) rotate(-20deg);
+    }
+}

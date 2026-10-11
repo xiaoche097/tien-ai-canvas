@@ -1,0 +1,293 @@
+.commerce-platform-trigger {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    min-height: 44px;
+    padding: var(--space-2) var(--space-3);
+    border: var(--stroke-1) solid var(--user-border-strong);
+    border-radius: var(--user-radius-control);
+    color: var(--user-ink);
+    background: var(--user-surface-muted);
+    text-align: left;
+}
+.commerce-platform-dialog {
+    color: var(--user-ink);
+    background: var(--user-surface);
+    border-radius: var(--user-radius-card);
+}
+.commerce-platform-dialog > header,
+.commerce-platform-dialog > footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-5);
+}
+.commerce-platform-dialog > header {
+    border-bottom: var(--stroke-1) solid var(--user-border);
+}
+.commerce-platform-dialog h2 {
+    margin: 0;
+    font-size: var(--fs-heading);
+    font-weight: 650;
+}
+.commerce-platform-dialog > header p {
+    margin: var(--space-1) 0 0;
+    font-size: var(--fs-caption);
+    color: var(--user-ink-muted);
+}
+.commerce-platform-dialog > header button {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    background: var(--user-surface-muted);
+    border-radius: var(--user-radius-control);
+}
+.commerce-platform-modal-body {
+    max-height: min(70dvh, calc(100dvh - 220px), 760px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: var(--space-5);
+}
+.commerce-platform-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: var(--space-3);
+}
+.commerce-platform-option {
+    position: relative;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-2);
+    border: var(--stroke-1) solid var(--user-border);
+    border-radius: var(--user-radius-control);
+    color: var(--user-ink);
+    background: var(--user-surface);
+}
+.commerce-platform-option:hover {
+    background: var(--user-surface-hover);
+    border-color: var(--user-border-strong);
+}
+.commerce-platform-option[aria-pressed="true"] {
+    border-color: var(--user-ink);
+    background: var(--user-surface-muted);
+    box-shadow: inset 0 0 0 var(--stroke-1) var(--user-ink);
+}
+.commerce-platform-option strong {
+    font-size: var(--fs-body);
+    font-weight: 600;
+}
+.commerce-platform-option-status {
+    font-size: var(--fs-caption);
+    color: var(--user-ink-muted);
+}
+.commerce-platform-mark {
+    display: grid;
+    place-items: center;
+    height: 52px;
+    width: 100%;
+}
+.commerce-platform-mark img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+}
+.commerce-platform-mark svg {
+    width: var(--space-8);
+    height: var(--space-8);
+}
+.commerce-platform-wordmark {
+    font-size: var(--fs-heading);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+.commerce-platform-check {
+    position: absolute;
+    top: var(--space-2);
+    right: var(--space-2);
+    background: var(--user-ink);
+    color: var(--user-surface);
+    border-radius: var(--r-full);
+    padding: 2px;
+    width: var(--space-5);
+    height: var(--space-5);
+}
+.commerce-platform-dialog > footer {
+    border-top: var(--stroke-1) solid var(--user-border);
+    font-size: var(--fs-caption);
+    color: var(--user-ink-muted);
+}
+.commerce-platform-dialog > footer > div {
+    display: flex;
+    gap: var(--space-2);
+}
+.commerce-platform-dialog > footer .ant-btn {
+    min-height: 44px;
+    padding-inline: var(--space-5);
+}
+.commerce-platform-dialog > footer .commerce-platform-confirm.ant-btn:not(:disabled) {
+    --button-primary-bg: var(--user-ink);
+    --button-primary-hover-bg: var(--user-ink-muted);
+    --button-primary-active-bg: var(--user-ink);
+    --button-primary-fg: var(--user-surface);
+    color: var(--user-surface);
+    background: var(--user-ink);
+    border-color: var(--user-ink);
+    box-shadow: none;
+}
+.commerce-platform-dialog > footer .commerce-platform-confirm.ant-btn:not(:disabled):hover {
+    color: var(--user-surface);
+    background: var(--user-ink-muted);
+    border-color: var(--user-ink-muted);
+}
+.commerce-platform-dialog button:focus-visible,
+.commerce-platform-dialog a:focus-visible,
+.commerce-platform-trigger:focus-visible,
+.commerce-platform-apply:focus-visible,
+.commerce-platform-details > summary:focus-visible {
+    outline: 2px solid var(--user-ink);
+    outline-offset: 3px;
+}
+.commerce-platform-rules {
+    margin-top: var(--space-4);
+    font-size: var(--fs-caption);
+    line-height: 1.8;
+}
+.commerce-platform-rule-heading {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+}
+.commerce-platform-rule-heading > span {
+    background: var(--user-surface-muted);
+    border-radius: var(--r-md);
+    color: var(--user-ink-muted);
+    padding-inline: var(--space-2);
+}
+.commerce-platform-rules p {
+    margin: var(--space-1) 0;
+    color: var(--user-ink-muted);
+    overflow-wrap: anywhere;
+}
+.commerce-platform-rules ul,
+.commerce-platform-issues {
+    padding-left: var(--space-4);
+    margin: var(--space-2) 0;
+    list-style: disc;
+    color: var(--user-ink-muted);
+}
+.commerce-platform-sources {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+}
+.commerce-platform-sources a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-height: 44px;
+    color: var(--user-ink);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.commerce-platform-summary {
+    border: var(--stroke-1) solid var(--user-border);
+    border-radius: var(--user-radius-control);
+    background: var(--user-surface-muted);
+    padding: var(--space-3);
+    margin-top: var(--space-3);
+    font-size: var(--fs-caption);
+    line-height: 1.8;
+}
+.commerce-platform-summary-title {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+.commerce-platform-summary-title > span,
+.commerce-platform-note {
+    color: var(--user-ink-muted);
+    font-size: var(--fs-caption);
+    line-height: 1.8;
+    margin: var(--space-3) 0;
+}
+.commerce-platform-details > summary {
+    cursor: pointer;
+    min-height: 44px;
+    align-content: center;
+    color: var(--user-ink);
+}
+.commerce-platform-details > .commerce-platform-rules {
+    margin-top: 0;
+}
+.commerce-platform-issues {
+    font-size: var(--fs-caption);
+    line-height: 1.8;
+}
+.commerce-platform-apply {
+    min-height: 44px;
+    padding: var(--space-2) var(--space-3);
+    border: var(--stroke-1) solid var(--user-border-strong);
+    border-radius: var(--user-radius-control);
+    background: var(--user-surface);
+    color: var(--user-ink);
+    font-size: var(--fs-caption);
+}
+.commerce-platform-apply:hover {
+    background: var(--user-surface-hover);
+}
+.commerce-brief {
+    margin-bottom: var(--space-3);
+}
+.commerce-brief textarea {
+    width: 100%;
+    border: var(--stroke-1) solid var(--user-border);
+    border-radius: var(--user-radius-control);
+    background: var(--user-surface-muted);
+    color: var(--user-ink);
+    padding: var(--space-3);
+    font-size: var(--fs-caption);
+    line-height: 1.8;
+    margin-bottom: var(--space-3);
+    resize: vertical;
+}
+.commerce-brief p {
+    color: var(--user-ink-muted);
+    font-size: var(--fs-caption);
+}
+@media (max-width: 899px) {
+    .commerce-platform-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+@media (max-width: 599px) {
+    .commerce-platform-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .commerce-platform-modal-body,
+    .commerce-platform-dialog > header,
+    .commerce-platform-dialog > footer {
+        padding: var(--space-4);
+    }
+    .commerce-platform-dialog > header p {
+        max-width: 24ch;
+    }
+    .commerce-platform-modal-body {
+        max-height: min(60dvh, calc(100dvh - 220px));
+    }
+    .commerce-platform-dialog > footer {
+        gap: var(--space-2);
+    }
+    .commerce-platform-dialog > footer .ant-btn {
+        padding-inline: var(--space-4);
+    }
+}
