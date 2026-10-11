@@ -8,7 +8,7 @@ import { App, Button, Form, Input, Modal } from "antd";
 import { ArrowRight, BookOpenText, FileText, FolderKanban, Images, LayoutGrid, Palette, Plus, Search, Sparkles } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 
-import { CollectionGrid, PageHeader, WorkspacePage } from "@/components/layout/workspace-page";
+import { CollectionGrid, WorkspacePage } from "@/components/layout/workspace-page";
 import { WorkspaceErrorState, WorkspaceLoadingState, WorkspaceState } from "@/components/layout/workspace-state";
 import { CanvasStylePickerModal, resolveCanvasStylePreset, resolveProjectCanvasStyle, type CanvasStylePreset } from "@/components/canvas/canvas-style-picker-modal";
 import { resourceFileUrl } from "@/services/api/resources";
@@ -24,6 +24,7 @@ import { modelDisplayName, useEffectiveConfig } from "@/stores/use-config-store"
 
 import { sourceTypeLabel } from "./detail/shared";
 import { Select } from "@/components/ui/base/select";
+import { CreativeCenter } from "./creative-center";
 
 type ProjectForm = { name: string; aspectRatio: string; sourceType: string };
 
@@ -134,6 +135,7 @@ export default function ProjectsPage() {
         }
     };
     const loadMoreRef = useRef<HTMLDivElement>(null);
+    const storyLauncherRef = useRef<HTMLDetailsElement>(null);
     const query = useInfiniteQuery({
         // 分页查询和画布页的全量项目查询不能共用缓存形状，否则两个页面会互相覆盖缓存数据。
         queryKey: ["projects", "paged"],
@@ -185,8 +187,15 @@ export default function ProjectsPage() {
     }, [query.fetchNextPage, query.hasNextPage, query.isError, query.isFetchingNextPage]);
     const hasInitialError = query.isError && !query.data;
     return (
-        <WorkspacePage className="library-page project-library-page" grid>
-            <details className="story-launcher-panel" aria-label="开始一部新短剧">
+        <WorkspacePage className="library-page project-library-page creative-center-page" grid>
+            <CreativeCenter onShortDrama={() => {
+                const launcher = storyLauncherRef.current;
+                if (!launcher) return;
+                launcher.open = true;
+                launcher.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+                launcher.querySelector<HTMLTextAreaElement>("textarea")?.focus({ preventScroll: true });
+            }} />
+            <details ref={storyLauncherRef} className="story-launcher-panel" aria-label="开始一部新短剧">
                 <summary className="story-launcher-head">
                     <div className="story-launcher-title">
                         <span className="story-launcher-mark"><Sparkles className="size-4" /></span>
@@ -242,6 +251,7 @@ export default function ProjectsPage() {
                 </div>
                 </details>
             </details>
+            <h2 className="creative-projects-heading">我的短剧项目</h2>
             <CollectionToolbar active={Boolean(keyword || status !== "all" || sort !== "updated")} onReset={() => { setKeyword(""); setStatus("all"); setSort("updated"); }}>
                 <Input allowClear className="app-list-search" prefix={<Search className="size-4 text-foreground/40" />} value={keyword} placeholder="搜索项目、简介或画风" onChange={(event) => setKeyword(event.target.value)} />
                 <Select className="w-32" value={status} onChange={setStatus} options={[{ label: "全部状态", value: "all" }, { label: "进行中", value: "active" }, { label: "已归档", value: "archived" }]} />

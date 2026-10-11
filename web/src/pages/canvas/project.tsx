@@ -7,7 +7,7 @@ import { canCancelGenerationTask } from "@/lib/generation-task-display";
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useParams, useSearchParams } from "react-router";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router";
 import { loadAssetsForUse } from "@/services/user-data-sync";
 import { canvasAssetHandoffIds } from "@/lib/canvas/canvas-asset-handoff";
 import { useEffectiveConfig } from "@/stores/use-config-store";
@@ -208,6 +208,8 @@ function CanvasViewportPage() {
     const { message, modal } = App.useApp();
     const queryClient = useQueryClient();
     const params = useParams<{ id: string }>();
+    const location = useLocation();
+    const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const projectId = params.id || "";
     const canvasStorageScope = getActiveUserScope();
@@ -618,6 +620,17 @@ function CanvasViewportPage() {
         next.delete("agent");
         setSearchParams(next, { replace: true });
     }, [projectLoaded, searchParams, setSearchParams, openAgent]);
+
+    const creativeCenterHandoff = (location.state as { creativeCenterAgent?: { canvasId: string; userId: string; prompt: string } } | null)?.creativeCenterAgent;
+    const consumedCreativeHandoff = useRef<string | null>(null);
+    useEffect(() => {
+        if (!projectLoaded || !creativeCenterHandoff || consumedCreativeHandoff.current === location.key) return;
+        if (creativeCenterHandoff.canvasId !== projectId || creativeCenterHandoff.userId !== useUserStore.getState().user?.id || typeof creativeCenterHandoff.prompt !== "string" || !creativeCenterHandoff.prompt.trim()) return;
+        consumedCreativeHandoff.current = location.key;
+        setAgentPrefillRequest((current) => ({ id: (current?.id ?? 0) + 1, text: creativeCenterHandoff.prompt, autoSubmit: false }));
+        openAgent();
+        navigate(`${location.pathname}${location.search}${location.hash}`, { replace: true, state: null });
+    }, [projectLoaded, creativeCenterHandoff, projectId, location.key, location.pathname, location.search, location.hash, navigate, openAgent]);
 
     // 沉浸专注进入时收起智能体与小地图、重置 Dock 唤出态；仅响应「进入」瞬间，避免关闭专注内主动唤出的面板。
     const prevFocusModeRef = useRef(focusMode);

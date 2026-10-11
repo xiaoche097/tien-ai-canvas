@@ -1,0 +1,384 @@
+.app-user-workspace .project-library-page.creative-center-page > div {
+    width: min(100%, 1840px);
+    margin-inline: auto;
+    padding: var(--space-8) var(--space-6) var(--space-12);
+}
+.creative-center {
+    color: var(--user-ink);
+    margin-bottom: var(--space-12);
+}
+.creative-center-header {
+    margin-bottom: var(--space-8);
+}
+.creative-center-header h1 {
+    font-size: var(--fs-title);
+    font-weight: 650;
+    margin: 0;
+}
+.creative-center-header p {
+    margin: var(--space-2) 0 0;
+    font-size: 13px;
+    color: var(--user-ink-muted);
+}
+.creative-center-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    margin-bottom: var(--space-5);
+}
+.creative-center-section-head h2,
+.creative-projects-heading {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 650;
+    letter-spacing: -0.03em;
+    color: var(--user-ink);
+}
+.creative-center-page .story-launcher-panel {
+    scroll-margin-top: calc(var(--workspace-topbar-height, 56px) + var(--space-4));
+}
+.creative-center-icon-button {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--workspace-border);
+    border-radius: var(--r-full);
+    color: var(--user-ink-muted);
+    background: var(--user-surface);
+    cursor: pointer;
+}
+.creative-center-icon-button svg {
+    width: 15px;
+    height: 15px;
+}
+.creative-center-icon-button:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+.creative-center :is(button, input):focus-visible {
+    outline: 2px solid var(--user-ink);
+    outline-offset: var(--space-1);
+}
+.creative-app-carousel-track {
+    display: flex;
+    gap: var(--space-4);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    padding: var(--space-1);
+}
+.creative-app-carousel-track::-webkit-scrollbar {
+    display: none;
+}
+.creative-app-feature {
+    --creative-media-ink: #fff;
+    --creative-media-surface: #101010;
+    position: relative;
+    flex: 0 0 calc((100% - 3 * var(--space-4)) / 4);
+    min-width: 0;
+    aspect-ratio: 1.5;
+    overflow: hidden;
+    border: 0;
+    border-radius: var(--user-radius-card);
+    background: var(--creative-media-surface);
+    color: var(--creative-media-ink);
+    padding: 0;
+    text-align: start;
+    cursor: pointer;
+    scroll-snap-align: start;
+}
+.creative-app-feature > :is(video, img) {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    inset: 0;
+    object-fit: cover;
+}
+.creative-app-feature-scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(transparent 35%, color-mix(in srgb, var(--creative-media-surface) 86%, transparent) 75%, var(--creative-media-surface));
+}
+.creative-app-feature-copy {
+    position: absolute;
+    inset-inline: var(--space-4);
+    bottom: var(--space-4);
+    display: grid;
+    gap: var(--space-2);
+}
+.creative-app-feature-copy strong {
+    font-size: 16px;
+    font-weight: 650;
+}
+.creative-app-feature-copy > span {
+    font-size: 12px;
+    line-height: 1.65;
+    color: color-mix(in srgb, var(--creative-media-ink) 78%, transparent);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+}
+.creative-app-carousel-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-4);
+    margin-top: var(--space-4);
+}
+.creative-app-carousel-controls > div {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+.creative-app-carousel-controls > div button {
+    width: 24px;
+    height: 24px;
+    border: 0;
+    padding: var(--space-2);
+    border-radius: var(--r-full);
+    background: transparent;
+    cursor: pointer;
+}
+.creative-app-carousel-controls > div button::after {
+    content: "";
+    display: block;
+    width: 100%;
+    height: 4px;
+    border-radius: var(--r-full);
+    background: var(--user-ink-muted);
+    opacity: 0.4;
+}
+.creative-app-carousel-controls > div button[aria-pressed="true"]::after {
+    background: var(--user-ink);
+    opacity: 1;
+}
+.creative-app-catalog {
+    margin-top: var(--space-12);
+}
+.creative-app-filters {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+}
+.creative-app-categories {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+.creative-app-categories button {
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid transparent;
+    border-radius: var(--user-radius-control);
+    background: var(--user-surface);
+    color: var(--user-ink-muted);
+    font-size: 13px;
+    cursor: pointer;
+}
+.creative-app-categories button[aria-pressed="true"] {
+    background: var(--user-ink);
+    color: var(--user-surface);
+}
+.creative-app-search {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: min(344px, 100%);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--workspace-border);
+    border-radius: var(--user-radius-control);
+    background: var(--user-surface);
+    color: var(--user-ink-muted);
+}
+.creative-app-search svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+.creative-app-search input {
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: var(--user-ink);
+    font-size: 13px;
+}
+.creative-app-search input::placeholder {
+    color: var(--user-ink-muted);
+}
+.creative-app-search button {
+    display: grid;
+    place-items: center;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+.creative-app-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-4);
+}
+.creative-app-card {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    min-width: 0;
+    min-height: 160px;
+    padding: var(--space-5);
+    border: 1px solid var(--workspace-border);
+    border-radius: var(--user-radius-card);
+    background: var(--user-surface);
+    color: var(--user-ink);
+    text-align: start;
+    cursor: pointer;
+}
+.creative-app-card:hover {
+    border-color: var(--user-ink-muted);
+}
+.creative-app-card-heading {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+.creative-app-icon {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    border-radius: var(--r-md);
+    background: var(--user-surface-muted);
+}
+.creative-app-icon svg {
+    width: 18px;
+    height: 18px;
+}
+.creative-app-card-heading strong {
+    min-width: 0;
+    font-size: 15px;
+    font-weight: 600;
+}
+.creative-app-arrow {
+    width: 17px;
+    height: 17px;
+    margin-left: auto;
+    flex-shrink: 0;
+    color: var(--user-ink-muted);
+}
+.creative-app-card-description {
+    display: block;
+    margin-top: var(--space-3);
+    font-size: 13px;
+    line-height: 1.75;
+    color: var(--user-ink-muted);
+}
+.creative-app-card-category {
+    margin-top: auto;
+    padding-top: var(--space-4);
+    font-size: 11px;
+    color: var(--user-ink-muted);
+}
+.creative-app-empty {
+    padding: var(--space-8);
+    text-align: center;
+    color: var(--user-ink-muted);
+}
+.creative-app-empty button {
+    border: 0;
+    background: transparent;
+    color: var(--user-ink);
+    text-decoration: underline;
+    cursor: pointer;
+}
+.creative-projects-heading {
+    margin-block: var(--space-8) var(--space-4);
+}
+.creative-app-launcher {
+    color: var(--user-ink);
+}
+.creative-app-launcher-intro {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-5);
+    color: var(--user-ink-muted);
+    font-size: 13px;
+    line-height: 1.7;
+}
+.creative-app-launcher-intro svg {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+}
+.creative-app-launcher label {
+    display: block;
+    margin-bottom: var(--space-2);
+    font-size: 13px;
+    font-weight: 600;
+}
+.creative-app-launcher-note,
+.creative-app-launcher-error {
+    font-size: 12px;
+    line-height: 1.75;
+    margin-top: var(--space-3);
+    color: var(--user-ink-muted);
+}
+.creative-app-launcher-error {
+    padding: var(--space-3);
+    background: var(--user-surface-muted);
+    border: 1px solid var(--workspace-border);
+    border-radius: var(--r-md);
+    color: var(--user-ink);
+}
+.creative-app-launcher-actions {
+    display: flex;
+    justify-content: end;
+    gap: var(--space-2);
+    margin-top: var(--space-5);
+}
+@media (max-width: 1280px) {
+    .creative-app-feature {
+        flex-basis: calc((100% - 2 * var(--space-4)) / 3);
+    }
+}
+@media (max-width: 1000px) {
+    .creative-app-feature {
+        flex-basis: calc((100% - var(--space-4)) / 2);
+    }
+    .creative-app-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+@media (max-width: 600px) {
+    .app-user-workspace .project-library-page.creative-center-page > div {
+        padding: var(--space-5) var(--space-4) var(--space-8);
+    }
+    .creative-app-feature {
+        flex-basis: 88%;
+        aspect-ratio: 1.25;
+    }
+    .creative-app-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .creative-app-card {
+        min-height: 152px;
+    }
+    .creative-app-search {
+        width: 100%;
+    }
+    .creative-app-categories button {
+        padding: var(--space-2) var(--space-3);
+    }
+    .creative-center-section-head h2,
+    .creative-projects-heading {
+        font-size: 20px;
+    }
+}
