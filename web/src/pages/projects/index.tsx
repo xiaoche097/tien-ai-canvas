@@ -5,7 +5,7 @@ import { MediaPlaceholder } from "@/components/ui/product/media-placeholder";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { App, Button, Form, Input, Modal } from "antd";
-import { ArrowRight, BookOpenText, FileText, FolderKanban, Images, LayoutGrid, Palette, Plus, Search, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpenText, FileText, FolderKanban, Images, LayoutGrid, Palette, Plus, Search, Sparkles } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 
 import { CollectionGrid, WorkspacePage } from "@/components/layout/workspace-page";
@@ -54,9 +54,13 @@ export default function ProjectsPage() {
     const [generationStatus, setGenerationStatus] = useState("");
     const [generationPreview, setGenerationPreview] = useState("");
     const createOpen = searchParams.get("create") === "1";
+    const shortDramaOpen = searchParams.get("view") === "short-drama" || createOpen;
     const setCreateOpen = (open: boolean) => {
         const next = new URLSearchParams(searchParams);
-        if (open) next.set("create", "1");
+        if (open) {
+            next.set("create", "1");
+            next.set("view", "short-drama");
+        }
         else next.delete("create");
         setSearchParams(next, { replace: true });
     };
@@ -135,13 +139,13 @@ export default function ProjectsPage() {
         }
     };
     const loadMoreRef = useRef<HTMLDivElement>(null);
-    const storyLauncherRef = useRef<HTMLDetailsElement>(null);
     const query = useInfiniteQuery({
         // 分页查询和画布页的全量项目查询不能共用缓存形状，否则两个页面会互相覆盖缓存数据。
         queryKey: ["projects", "paged"],
         queryFn: ({ pageParam }) => listProjects({ page: pageParam, pageSize: 50 }),
         initialPageParam: 1,
         getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.page + 1 : undefined),
+        enabled: shortDramaOpen,
     });
     const mutation = useMutation({
         mutationFn: createProject,
@@ -184,18 +188,26 @@ export default function ProjectsPage() {
         );
         observer.observe(node);
         return () => observer.disconnect();
-    }, [query.fetchNextPage, query.hasNextPage, query.isError, query.isFetchingNextPage]);
+    }, [query.fetchNextPage, query.hasNextPage, query.isError, query.isFetchingNextPage, shortDramaOpen]);
     const hasInitialError = query.isError && !query.data;
     return (
         <WorkspacePage className="library-page project-library-page creative-center-page" grid>
-            <CreativeCenter onShortDrama={() => {
-                const launcher = storyLauncherRef.current;
-                if (!launcher) return;
-                launcher.open = true;
-                launcher.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
-                launcher.querySelector<HTMLTextAreaElement>("textarea")?.focus({ preventScroll: true });
-            }} />
-            <details ref={storyLauncherRef} className="story-launcher-panel" aria-label="开始一部新短剧">
+            {!shortDramaOpen ? <CreativeCenter onShortDrama={() => {
+                const next = new URLSearchParams(searchParams);
+                next.set("view", "short-drama");
+                setSearchParams(next);
+            }} /> : <>
+            <header className="creative-center-header">
+                <Button icon={<ArrowLeft />} onClick={() => {
+                    const next = new URLSearchParams(searchParams);
+                    next.delete("view");
+                    next.delete("create");
+                    setSearchParams(next);
+                }}>返回创意中心</Button>
+                <h1>短剧创作</h1>
+                <p>从故事开始，管理章节、角色与制作进度</p>
+            </header>
+            <details open className="story-launcher-panel" aria-label="开始一部新短剧">
                 <summary className="story-launcher-head">
                     <div className="story-launcher-title">
                         <span className="story-launcher-mark"><Sparkles className="size-4" /></span>
@@ -277,6 +289,7 @@ export default function ProjectsPage() {
                 />
             ) : null}
 
+            </>}
             <Modal className="library-modal" title="创建短剧项目" open={createOpen} footer={null} destroyOnHidden onCancel={() => setCreateOpen(false)} width={560} styles={{ body: { paddingTop: 12 } }}>
                 <Form<ProjectForm> form={createForm} layout="vertical" initialValues={{ aspectRatio: "9:16", sourceType: "blank" }} onFinish={(values) => mutation.mutate({ ...values, type: "short-drama", ...(selectedStyle ? { stylePresetId: selectedStyle.id, styleProfileJson: serializeStyleProfile(selectedStyle.profile || createStyleProfileSnapshot(selectedStyle)) } : {}) })}>
                     <div className="mb-4 grid grid-cols-3 gap-2">
