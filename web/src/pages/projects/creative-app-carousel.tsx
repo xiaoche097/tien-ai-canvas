@@ -38,7 +38,7 @@ function ApplicationVideo({ application, paused }: { application: CreativeApplic
     );
 }
 
-export function CreativeAppCarousel({ applications, onOpen, onPlaybackChange }: { applications: CreativeApplication[]; onOpen: (application: CreativeApplication) => void; onPlaybackChange?: (paused: boolean) => void }) {
+export function CreativeAppCarousel({ applications, onOpen }: { applications: CreativeApplication[]; onOpen: (application: CreativeApplication) => void }) {
     const track = useRef<HTMLDivElement>(null);
     const reducedMotion = useCreativeReducedMotion();
     const [paused, setPaused] = useState(false);
@@ -96,8 +96,7 @@ export function CreativeAppCarousel({ applications, onOpen, onPlaybackChange }: 
                     aria-label={paused || reducedMotion ? "播放应用预览" : "暂停应用预览"}
                     disabled={Boolean(reducedMotion)}
                     onClick={() => {
-                        setPaused(!paused);
-                        onPlaybackChange?.(!paused);
+                        setPaused((value) => !value);
                     }}
                 >
                     {paused || reducedMotion ? <Play aria-hidden /> : <Pause aria-hidden />}

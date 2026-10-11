@@ -246,8 +246,8 @@ export function preferredPlatformSize(rule: PlatformRule | undefined, sizes: str
     });
 }
 export function checkPlatformSettings(rule: PlatformRule | undefined, size: string, requirements: string): string[] {
-    if (!rule) return ["尚未匹配目标平台，平台规范还未应用。"];
-    if (rule.status === "pending") return ["平台硬性规范尚待核验，不能判断当前参数符合上架要求。"];
+    if (!rule) return ["将使用通用商品展示原则，不套用未确认的平台条款。"];
+    if (rule.status === "pending") return ["平台完整规范尚待核验，已知要求与通用规避原则会用于本次创作。"];
     const issues: string[] = [];
     if (rule.status === "partial") issues.push("已应用公开条款；完整上传与内容规范仍需登录商家后台核验。");
     const pixels = parseOutputSize(size);
@@ -258,7 +258,7 @@ export function checkPlatformSettings(rule: PlatformRule | undefined, size: stri
     if ((rule.minimum || rule.longestMinimum || rule.recommendedSize) && !pixels) issues.push("当前模型仅提供比例或自动尺寸，无法据此确认最终像素；须在导出后检查实际图片。");
     if (rule.recommendedSize && pixels && (pixels[0] < rule.recommendedSize[0] || pixels[1] < rule.recommendedSize[1])) issues.push(`当前尺寸未达到官方建议 ${rule.recommendedSize[0]} × ${rule.recommendedSize[1]} px。`);
     if (rule.noOverlay && /文字|水印|边框|贴纸|logo|text|watermark|border/i.test(requirements)) issues.push("需求提及文字、水印或边框等元素，请核对是否与图片政策冲突；这是关键词提示，不是图像审核。");
-    if (rule.noPromotion && /促销|折扣|优惠|二维码|外链|联系方式|保修|discount|qr\s*code/i.test(requirements)) issues.push("需求提及促销或导流等内容，请核对平台限制；系统不会自动删除你的需求。");
+    if (rule.noPromotion && /促销|折扣|优惠|二维码|外链|联系方式|保修|discount|qr\s*code/i.test(requirements)) issues.push("需求提及促销或导流等内容；生成时将优先规避平台限制元素，保留商品展示意图。");
     return issues;
 }
 export function compileCommerceBrief(input: {

@@ -4,7 +4,6 @@ import { ArrowUpRight, Search, X } from "lucide-react";
 import { creativeApplications, type CreativeApplication } from "./creative-apps";
 import { CreativeAppCarousel } from "./creative-app-carousel";
 import { CreativeAppLauncher } from "./creative-app-launcher";
-import { CreativeStudioSurface } from "./creative-studio-surface";
 import "./creative-center.css";
 
 const categories = ["全部", "影视创意", "电商广告", "社媒内容", "创意设计"];
@@ -14,7 +13,6 @@ export function CreativeCenter({ onShortDrama }: { onShortDrama: () => void }) {
     const [category, setCategory] = useState("全部");
     const [search, setSearch] = useState("");
     const [selected, setSelected] = useState<CreativeApplication | null>(null);
-    const [paused, setPaused] = useState(false);
     const open = (application: CreativeApplication) => {
         if (application.id === "short-drama") onShortDrama();
         else if (application.id === "commerce-studio") navigate("/projects/commerce-studio");
@@ -23,14 +21,11 @@ export function CreativeCenter({ onShortDrama }: { onShortDrama: () => void }) {
     const items = creativeApplications.filter((application) => (category === "全部" || application.category === category) && `${application.title} ${application.description}`.toLowerCase().includes(search.trim().toLowerCase()));
     return (
         <div className="creative-center">
-            <header className="creative-center-header creative-studio-header">
-                <div className="creative-studio-heading">
-                    <h1>创意中心</h1>
-                    <p>选择创作方向，把灵感一步步变成作品</p>
-                </div>
-                <CreativeStudioSurface paused={paused} />
+            <header className="creative-center-header">
+                <h1>创意中心</h1>
+                <p>选择创作方向，把灵感一步步变成作品</p>
             </header>
-            <CreativeAppCarousel applications={creativeApplications.filter((application) => application.video)} onOpen={open} onPlaybackChange={setPaused} />
+            <CreativeAppCarousel applications={creativeApplications.filter((application) => application.video)} onOpen={open} />
             <section className="creative-app-catalog" aria-label="全部创意应用">
                 <header className="creative-center-section-head">
                     <h2>全部应用</h2>

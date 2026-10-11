@@ -1,22 +1,23 @@
-import { Clapperboard, House, Images, ListTodo, Newspaper, PanelsTopLeft, Store, WandSparkles } from "lucide-react";
+import { Images, ListTodo, WandSparkles } from "lucide-react";
 import { Link, useLocation } from "react-router";
 
 import { BrandLogoFrame } from "@/components/brand/brand-logo";
 import { SystemAnnouncementCenter } from "@/components/layout/system-announcement-center";
 import { WorkspaceAccountMenu } from "@/components/layout/workspace-account-menu";
+import { WorkspaceNavIcon } from "@/components/layout/workspace-nav-icon";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { cn } from "@/lib/utils";
 import { useAppearanceStore } from "@/stores/use-appearance-store";
 import { useThemeStore } from "@/stores/use-theme-store";
 import { useUserStore } from "@/stores/use-user-store";
 
-/** 顶部五大类目：创作 / 创意中心 / 工作空间 / 应用市场 / 资讯（资讯为占位入口）。 */
+/** 顶部与窄屏底部导航共用路由和选中状态。 */
 const NAV_SECTIONS = [
-    { id: "create", title: "创作", to: "/", icon: House },
-    { id: "projects", title: "创意中心", to: "/projects", icon: Clapperboard },
-    { id: "canvas", title: "工作空间", to: "/canvas", icon: PanelsTopLeft },
-    { id: "apps", title: "应用市场", to: "/apps", icon: Store },
-    { id: "news", title: "资讯", to: "/news", icon: Newspaper },
+    { id: "create", title: "创作", to: "/" },
+    { id: "projects", title: "创意中心", to: "/projects" },
+    { id: "canvas", title: "工作空间", to: "/canvas" },
+    { id: "apps", title: "应用市场", to: "/apps" },
+    { id: "news", title: "资讯", to: "/news" },
 ] as const;
 
 export function WorkspaceTopBar() {
@@ -39,11 +40,10 @@ export function WorkspaceTopBar() {
 
             <nav className="app-workspace-topnav-items" aria-label="主导航">
                 {NAV_SECTIONS.map((item) => {
-                    const Icon = item.icon;
                     const isActive = slug === item.id;
                     return (
                         <Link key={item.id} to={item.to} className={cn("app-workspace-topnav-item", isActive && "is-active")} aria-current={isActive ? "page" : undefined}>
-                            <Icon className="size-4 shrink-0" strokeWidth={1.8} />
+                            <WorkspaceNavIcon section={item.id} active={isActive} />
                             <span>{item.title}</span>
                         </Link>
                     );
@@ -67,11 +67,10 @@ export function WorkspaceTopBar() {
             {/* 窄屏底部导航：五大类目固定于屏幕底部（≤1023px 显示，宽屏隐藏） */}
             <nav className="app-workspace-topnav-bottom" aria-label="移动端底部导航">
                 {NAV_SECTIONS.map((item) => {
-                    const Icon = item.icon;
                     const isActive = slug === item.id;
                     return (
                         <Link key={item.id} to={item.to} className={cn("app-workspace-topnav-bottom-item", isActive && "is-active")} aria-current={isActive ? "page" : undefined}>
-                            <Icon className="size-5" strokeWidth={isActive ? 2.1 : 1.8} />
+                            <WorkspaceNavIcon section={item.id} active={isActive} />
                             <span>{item.title}</span>
                         </Link>
                     );

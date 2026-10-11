@@ -58,7 +58,7 @@ export function WorkbenchHeader({ saved, saving, locked, dirty, onSave, stage = 
                             "草稿仅存当前浏览器"
                         )}
                     </span>
-                    <Tooltip title="保存产品图、填写的需求与参数。刷新或下次进入时可恢复；不会同步到其他设备，也不会开始生成。" placement="bottomRight">
+                    <Tooltip title="任务草稿会自动保留在当前浏览器；点击保存可立即保存产品图、需求与参数。刷新或下次进入可恢复，不会同步到其他设备，也不会开始生成。" placement="bottomRight">
                         <button type="button" className="commerce-draft-help" aria-label="草稿保存说明">
                             <HelpCircle aria-hidden />
                         </button>
@@ -77,10 +77,10 @@ export function WorkbenchHeader({ saved, saving, locked, dirty, onSave, stage = 
                     <h1>一键生成电商主图</h1>
                     <p>从真实产品素材出发，准备一组连贯的商品视觉</p>
                 </div>
-                <span className="commerce-phase">{["输入阶段", "规范检查", "确认方案", "生成中", "完成"][stage]}</span>
+                <span className="commerce-phase">{["输入阶段", "分析中", "确认规划", "生成中", "完成"][stage]}</span>
             </header>
             <ol className="commerce-steps" aria-label="电商主图创作步骤">
-                {["输入", "规范检查", "确认方案", "生成中", "完成"].map((step, index) => (
+                {["输入", "分析中", "确认规划", "生成中", "完成"].map((step, index) => (
                     <li key={step} aria-current={index === stage ? "step" : undefined}>
                         <span>{index + 1}</span>
                         <strong>{step}</strong>
@@ -91,26 +91,35 @@ export function WorkbenchHeader({ saved, saving, locked, dirty, onSave, stage = 
     );
 }
 
-export function ProductPreview({ current, count, locked, onAdd }: { current?: ProductReference; count: number; locked: boolean; onAdd: () => void }) {
+export function ProductPreview({ references, locked, onAdd }: { references: ProductReference[]; locked: boolean; onAdd: () => void }) {
     return (
         <section id="commerce-preview" className="commerce-panel commerce-results" aria-label="素材预览">
             <div className="commerce-result-header">
                 <div>
                     <h2>素材预览</h2>
-                    <p>{current ? "核对商品外观与细节" : "添加产品图，开始准备主图"}</p>
+                    <p>{references.length ? "核对商品外观与细节" : "添加产品图，开始准备主图"}</p>
                 </div>
-                <span className="commerce-preview-count">{count} 张素材</span>
+                <span className="commerce-preview-count">{references.length} 张素材</span>
             </div>
-            {current ? (
+            {references.length ? (
                 <div className="commerce-product-preview">
-                    <div className="commerce-preview-stage">
-                        <ReferenceImage reference={current} />
-                    </div>
-                    <div className="commerce-preview-meta">
-                        <strong>{current.name}</strong>
-                        <span>
-                            {current.width} × {current.height}
-                        </span>
+                    <div className="commerce-preview-cards">
+                        {references.map((reference, index) => (
+                            <figure key={reference.id}>
+                                <div className="commerce-preview-stage" style={{ aspectRatio: `${reference.width} / ${reference.height}` }}>
+                                    <ReferenceImage reference={reference} />
+                                </div>
+                                <figcaption className="commerce-preview-meta">
+                                    <strong>
+                                        {index + 1}
+                                        {index === 0 ? " · 主参考图" : " · 参考图"}
+                                    </strong>
+                                    <span>
+                                        {reference.width} × {reference.height}
+                                    </span>
+                                </figcaption>
+                            </figure>
+                        ))}
                     </div>
                     <p>当前展示上传的参考素材，生成结果将在此呈现。</p>
                 </div>
@@ -122,8 +131,8 @@ export function ProductPreview({ current, count, locked, onAdd }: { current?: Pr
                         </span>
                         <ImagePlus className="commerce-illustration-corner" aria-hidden />
                     </div>
-                    <h3>先添加你的产品图</h3>
-                    <p>清晰的商品图片，是一组好主图的起点</p>
+                    <h3>生成结果将在这里呈现</h3>
+                    <p>上传产品图并填写要求，检查规范后开始生成</p>
                     <Button className="commerce-add-reference" icon={<ImagePlus aria-hidden />} disabled={locked} onClick={onAdd}>
                         添加产品图
                     </Button>

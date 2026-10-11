@@ -1,6 +1,16 @@
 /* 顶部横向导航（创作/创意中心/工作空间/应用市场/资讯 + 右侧图标区）与应用市场/资讯页样式。 */
 
 .app-workspace-topbar.app-workspace-topnav {
+    --workspace-nav-scale: 1.1;
+    --workspace-nav-item-height: calc(43px * var(--workspace-nav-scale));
+    --workspace-nav-item-padding: calc(var(--fs-body-lg) * var(--workspace-nav-scale));
+    --workspace-nav-item-font: calc(var(--fs-body-lg) * var(--workspace-nav-scale));
+    --workspace-nav-icon-size: calc(18px * var(--workspace-nav-scale));
+    --workspace-nav-selected-surface: color-mix(in srgb, var(--user-ink) 6%, var(--workspace-nav));
+    --workspace-nav-icon-cutout: var(--workspace-nav-selected-surface);
+    --workspace-nav-cube-top: color-mix(in srgb, var(--palette-node-image) 65%, var(--color-neutral-0));
+    --workspace-nav-cube-left: color-mix(in srgb, var(--palette-node-frame) 65%, var(--color-neutral-0));
+    --workspace-nav-cube-right: color-mix(in srgb, var(--palette-node-script) 55%, var(--color-neutral-0));
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
@@ -18,6 +28,7 @@
     --foreground: var(--news-hero-ink);
     --user-ink: var(--news-hero-ink);
     --user-ink-muted: color-mix(in srgb, var(--news-hero-ink) 72%, transparent);
+    --workspace-nav-icon-cutout: var(--news-hero-shadow);
     --workspace-topbar-background: linear-gradient(to bottom, var(--news-hero-shadow), transparent);
     flex-shrink: 0;
     margin-bottom: calc(-1 * var(--workspace-topbar-height, 56px));
@@ -72,7 +83,7 @@
     color: var(--foreground);
 }
 
-/* 五大类目：页面水平居中。未激活为纯文字，激活为胶囊按钮 + 上下黑白渐变描边 + 实心图标 */
+/* 导航保留固定槽位；选中仅改变表面与图形，不缩放点击区域。 */
 .app-workspace-topnav-items {
     display: flex;
     min-width: 0;
@@ -86,15 +97,15 @@
 .app-workspace-topnav-item {
     position: relative;
     display: inline-flex;
-    height: 43px;
+    height: var(--workspace-nav-item-height);
     align-items: center;
-    gap: 6px;
-    padding: 0 15px;
+    gap: calc(6px * var(--workspace-nav-scale));
+    padding: 0 var(--workspace-nav-item-padding);
     border: 1px solid transparent;
-    border-radius: 999px;
+    border-radius: var(--r-full);
     color: var(--user-ink-muted);
-    font-size: 15.1px;
-    font-weight: 450;
+    font-size: var(--workspace-nav-item-font);
+    font-weight: 550;
     line-height: 1;
     white-space: nowrap;
     transition:
@@ -104,13 +115,9 @@
 }
 
 .app-workspace-topnav-item > svg {
-    width: 18px;
-    height: 18px;
+    width: var(--workspace-nav-icon-size);
+    height: var(--workspace-nav-icon-size);
     flex: 0 0 auto;
-    stroke-width: 1.6;
-    transition:
-        transform var(--motion-instant) ease-out,
-        fill var(--motion-instant) ease-out;
 }
 
 .app-workspace-topnav-item:hover {
@@ -119,29 +126,35 @@
 }
 
 .app-workspace-topnav-item:focus-visible {
-    outline: 2px solid color-mix(in srgb, var(--workspace-accent) 46%, transparent);
+    outline: var(--stroke-2) solid var(--user-ink);
     outline-offset: 2px;
 }
 
-.app-workspace-topnav-item.is-active {
+.app-workspace-topnav-item.is-active,
+.app-workspace-topnav-bottom-item.is-active {
     color: var(--user-ink);
-    background:
-        linear-gradient(180deg, color-mix(in srgb, var(--workspace-nav) 76%, #fff 10%) 0%, color-mix(in srgb, var(--workspace-nav) 92%, #fff 3%) 48%, color-mix(in srgb, var(--workspace-nav) 94%, #000 5%) 100%) padding-box,
-        /* 描边随主题前景色变化，上下边缘保持更清晰。 */ linear-gradient(180deg, color-mix(in srgb, var(--user-ink) 20%, transparent) 0%, color-mix(in srgb, var(--user-ink) 6%, transparent) 30%, color-mix(in srgb, var(--user-ink) 4%, transparent) 70%, color-mix(in srgb, var(--user-ink) 16%, transparent) 100%) border-box;
-    box-shadow:
-        inset 0 1px 0 rgb(255 255 255 / 12%),
-        0 2px 10px rgb(0 0 0 / 26%);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--user-ink) 4%, var(--workspace-nav-selected-surface)), var(--workspace-nav-selected-surface) 50%, color-mix(in srgb, var(--user-ink) 2%, var(--workspace-nav-selected-surface))) padding-box;
 }
 
-/* 选中后图标由空心变实心（lucide path 自带 fill="none"，需作用到子元素） */
-.app-workspace-topnav-item.is-active > svg {
-    stroke-width: 1.2;
-    transform: scale(1.06);
+/* 仅绘制边缘：上下中央高光向两侧衰减，浮层不参与点击。 */
+.app-workspace-topnav-item.is-active::before,
+.app-workspace-topnav-bottom-item.is-active::before {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--stroke-1));
+    padding: var(--stroke-1);
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+        radial-gradient(80% 55% at 50% 0%, color-mix(in srgb, var(--user-ink) 48%, transparent), color-mix(in srgb, var(--user-ink) 15%, transparent) 50%, transparent 85%),
+        radial-gradient(80% 55% at 50% 100%, color-mix(in srgb, var(--user-ink) 34%, transparent), color-mix(in srgb, var(--user-ink) 10%, transparent) 50%, transparent 85%);
+    mask: linear-gradient(var(--color-neutral-0) 0 0) content-box, linear-gradient(var(--color-neutral-0) 0 0);
+    mask-composite: exclude;
 }
 
 .app-workspace-topnav-item.is-active > svg,
-.app-workspace-topnav-item.is-active > svg * {
-    fill: currentColor;
+.app-workspace-topnav-bottom-item.is-active > svg {
+    color: var(--user-ink);
 }
 
 .app-workspace-topnav-actions {
@@ -250,7 +263,7 @@
     }
     .app-workspace-topnav-item {
         padding-inline: var(--space-2);
-        font-size: var(--fs-caption);
+        font-size: calc(var(--fs-caption) * var(--workspace-nav-scale));
     }
     .app-workspace-account-trigger {
         max-width: 140px;
@@ -322,6 +335,7 @@
     }
 
     .app-workspace-topnav-bottom-item {
+        position: relative;
         display: flex;
         flex: 1 1 0;
         min-width: 0;
@@ -329,23 +343,24 @@
         align-items: center;
         justify-content: center;
         gap: 3px;
-        color: color-mix(in srgb, var(--foreground) 55%, transparent);
+        margin: var(--space-1) var(--space-1);
+        border: var(--stroke-1) solid transparent;
+        border-radius: var(--r-full);
+        color: var(--user-ink-muted);
         font-size: 11px;
         line-height: 1;
         transition: color var(--motion-instant) ease-out;
     }
 
     .app-workspace-topnav-bottom-item > svg {
-        width: 20px;
-        height: 20px;
+        width: calc(var(--space-5) * var(--workspace-nav-scale));
+        height: calc(var(--space-5) * var(--workspace-nav-scale));
         flex: 0 0 auto;
-        stroke-width: 1.8;
     }
 
-    .app-workspace-topnav-bottom-item.is-active,
-    .app-workspace-topnav-bottom-item.is-active > svg {
-        color: var(--workspace-accent);
-        stroke-width: 2.1;
+    .app-workspace-topnav-bottom-item:focus-visible {
+        outline: var(--stroke-2) solid var(--user-ink);
+        outline-offset: var(--stroke-1);
     }
 
     /* 固定底栏不遮挡内容：给舞台区底部留出等高校验 */
@@ -395,8 +410,8 @@
     }
 
     .app-workspace-topnav-bottom-item > svg {
-        width: 18px;
-        height: 18px;
+        width: var(--workspace-nav-icon-size);
+        height: var(--workspace-nav-icon-size);
     }
 }
 

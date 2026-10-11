@@ -9,15 +9,15 @@ export function generatedImageMime(header: Uint8Array) {
 
 export function generationPolicy(rule: PlatformRule | undefined, currentSize: string, sizes: string[], merchantRules: string) {
     const size = preferredPlatformSize(rule, sizes) || currentSize;
-    const blockers: string[] = [];
-    if (!rule) blockers.push("请先选择一个目标平台，智能匹配需要需求中有明确的平台名称。");
-    if (rule?.disallowGeneratedProduct) blockers.push("该平台用途禁止商品数字渲染图，请使用真实拍摄图片，不能执行 AI 商品主图生成。");
-    if (rule?.status === "pending" && !merchantRules.trim()) blockers.push("此平台规范待核验，请从商家后台确认并填写补充规范后再生成。");
-    if (rule?.ratio && !fitsRatio(size, rule.ratio)) blockers.push(`当前模型不支持所需 ${rule.ratio.join(":")} 版式，请更换图片模型。`);
+    const warnings: string[] = [];
+    if (!rule) warnings.push("尚未匹配具体平台，将按通用商品创作要求生成；可继续生成或返回选择平台。");
+    if (rule?.disallowGeneratedProduct) warnings.push("此平台用途不接受商品数字渲染图；可以继续制作创意草稿，直接上架时请使用符合要求的实拍素材。");
+    if (rule?.status === "pending" && !merchantRules.trim()) warnings.push("此平台完整规范尚待核验，将按通用商品展示原则生成；商家补充规范可选，不影响创作。");
+    if (rule?.ratio && !fitsRatio(size, rule.ratio)) warnings.push(`当前模型没有 ${rule.ratio.join(":")} 版式，将使用 ${size} 生成；上架前可裁切调整。`);
     const pixels = parseOutputSize(size);
-    if (rule?.minimum && pixels && (pixels[0] < rule.minimum[0] || pixels[1] < rule.minimum[1])) blockers.push("当前模型尺寸低于平台最低像素要求，请更换模型或尺寸。");
-    if (rule?.longestMinimum && pixels && Math.max(...pixels) < rule.longestMinimum) blockers.push("当前图片最长边低于平台要求，请更换模型或尺寸。");
-    return { size, blockers };
+    if (rule?.minimum && pixels && (pixels[0] < rule.minimum[0] || pixels[1] < rule.minimum[1])) warnings.push("当前模型尺寸低于平台建议的上架最低像素要求；可继续创作，上架前请调整尺寸。");
+    if (rule?.longestMinimum && pixels && Math.max(...pixels) < rule.longestMinimum) warnings.push("当前图片最长边低于平台要求；可继续创作，上架前请调整尺寸。");
+    return { size, warnings };
 }
 
 export function checkGeneratedImage(rule: PlatformRule, image: { width: number; height: number; bytes: number; mimeType: string }) {

@@ -12,6 +12,7 @@ export type CommerceDraft = {
     requirements: string;
     language: string;
     model: string;
+    analysisModel?: string;
     size: string;
     quality: string;
     count: string;
