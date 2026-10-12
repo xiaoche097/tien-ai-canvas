@@ -2,6 +2,7 @@ import { Popover } from "antd";
 import { Switch } from "@/components/ui/base/switch";
 import { ChevronDown, CircleUserRound, Moon, Sun } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router";
 
 import { AppChangelogButton } from "@/components/layout/app-changelog-modal";
 import { WorkspaceAccountCard } from "./workspace-account-card";
@@ -73,9 +74,9 @@ export function WorkspaceAccountMenu() {
             </Popover>
         </>
     ) : (
-        <span className="inline-flex items-center gap-1.5 px-1.5 text-xs text-foreground/55" role="img" aria-label="游客模式" title="游客模式">
+        <Link to="/login" className="inline-flex items-center gap-1.5 px-1.5 text-xs text-foreground/55" aria-label="登录" title="登录">
             <CircleUserRound className="size-5" />
             <span className="hidden sm:inline">游客</span>
-        </span>
+        </Link>
     );
 }
