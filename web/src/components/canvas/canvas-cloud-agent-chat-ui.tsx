@@ -172,10 +172,18 @@ function AgentFormAnswerCard({ answer, theme }: { answer: CloudAgentFormAnswer; 
                             <span className="agent-form-answer-value">{answer.displayAnswers?.[key] || agentFormValueLabel(value)}</span>
                         </div>
                     ))}
-                    {answer.additionalNotes ? <div className="agent-form-answer-row"><span className="agent-form-answer-label">补充说明</span><span className="agent-form-answer-value">{answer.additionalNotes}</span></div> : null}
+                    {answer.additionalNotes ? (
+                        <div className="agent-form-answer-row">
+                            <span className="agent-form-answer-label">补充说明</span>
+                            <span className="agent-form-answer-value">{answer.additionalNotes}</span>
+                        </div>
+                    ) : null}
                 </div>
             ) : answer.additionalNotes ? (
-                <div className="agent-form-answer-row"><span className="agent-form-answer-label">补充说明</span><span className="agent-form-answer-value">{answer.additionalNotes}</span></div>
+                <div className="agent-form-answer-row">
+                    <span className="agent-form-answer-label">补充说明</span>
+                    <span className="agent-form-answer-value">{answer.additionalNotes}</span>
+                </div>
             ) : (
                 <div className="agent-form-answer-note">已确认，按推荐方案继续</div>
             )}
@@ -1143,7 +1151,9 @@ export function AgentQuestionBar({ question, theme, onAnswer, disabled = false }
                     })}
                 </div>
                 <div className="agent-question-field px-3 pb-2">
-                    <label className="agent-question-field-label" htmlFor="agent-question-additional-notes">补充说明</label>
+                    <label className="agent-question-field-label" htmlFor="agent-question-additional-notes">
+                        补充说明
+                    </label>
                     <textarea
                         id="agent-question-additional-notes"
                         rows={2}
