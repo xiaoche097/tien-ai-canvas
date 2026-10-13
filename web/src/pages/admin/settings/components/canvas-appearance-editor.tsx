@@ -5,7 +5,7 @@ import { useReducedMotion } from "motion/react";
 import { Live2DAvatar } from "@/components/canvas/live2d-avatar";
 import { FluidOrb } from "@/components/ui/fluid-orb";
 import { agentCopy, type CanvasAppearance } from "@/lib/canvas/agent-appearance";
-import { jingcheModelURL, live2DModelURL, uploadLive2D } from "@/services/api/appearance";
+import { jingcheModelURL, jingcheTextureURL, live2DModelURL, uploadLive2D } from "@/services/api/appearance";
 import { useThemeStore } from "@/stores/use-theme-store";
 
 export function CanvasAppearanceEditor({ value, onChange, disabled, onUploading }: { value: CanvasAppearance; onChange: (value: CanvasAppearance) => void; disabled: boolean; onUploading: (value: boolean) => void }) {
@@ -70,8 +70,8 @@ export function CanvasAppearanceEditor({ value, onChange, disabled, onUploading 
                     disabled={disabled || uploading}
                     onChange={(event) => change({ avatarType: event.target.value })}
                     options={[
-                        { label: "默认动态球", value: "orb" },
-                        { label: "镜彻 Live2D（随主题切换）", value: "jingche" },
+                        { label: "默认 · 镜彻 Live2D（随主题切换）", value: "jingche" },
+                        { label: "动态球", value: "orb" },
                         { label: "Live2D", value: "live2d", disabled: !url || readyURL !== url },
                     ]}
                 />
@@ -132,7 +132,7 @@ export function CanvasAppearanceEditor({ value, onChange, disabled, onUploading 
                             width={Math.round(value.avatarHeight * (value.avatarType === "jingche" ? 1 : 0.75))}
                             height={value.avatarHeight}
                             reducedMotion={reducedMotion}
-                            fallback={<FluidOrb size={60} color="#7164f6" />}
+                            fallback={value.avatarType === "jingche" ? <img src={jingcheTextureURL(theme)} alt="镜彻 Agent 形象" width={value.avatarHeight} height={value.avatarHeight} /> : <FluidOrb size={60} color="#7164f6" />}
                             onReady={() => {
                                 setReadyURL(previewURL);
                                 setError("");

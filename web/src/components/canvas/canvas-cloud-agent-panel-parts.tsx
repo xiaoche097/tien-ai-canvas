@@ -11,8 +11,7 @@ import { useAgentLauncherPosition } from "./use-agent-launcher-position";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { Live2DAvatar } from "./live2d-avatar";
-import { live2DModelURL } from "@/services/api/appearance";
-import { jingcheModelURL } from "@/services/api/appearance";
+import { jingcheModelURL, jingcheTextureURL, live2DModelURL } from "@/services/api/appearance";
 import { useActiveTheme } from "@/stores/canvas/use-canvas-theme-store";
 import { FluidOrb } from "@/components/ui/fluid-orb";
 import { ArrowLeft, Check, CircleDot, Clock3, Download, History, LoaderCircle, MessageSquarePlus, RotateCcw, Settings2, ShieldCheck, Sparkles, Trash2, X } from "lucide-react";
@@ -67,7 +66,7 @@ export function AgentLauncher({ theme, statusColor, approvalPending, reducedMoti
             transition={{ duration: reducedMotion ? 0 : 0.18 }}
         >
             {live ? (
-                <Live2DAvatar url={jingche ? jingcheModelURL(colorMode) : live2DModelURL(appearance.live2dResourceId, appearance.live2dEntry)} width={width} height={height} reducedMotion={reducedMotion} fallback={<FluidOrb size={60} color="#7164f6" />} />
+                <Live2DAvatar url={jingche ? jingcheModelURL(colorMode) : live2DModelURL(appearance.live2dResourceId, appearance.live2dEntry)} width={width} height={height} reducedMotion={reducedMotion} fallback={jingche ? <img src={jingcheTextureURL(colorMode)} alt="" width={width} height={height} draggable={false} /> : <FluidOrb size={60} color="#7164f6" />} />
             ) : (
                 <FluidOrb size={60} color="#7164f6" />
             )}

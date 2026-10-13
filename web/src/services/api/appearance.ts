@@ -146,3 +146,7 @@ export function live2DModelURL(resourceId: string, entry: string, preview = fals
 export function jingcheModelURL(theme: "light" | "dark") {
     return `${import.meta.env.BASE_URL}live2d/jingche/${theme}/JingcheAgent.model3.json`;
 }
+
+export function jingcheTextureURL(theme: "light" | "dark") {
+    return `${import.meta.env.BASE_URL}live2d/jingche/${theme}/texture_00.png`;
+}
