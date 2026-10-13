@@ -164,6 +164,11 @@
     }
 }
 
+.agent-context-popover.ant-popover {
+    --agent-surface-raised: color-mix(in srgb, var(--agent-ink) 6%, var(--agent-surface-base));
+    --agent-caption: color-mix(in srgb, var(--agent-ink) 62%, var(--agent-surface-base));
+}
+
 .agent-context-popover.ant-popover,
 .agent-context-popover .ant-popover-content,
 .agent-context-popover .ant-popover-inner {

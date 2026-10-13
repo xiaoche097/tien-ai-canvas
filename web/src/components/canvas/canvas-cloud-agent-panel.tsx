@@ -1111,7 +1111,7 @@ export function CanvasCloudAgentPanel({ canvasId, domainProjectId, nodeCount, se
                                         references={[...references, ...buildSkillMentionReferences(installedSkills)]}
                                         slashSkills={installedSkills}
                                         includeAssetLibrary={false}
-                                        submitAccessory={<AgentContextRing view={presentAgentContextUsage(contextUsage)} />}
+                                        submitAccessory={<AgentContextRing view={presentAgentContextUsage(contextUsage)} theme={theme} />}
                                         footer={connectorsVisible ? <AgentConnectorsBar onClose={() => setConnectorsVisible(false)} /> : null}
                                         left={
                                             <ComposerControls

@@ -158,7 +158,7 @@ export function formatContextBytes(bytes: number | undefined) {
     return `${Math.round(bytes).toLocaleString("zh-CN")} 字节`;
 }
 
-export function AgentContextRing({ view }: { view: AgentContextUsageView }) {
+export function AgentContextRing({ view, theme }: { view: AgentContextUsageView; theme: CanvasTheme }) {
     const [open, setOpen] = useState(false);
     const marker = view.compactRatio && view.compactRatio > 0 && view.compactRatio < 1 ? view.compactRatio : undefined;
     const percent = view.ratio === undefined ? view.label : `${Math.round(view.ratio * 100)}%`;
@@ -180,7 +180,8 @@ export function AgentContextRing({ view }: { view: AgentContextUsageView }) {
             placement="bottomRight"
             arrow={false}
             overlayClassName="agent-context-popover"
-            getPopupContainer={(trigger) => trigger.closest<HTMLElement>(".canvas-agent-panel") ?? document.body}
+            getPopupContainer={() => document.body}
+            styles={{ root: { zIndex: "calc(var(--z-toast) + 2)", "--agent-ink": theme.node.text, "--agent-surface-base": theme.node.panel } as CSSProperties }}
             content={
                 <div className="agent-context-panel" data-phase={view.phase}>
                     <span className="agent-context-eyebrow">下一次请求 · 上下文窗口占用</span>
