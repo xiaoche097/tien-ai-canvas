@@ -20,7 +20,7 @@ type CanvasAppearance struct {
 }
 
 func defaultCanvasAppearance() CanvasAppearance {
-	return CanvasAppearance{AgentName: "境彻", LauncherLabel: "Agent", PanelTitle: "画布助手", WelcomeTitle: "在这里，和{agentName}让灵感，慢慢成形", WelcomeDescription: "从一个想法开始，和{agentName}一起创作。", InputPlaceholder: "输入操作指导；用 @ 引用画布节点，用 / 或 、 引用 Skills", AvatarType: "jingche", AvatarHeight: 220}
+	return CanvasAppearance{AgentName: "境彻", LauncherLabel: "Agent", PanelTitle: "画布助手", WelcomeTitle: "在这里，和{agentName}让灵感，慢慢成形", WelcomeDescription: "从一个想法开始，和{agentName}一起创作。", InputPlaceholder: "输入操作指导；用 @ 引用画布节点，用 / 或 、 引用 Skills", AvatarType: "jingche", AvatarHeight: 60}
 }
 
 func normalizeCanvasAppearance(value CanvasAppearance) (CanvasAppearance, error) {
@@ -51,8 +51,12 @@ func normalizeCanvasAppearance(value CanvasAppearance) (CanvasAppearance, error)
 	if value.AvatarType != "orb" && value.AvatarType != "live2d" && value.AvatarType != "jingche" {
 		return value, BadAuthRequest("请选择有效的 Agent 形象类型")
 	}
-	if value.AvatarHeight < 120 || value.AvatarHeight > 360 {
-		return value, BadAuthRequest("形象高度须在 120–360 之间")
+	minHeight := 60
+	if value.AvatarType == "live2d" {
+		minHeight = 120
+	}
+	if value.AvatarHeight < minHeight || value.AvatarHeight > 360 {
+		return value, BadAuthRequest("形象高度超出允许范围")
 	}
 	if value.AvatarType == "live2d" && value.Live2DResourceID == "" {
 		return value, BadAuthRequest("请先导入 Live2D 模型")

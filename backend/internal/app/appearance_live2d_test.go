@@ -241,6 +241,16 @@ func TestCanvasAppearanceValidation(t *testing.T) {
 	if actual, err := normalizeCanvasAppearance(value); err != nil || actual.AvatarType != "jingche" {
 		t.Fatalf("built-in Live2D appearance rejected: %+v %v", actual, err)
 	}
+	value.AvatarHeight = 59
+	if _, err := normalizeCanvasAppearance(value); err == nil {
+		t.Fatal("undersized built-in avatar accepted")
+	}
+	value = defaultCanvasAppearance()
+	value.AvatarType = "live2d"
+	value.Live2DResourceID = "model"
+	if _, err := normalizeCanvasAppearance(value); err == nil {
+		t.Fatal("undersized imported Live2D avatar accepted")
+	}
 	for _, mutate := range []func(*CanvasAppearance){
 		func(v *CanvasAppearance) { v.AgentName = "\n" },
 		func(v *CanvasAppearance) { v.AgentName = "小\x00鱼" },

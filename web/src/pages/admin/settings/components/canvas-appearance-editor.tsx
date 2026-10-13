@@ -68,7 +68,7 @@ export function CanvasAppearanceEditor({ value, onChange, disabled, onUploading 
                 <Radio.Group
                     value={value.avatarType}
                     disabled={disabled || uploading}
-                    onChange={(event) => change({ avatarType: event.target.value })}
+                    onChange={(event) => change({ avatarType: event.target.value, avatarHeight: event.target.value === "live2d" ? Math.max(120, value.avatarHeight) : value.avatarHeight })}
                     options={[
                         { label: "默认 · 镜彻 Live2D（随主题切换）", value: "jingche" },
                         { label: "动态球", value: "orb" },
@@ -121,7 +121,7 @@ export function CanvasAppearanceEditor({ value, onChange, disabled, onUploading 
                 </div>
                 <label className="flex items-center gap-3 text-sm">
                     形象高度
-                    <InputNumber aria-label="形象高度" min={120} max={360} value={value.avatarHeight} disabled={disabled || uploading} onChange={(height) => height !== null && change({ avatarHeight: height })} />
+                    <InputNumber aria-label="形象高度" min={value.avatarType === "live2d" ? 120 : 60} max={360} value={value.avatarHeight} disabled={disabled || uploading} onChange={(height) => height !== null && change({ avatarHeight: height })} />
                     px
                 </label>
                 <div className="grid justify-items-center gap-3 rounded-xl border border-border bg-background p-5" aria-label="Agent 形象预览">

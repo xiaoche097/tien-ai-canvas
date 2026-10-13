@@ -21,7 +21,7 @@ export const DEFAULT_CANVAS_APPEARANCE: CanvasAppearance = {
     avatarType: "jingche",
     live2dResourceId: "",
     live2dEntry: "",
-    avatarHeight: 220,
+    avatarHeight: 60,
 };
 
 export function agentCopy(template: string, name: string) {

@@ -38,8 +38,8 @@ func TestAppearanceDefaultsPreserveBuiltInBrand(t *testing.T) {
 	if appearance.ActiveSkin.ID != defaultAppearanceSkinID || !appearance.ActiveSkin.Locked {
 		t.Fatalf("Appearance() active skin = %#v", appearance.ActiveSkin)
 	}
-	if appearance.Canvas.AvatarType != "jingche" {
-		t.Fatalf("Appearance() default canvas avatar = %q", appearance.Canvas.AvatarType)
+	if appearance.Canvas.AvatarType != "jingche" || appearance.Canvas.AvatarHeight != 60 {
+		t.Fatalf("Appearance() default canvas avatar = %#v", appearance.Canvas)
 	}
 	if appearance.ActiveSkin.Tokens.Light.SwitchChecked == appearance.ActiveSkin.Tokens.Light.SwitchUnchecked || appearance.ActiveSkin.Tokens.Dark.SwitchChecked == appearance.ActiveSkin.Tokens.Dark.SwitchUnchecked || appearance.ActiveSkin.Tokens.Light.DangerForeground == "" {
 		t.Fatalf("Appearance() state colors = %#v", appearance.ActiveSkin.Tokens)
@@ -246,7 +246,7 @@ func TestResetAppearanceRestoresBuiltInBrandWithoutDeletingResources(t *testing.
 	if err != nil {
 		t.Fatal(err)
 	}
-	if reset.Configured || reset.BrandName != defaultAppearanceBrandName || reset.BrandSlug != defaultAppearanceBrandSlug || reset.AuthHeroTitle != defaultAppearanceHeroTitle || reset.LogoResourceID != "" || reset.DarkLogoResourceID != "" || !reset.LogoFrameEnabled || reset.Canvas.AvatarType != "jingche" || reset.Public.Revision != "builtin" || reset.Public.LogoConfigured || reset.Public.DarkLogoConfigured {
+	if reset.Configured || reset.BrandName != defaultAppearanceBrandName || reset.BrandSlug != defaultAppearanceBrandSlug || reset.AuthHeroTitle != defaultAppearanceHeroTitle || reset.LogoResourceID != "" || reset.DarkLogoResourceID != "" || !reset.LogoFrameEnabled || reset.Canvas.AvatarType != "jingche" || reset.Canvas.AvatarHeight != 60 || reset.Public.Revision != "builtin" || reset.Public.LogoConfigured || reset.Public.DarkLogoConfigured {
 		t.Fatalf("ResetAppearance() = %#v", reset)
 	}
 	var resourceCount int64
