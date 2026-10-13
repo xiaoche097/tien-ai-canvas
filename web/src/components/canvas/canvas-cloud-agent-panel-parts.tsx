@@ -177,7 +177,7 @@ export function AgentContextRing({ view, theme }: { view: AgentContextUsageView;
             open={open}
             onOpenChange={setOpen}
             trigger="click"
-            placement="bottomRight"
+            placement="rightTop"
             arrow={false}
             overlayClassName="agent-context-popover"
             getPopupContainer={() => document.body}
