@@ -6,7 +6,7 @@
 import type { CanvasTheme } from "@/lib/canvas-theme";
 import { useAppearanceStore } from "@/stores/use-appearance-store";
 import { agentCopy, DEFAULT_CANVAS_APPEARANCE } from "@/lib/canvas/agent-appearance";
-import { type CSSProperties, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { type ComponentRef, type CSSProperties, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useAgentLauncherPosition } from "./use-agent-launcher-position";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
@@ -160,6 +160,11 @@ export function formatContextBytes(bytes: number | undefined) {
 
 export function AgentContextRing({ view, theme }: { view: AgentContextUsageView; theme: CanvasTheme }) {
     const [open, setOpen] = useState(false);
+    const popover = useRef<ComponentRef<typeof Popover>>(null);
+    // 面板拖拽会改变锚点位置；body 中的浮层需要在布局提交后重新对齐。
+    useLayoutEffect(() => {
+        if (open) popover.current?.forceAlign();
+    });
     const marker = view.compactRatio && view.compactRatio > 0 && view.compactRatio < 1 ? view.compactRatio : undefined;
     const percent = view.ratio === undefined ? view.label : `${Math.round(view.ratio * 100)}%`;
     const meterLabel = view.ratio === undefined ? "—" : percent;
@@ -174,6 +179,7 @@ export function AgentContextRing({ view, theme }: { view: AgentContextUsageView;
 
     return (
         <Popover
+            ref={popover}
             open={open}
             onOpenChange={setOpen}
             trigger="click"
