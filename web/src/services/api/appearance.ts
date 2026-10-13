@@ -142,3 +142,7 @@ export async function uploadLive2D(file: File) {
 export function live2DModelURL(resourceId: string, entry: string, preview = false) {
     return `${apiBaseURL.replace(/\/$/, "")}/${preview ? "admin/settings" : "public"}/appearance/live2d/${encodeURIComponent(resourceId)}/${entry.split("/").map(encodeURIComponent).join("/")}`;
 }
+
+export function jingcheModelURL(theme: "light" | "dark") {
+    return `${import.meta.env.BASE_URL}live2d/jingche/${theme}/JingcheAgent.model3.json`;
+}

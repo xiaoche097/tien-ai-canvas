@@ -5,17 +5,20 @@ import { useReducedMotion } from "motion/react";
 import { Live2DAvatar } from "@/components/canvas/live2d-avatar";
 import { FluidOrb } from "@/components/ui/fluid-orb";
 import { agentCopy, type CanvasAppearance } from "@/lib/canvas/agent-appearance";
-import { live2DModelURL, uploadLive2D } from "@/services/api/appearance";
+import { jingcheModelURL, live2DModelURL, uploadLive2D } from "@/services/api/appearance";
+import { useThemeStore } from "@/stores/use-theme-store";
 
 export function CanvasAppearanceEditor({ value, onChange, disabled, onUploading }: { value: CanvasAppearance; onChange: (value: CanvasAppearance) => void; disabled: boolean; onUploading: (value: boolean) => void }) {
     const { message } = App.useApp();
     const reducedMotion = useReducedMotion() ?? false;
+    const theme = useThemeStore((state) => state.theme);
     const input = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
     const [readyURL, setReadyURL] = useState("");
     const [error, setError] = useState("");
     const [attempt, setAttempt] = useState(0);
     const url = value.live2dResourceId ? live2DModelURL(value.live2dResourceId, value.live2dEntry, true) : "";
+    const previewURL = value.avatarType === "jingche" ? jingcheModelURL(theme) : url;
     const change = (patch: Partial<CanvasAppearance>) => onChange({ ...value, ...patch });
     async function upload(file?: File) {
         if (!file) return;
@@ -68,9 +71,11 @@ export function CanvasAppearanceEditor({ value, onChange, disabled, onUploading 
                     onChange={(event) => change({ avatarType: event.target.value })}
                     options={[
                         { label: "默认动态球", value: "orb" },
+                        { label: "镜彻 Live2D（随主题切换）", value: "jingche" },
                         { label: "Live2D", value: "live2d", disabled: !url || readyURL !== url },
                     ]}
                 />
+                <p className="text-sm text-foreground/60">内置镜彻 Live2D 会随深浅主题切换模型；无需导入 ZIP。</p>
                 <p className="text-sm text-foreground/60">上传有授权的 Cubism 3/4 运行时 ZIP：一个 model3.json、moc3、PNG 纹理及可选动作/表情 JSON。首期不支持音频、旧版模型和编辑工程。模型会发送到浏览器，无法保证防下载。</p>
                 <div className="grid gap-2 text-sm">
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -120,16 +125,16 @@ export function CanvasAppearanceEditor({ value, onChange, disabled, onUploading 
                     px
                 </label>
                 <div className="grid justify-items-center gap-3 rounded-xl border border-border bg-background p-5" aria-label="Agent 形象预览">
-                    {url ? (
+                    {previewURL ? (
                         <Live2DAvatar
-                            key={`${url}-${attempt}`}
-                            url={url}
-                            width={Math.round(value.avatarHeight * 0.75)}
+                            key={`${previewURL}-${attempt}`}
+                            url={previewURL}
+                            width={Math.round(value.avatarHeight * (value.avatarType === "jingche" ? 1 : 0.75))}
                             height={value.avatarHeight}
                             reducedMotion={reducedMotion}
                             fallback={<FluidOrb size={60} color="#7164f6" />}
                             onReady={() => {
-                                setReadyURL(url);
+                                setReadyURL(previewURL);
                                 setError("");
                             }}
                             onError={(reason) => {
@@ -142,7 +147,7 @@ export function CanvasAppearanceEditor({ value, onChange, disabled, onUploading 
                     )}
                     <strong>{agentCopy(value.welcomeTitle, value.agentName)}</strong>
                     <p className="text-sm text-foreground/60">{agentCopy(value.welcomeDescription, value.agentName)}</p>
-                    {url ? <small>{readyURL === url ? "预览已就绪，可选择 Live2D 并保存启用" : "等待模型预览就绪"}</small> : null}
+                    {previewURL ? <small>{readyURL === previewURL ? "预览已就绪，可保存启用" : "等待模型预览就绪"}</small> : null}
                 </div>
                 {error ? (
                     <Alert

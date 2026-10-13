@@ -12,6 +12,8 @@ import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { Live2DAvatar } from "./live2d-avatar";
 import { live2DModelURL } from "@/services/api/appearance";
+import { jingcheModelURL } from "@/services/api/appearance";
+import { useActiveTheme } from "@/stores/canvas/use-canvas-theme-store";
 import { FluidOrb } from "@/components/ui/fluid-orb";
 import { ArrowLeft, Check, CircleDot, Clock3, Download, History, LoaderCircle, MessageSquarePlus, RotateCcw, Settings2, ShieldCheck, Sparkles, Trash2, X } from "lucide-react";
 import { Button, Dropdown, Input, Popover } from "antd";
@@ -37,15 +39,17 @@ import type { ApprovalState } from "./canvas-cloud-agent-events";
 // 否则每次重新挂载都要重新下载模型并重建渲染上下文，期间只能显示默认形象。
 export function AgentLauncher({ theme, statusColor, approvalPending, reducedMotion, hidden = false, onOpen }: { theme: CanvasTheme; statusColor: string; approvalPending: boolean; reducedMotion: boolean; hidden?: boolean; onOpen: () => void }) {
     const appearance = useAppearanceStore((state) => state.appearance.canvas) || DEFAULT_CANVAS_APPEARANCE;
-    const live = appearance.avatarType === "live2d" && Boolean(appearance.live2dResourceId && appearance.live2dEntry);
+    const colorMode = useActiveTheme();
+    const jingche = appearance.avatarType === "jingche";
+    const live = jingche || (appearance.avatarType === "live2d" && Boolean(appearance.live2dResourceId && appearance.live2dEntry));
     const [viewport, setViewport] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }));
     useEffect(() => {
         const resize = () => setViewport({ width: window.innerWidth, height: window.innerHeight });
         window.addEventListener("resize", resize);
         return () => window.removeEventListener("resize", resize);
     }, []);
-    const height = live ? Math.max(40, Math.min(appearance.avatarHeight, viewport.height - 60, (viewport.width - 40) / 0.75)) : 76;
-    const width = live ? Math.round(height * 0.75) : 76;
+    const height = live ? Math.max(40, Math.min(appearance.avatarHeight, viewport.height - 60, (viewport.width - 40) / (jingche ? 1 : 0.75))) : 76;
+    const width = live ? Math.round(height * (jingche ? 1 : 0.75)) : 76;
     const { position, dragging, handlers } = useAgentLauncherPosition(onOpen, width, height);
     return (
         <motion.button
@@ -63,7 +67,7 @@ export function AgentLauncher({ theme, statusColor, approvalPending, reducedMoti
             transition={{ duration: reducedMotion ? 0 : 0.18 }}
         >
             {live ? (
-                <Live2DAvatar url={live2DModelURL(appearance.live2dResourceId, appearance.live2dEntry)} width={width} height={height} reducedMotion={reducedMotion} fallback={<FluidOrb size={60} color="#7164f6" />} />
+                <Live2DAvatar url={jingche ? jingcheModelURL(colorMode) : live2DModelURL(appearance.live2dResourceId, appearance.live2dEntry)} width={width} height={height} reducedMotion={reducedMotion} fallback={<FluidOrb size={60} color="#7164f6" />} />
             ) : (
                 <FluidOrb size={60} color="#7164f6" />
             )}

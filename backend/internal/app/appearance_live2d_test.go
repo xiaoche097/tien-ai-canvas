@@ -236,6 +236,11 @@ func TestLive2DAppearanceImportPublishAndDetach(t *testing.T) {
 }
 
 func TestCanvasAppearanceValidation(t *testing.T) {
+	value := defaultCanvasAppearance()
+	value.AvatarType = "jingche"
+	if actual, err := normalizeCanvasAppearance(value); err != nil || actual.AvatarType != "jingche" {
+		t.Fatalf("built-in Live2D appearance rejected: %+v %v", actual, err)
+	}
 	for _, mutate := range []func(*CanvasAppearance){
 		func(v *CanvasAppearance) { v.AgentName = "\n" },
 		func(v *CanvasAppearance) { v.AgentName = "小\x00鱼" },
