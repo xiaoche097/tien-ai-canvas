@@ -25,6 +25,7 @@ const AdminPluginsPage = lazy(() => import("@/pages/admin/plugins/plugins-page")
 const SkillCurationPage = lazy(() => import("@/pages/admin/skill-curation-page"));
 const AdminPaymentsPage = lazy(() => import("@/pages/admin/payments/payments-page"));
 const LogsPage = lazy(() => import("@/pages/admin/logs/logs-page"));
+const LoginLogsPage = lazy(() => import("@/pages/admin/login-logs/login-logs-page"));
 const RedemptionCodesPage = lazy(() => import("@/pages/admin/redemption-codes/redemption-codes-page"));
 const RuntimePolicySettingsPage = lazy(() => import("@/pages/admin/settings/runtime-policy-settings-page"));
 const AppearanceSettingsPage = lazy(() => import("@/pages/admin/settings/appearance-settings-page"));
@@ -33,6 +34,7 @@ const StorageSettingsPage = lazy(() => import("@/pages/admin/settings/storage-se
 const ArkPrivateAssetsSettingsPage = lazy(() => import("@/pages/admin/settings/ark-private-assets-settings-page"));
 const ResponseInterceptionSettingsPage = lazy(() => import("@/pages/admin/settings/response-interception-settings-page"));
 const ThirdPartySettingsPage = lazy(() => import("@/pages/admin/settings/libtv-settings-page"));
+const WorkbenchToolsPage = lazy(() => import("@/pages/admin/workbench-tools/workbench-tools-page"));
 const SystemUpdatePage = lazy(() => import("@/pages/admin/settings/system-update-page"));
 const SystemPerformancePage = lazy(() => import("@/pages/admin/settings/system-performance-page"));
 const StoryboardPromptsPage = lazy(() => import("@/pages/admin/storyboard-prompts/storyboard-prompts-page"));
@@ -45,6 +47,8 @@ const CanvasPage = lazy(loadCanvasPage);
 const CanvasProjectPage = lazy(loadCanvasProjectPage);
 const SharedCanvasPage = lazy(() => import("@/pages/canvas/shared"));
 const CreatePage = lazy(loadCreatePage);
+const ImageWorkbenchPage = lazy(() => import("@/pages/workbench/image-workbench-route"));
+const VideoWorkbenchPage = lazy(() => import("@/pages/workbench/video-workbench-page"));
 const InspirationsPage = lazy(loadInspirationsPage);
 const NotFound = lazy(() => import("@/pages/not-found"));
 const SkillsPage = lazy(() => import("@/pages/skills"));
@@ -119,6 +123,22 @@ export const router = createBrowserRouter([
         children: [
             { path: "/", element: deferred(<CreatePage />) },
             { path: "/create", element: deferred(<CreatePage />) },
+            {
+                path: "/toolbox/image",
+                element: (
+                    <RequireAuth>
+                        <RequireFeature feature="imageWorkbenchEnabled">{deferred(<ImageWorkbenchPage />)}</RequireFeature>
+                    </RequireAuth>
+                ),
+            },
+            {
+                path: "/toolbox/video",
+                element: (
+                    <RequireAuth>
+                        <RequireFeature feature="videoWorkbenchEnabled">{deferred(<VideoWorkbenchPage />)}</RequireFeature>
+                    </RequireAuth>
+                ),
+            },
             { path: "/inspirations", element: deferred(<InspirationsPage />) },
             {
                 path: "/tasks",
@@ -213,6 +233,7 @@ export const router = createBrowserRouter([
                 children: [
                     { index: true, element: <AnalyticsPage /> },
                     { path: "users", element: <UsersPage /> },
+                    { path: "login-logs", element: <LoginLogsPage /> },
                     { path: "channels", element: <ChannelsPage /> },
                     {
                         path: "models",
@@ -223,6 +244,7 @@ export const router = createBrowserRouter([
                         ),
                     },
                     { path: "plugins", element: <AdminPluginsPage /> },
+                    { path: "workbench-tools", element: <WorkbenchToolsPage /> },
                     { path: "skill-curation", element: <SkillCurationPage /> },
                     { path: "payments", element: <AdminPaymentsPage /> },
                     { path: "prompt-templates", element: <StoryboardPromptsPage /> },
