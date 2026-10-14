@@ -1,37 +1,22 @@
 {
-  "Version": 3,
-  "Meta": {
-    "Duration": 8.0,
-    "Fps": 30.0,
-    "Loop": true,
-    "AreBeziersRestricted": true,
-    "CurveCount": 1,
-    "TotalSegmentCount": 4,
-    "TotalPointCount": 5,
-    "UserDataCount": 0,
-    "TotalUserDataSize": 0
-  },
-  "Curves": [
-    {
-      "Target": "Parameter",
-      "Id": "ParamAngleZ",
-      "Segments": [
-        0.0,
-        0.0,
-        0,
-        2.0,
-        1.25,
-        0,
-        4.0,
-        0.0,
-        0,
-        6.0,
-        -1.25,
-        0,
-        8.0,
-        0.0
-      ]
-    }
-  ],
-  "UserData": []
+    "Version": 3,
+    "Meta": {
+        "Duration": 8.0,
+        "Fps": 30.0,
+        "Loop": true,
+        "AreBeziersRestricted": true,
+        "CurveCount": 1,
+        "TotalSegmentCount": 4,
+        "TotalPointCount": 5,
+        "UserDataCount": 0,
+        "TotalUserDataSize": 0
+    },
+    "Curves": [
+        {
+            "Target": "Parameter",
+            "Id": "ParamAngleZ",
+            "Segments": [0.0, 0.0, 0, 2.0, 1.25, 0, 4.0, 0.0, 0, 6.0, -1.25, 0, 8.0, 0.0]
+        }
+    ],
+    "UserData": []
 }

@@ -66,7 +66,13 @@ export function AgentLauncher({ theme, statusColor, approvalPending, reducedMoti
             transition={{ duration: reducedMotion ? 0 : 0.18 }}
         >
             {live ? (
-                <Live2DAvatar url={jingche ? jingcheModelURL(colorMode) : live2DModelURL(appearance.live2dResourceId, appearance.live2dEntry)} width={width} height={height} reducedMotion={reducedMotion} fallback={jingche ? <img src={jingcheTextureURL(colorMode)} alt="" width={width} height={height} draggable={false} /> : <FluidOrb size={60} color="#7164f6" />} />
+                <Live2DAvatar
+                    url={jingche ? jingcheModelURL(colorMode) : live2DModelURL(appearance.live2dResourceId, appearance.live2dEntry)}
+                    width={width}
+                    height={height}
+                    reducedMotion={reducedMotion}
+                    fallback={jingche ? <img src={jingcheTextureURL(colorMode)} alt="" width={width} height={height} draggable={false} /> : <FluidOrb size={60} color="#7164f6" />}
+                />
             ) : (
                 <FluidOrb size={60} color="#7164f6" />
             )}

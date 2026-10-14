@@ -1,19 +1,17 @@
 {
-  "Version": 3,
-  "FileReferences": {
-    "Moc": "JingcheAgent.moc3",
-    "Textures": [
-      "texture_00.png"
-    ],
-    "Motions": {
-      "Idle": [
-        {
-          "File": "idle.motion3.json",
-          "FadeInTime": 0.5,
-          "FadeOutTime": 0.5
+    "Version": 3,
+    "FileReferences": {
+        "Moc": "JingcheAgent.moc3",
+        "Textures": ["texture_00.png"],
+        "Motions": {
+            "Idle": [
+                {
+                    "File": "idle.motion3.json",
+                    "FadeInTime": 0.5,
+                    "FadeOutTime": 0.5
+                }
+            ]
         }
-      ]
-    }
-  },
-  "Groups": []
+    },
+    "Groups": []
 }

@@ -183,6 +183,7 @@ func TestLive2DAppearanceImportPublishAndDetach(t *testing.T) {
 	value := defaultAppearanceSetting()
 	value.Canvas.AgentName = "小鱼"
 	value.Canvas.AvatarType = "live2d"
+	value.Canvas.AvatarHeight = 220
 	value.Canvas.Live2DResourceID = imported.ResourceID
 	value.Canvas.Live2DEntry = "client-cannot-choose.json"
 	if _, err := svc.UpdateAppearance(other, value); err == nil {
