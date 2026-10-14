@@ -5,6 +5,13 @@ description: 从产品功能快速定位主要代码入口
 
 # 代码功能地图
 
+## 摹图电商设计室
+
+- 入口：`web/src/pages/projects/creative-center.tsx`、`web/src/router.tsx`；旧地址跳转同源 `/motu`。
+- 独立服务：`apps/xc-aimutu/upstream/` 保留上游 Next.js UI，`apps/xc-aimutu/Dockerfile` 单独构建；`nginx.conf` 代理，开发/本地/生产 Compose 各自启动服务。
+- 境彻适配：`upstream/middleware.ts` 验证登录，`lib/canvas/scope.ts` 按用户隔离数据，`provider-adapter.ts` 接入模型，`video-render.ts` 提交境彻资源和时间线任务；后端 `app/timeline_render_plan.go` 与 `task_render.go` 执行画幅渲染。
+- 发布：`.github/workflows/publish-images.yml` 发布摹图镜像，`backend/internal/hostupdate/` 与 `scripts/install-server-image.sh` 校验并固定镜像 digest。上线验收见待测试页。
+
 ## 用户登录日志
 
 - 持久化：`backend/internal/model/models_login_log.go`、`repository/login_logs.go`；会话与日志原子提交在 `repository/account.go`，schema v53 在 `database/migrations.go`。

@@ -1,0 +1,9 @@
+upstream/node_modules
+upstream/.next
+upstream/out
+upstream/storage
+upstream/prisma/*.db
+upstream/auth-server/prisma/*.db
+upstream/.env*
+!upstream/.env.example
+*.log

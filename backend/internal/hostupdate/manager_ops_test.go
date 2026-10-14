@@ -130,6 +130,42 @@ func TestCreateBackupReadsBackendDataAsRoot(t *testing.T) {
 	t.Fatalf("backend data backup did not use root: %#v", runner.calls)
 }
 
+func TestCreateBackupIncludesMotuData(t *testing.T) {
+	installDir := t.TempDir()
+	backupDir := filepath.Join(installDir, "backups")
+	if err := os.MkdirAll(backupDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(installDir, ".env"), []byte("POSTGRES_USER=canvas\nPOSTGRES_DB=canvas\nCANVAS_MOTU_IMAGE=example/motu@sha256:abc\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	runner := &recordingRunner{}
+	manager := &Manager{config: Config{InstallDir: installDir, ComposeFile: "docker-compose.deploy.yml", EnvFile: ".env", BackupDir: backupDir}, runner: runner}
+	backup, err := manager.createBackup("v1.2.3")
+	if err != nil {
+		t.Fatal(err)
+	}
+	archive, err := zip.OpenReader(backup.Path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer archive.Close()
+	foundEntry, foundCall := false, false
+	for _, entry := range archive.File {
+		if entry.Name == "motu-data.tar" && entry.UncompressedSize64 > 0 {
+			foundEntry = true
+		}
+	}
+	for _, call := range runner.calls {
+		if strings.Contains(strings.Join(call, " "), "run --rm --no-deps --user root motu tar -C /data -cf - .") {
+			foundCall = true
+		}
+	}
+	if !foundEntry || !foundCall {
+		t.Fatalf("motu backup missing: entry=%t call=%t", foundEntry, foundCall)
+	}
+}
+
 func TestCheckWritableDirectory(t *testing.T) {
 	directory := t.TempDir()
 	if err := checkWritableDirectory(directory); err != nil {
@@ -172,7 +208,7 @@ func TestWriteComposeEnvOverrideReplacesImageRefs(t *testing.T) {
 		t.Fatal(err)
 	}
 	manager := &Manager{config: Config{InstallDir: installDir, EnvFile: ".env", StateDir: stateDir}}
-	path, err := manager.writeComposeEnvOverride(deploymentImages{backend: "new-backend", web: "new-web", agent: "new-agent"})
+	path, err := manager.writeComposeEnvOverride(deploymentImages{backend: "new-backend", web: "new-web", agent: "new-agent", motu: "new-motu"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -182,7 +218,7 @@ func TestWriteComposeEnvOverrideReplacesImageRefs(t *testing.T) {
 		t.Fatal(err)
 	}
 	value := string(data)
-	if !strings.Contains(value, "CANVAS_BACKEND_IMAGE=new-backend\n") || !strings.Contains(value, "CANVAS_WEB_IMAGE=new-web\n") || !strings.Contains(value, "CANVAS_YINGCE_AGENT_IMAGE=new-agent\n") || !strings.Contains(value, "POSTGRES_DB=canvas\n") {
+	if !strings.Contains(value, "CANVAS_BACKEND_IMAGE=new-backend\n") || !strings.Contains(value, "CANVAS_WEB_IMAGE=new-web\n") || !strings.Contains(value, "CANVAS_YINGCE_AGENT_IMAGE=new-agent\n") || !strings.Contains(value, "CANVAS_MOTU_IMAGE=new-motu\n") || !strings.Contains(value, "POSTGRES_DB=canvas\n") {
 		t.Fatalf("unexpected override env: %q", value)
 	}
 }
@@ -195,12 +231,12 @@ func TestDeployComposeAgentVariablesFallbackForLegacyUpdater(t *testing.T) {
 		t.Fatal(err)
 	}
 	compose := string(data)
-	for _, required := range []string{"${CANVAS_YINGCE_AGENT_IMAGE:?", "${YINGCE_AGENT_TOKEN:?"} {
+	for _, required := range []string{"${CANVAS_YINGCE_AGENT_IMAGE:?", "${CANVAS_MOTU_IMAGE:?", "${YINGCE_AGENT_TOKEN:?"} {
 		if strings.Contains(compose, required) {
 			t.Errorf("docker-compose.deploy.yml must not hard-require %s…}", required)
 		}
 	}
-	for _, fallback := range []string{"${CANVAS_YINGCE_AGENT_IMAGE:-", "${YINGCE_AGENT_TOKEN:-${CANVAS_UPDATER_TOKEN:?"} {
+	for _, fallback := range []string{"${CANVAS_YINGCE_AGENT_IMAGE:-", "${CANVAS_MOTU_IMAGE:-", "${YINGCE_AGENT_TOKEN:-${CANVAS_UPDATER_TOKEN:?"} {
 		if !strings.Contains(compose, fallback) {
 			t.Errorf("docker-compose.deploy.yml is missing fallback %s…}", fallback)
 		}

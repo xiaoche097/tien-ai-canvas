@@ -105,8 +105,20 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  motu:
+    image: ${CANVAS_MOTU_IMAGE:-ghcr.io/ddcat-ai/open-ai-canvas-motu:${CANVAS_IMAGE_TAG:?请先配置 CANVAS_IMAGE_TAG}}
+    environment:
+      CANVAS_BACKEND_INTERNAL_URL: http://backend:8080
+    volumes:
+      - ${CANVAS_MOTU_DATA_PATH:-motu-data}:/data
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   backend-data:
   postgres-data:
   redis-data:
   web-data:
+  motu-data:

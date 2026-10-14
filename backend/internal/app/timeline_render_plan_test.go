@@ -46,6 +46,21 @@ func TestBuildRenderPlanExpandsGapAndSorts(t *testing.T) {
 	}
 }
 
+func TestBuildRenderPlanPortraitAspect(t *testing.T) {
+	plan := buildRenderPlan(renderProject{
+		Version: 2, AspectRatio: "9:16",
+		Tracks: []renderTrack{{ID: "video", Kind: "video"}},
+		Clips:  []renderClip{renderClipFixture("scene", "image", "video", 0, 1000, "resource:scene")},
+	})
+	if plan.Width != 1080 || plan.Height != 1920 {
+		t.Fatalf("portrait dimensions = %dx%d", plan.Width, plan.Height)
+	}
+	args := strings.Join(buildRenderFFmpegArgs(plan, "out.mp4"), " ")
+	if !strings.Contains(args, "scale=1080:1920") {
+		t.Fatalf("portrait scale missing: %s", args)
+	}
+}
+
 func TestBuildRenderPlanSkipsHiddenTrack(t *testing.T) {
 	hidden := false
 	project := renderProject{
@@ -106,6 +121,7 @@ func TestBuildRenderFFmpegArgsLayout(t *testing.T) {
 		"libx264", "aac",
 		"color=c=black:s=1920x1080:r=30",
 		"anullsrc=r=44100:cl=stereo",
+		"apad,atrim=0:2.000",
 		"render-output.mp4",
 	} {
 		if !strings.Contains(joined, want) {

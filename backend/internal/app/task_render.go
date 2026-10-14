@@ -88,7 +88,7 @@ func (w *taskWorkerCoordinator) processTimelineRender(task *model.Task, ctx cont
 	}
 	durationMs := planDurationMs(plan)
 	fileName := fmt.Sprintf("timeline-render-%s.mp4", time.Now().Format("20060102-150405"))
-	resource, _, err := s.storeResource(task.UserID, "media", fileName, "video/mp4", stat.Size(), renderWidth, renderHeight, durationMs, file, nil, false)
+	resource, _, err := s.storeResource(task.UserID, "media", fileName, "video/mp4", stat.Size(), plan.Width, plan.Height, durationMs, file, nil, false)
 	if err != nil || resource == nil {
 		return w.failTimelineTask(task, "渲染失败", "保存渲染产物失败")
 	}
@@ -154,12 +154,12 @@ func materializeRenderSources(ctx context.Context, s *Service, userID string, pl
 		}
 		path, cached := cache[resourceID]
 		if !cached {
-			_, reader, err := s.OpenResource(userID, resourceID)
+			resource, reader, err := s.OpenResource(userID, resourceID)
 			if err != nil || reader == nil {
 				cleanup()
 				return "", nil, fmt.Errorf("无法读取时间线引用的媒体，可能已被删除")
 			}
-			ext := extForMime("video/mp4")
+			ext := extForMime(resource.MimeType)
 			path = filepath.Join(tmpDir, fmt.Sprintf("src-%d%s", len(cache), ext))
 			file, err := os.Create(path)
 			if err != nil {

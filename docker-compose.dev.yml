@@ -61,6 +61,7 @@ services:
     command: ["sh", "-c", "bun install --frozen-lockfile && bun run dev"]
     environment:
       VITE_API_PROXY_TARGET: http://backend:8080
+      VITE_MOTU_PROXY_TARGET: http://motu:3002
       VITE_TLDRAW_LICENSE_KEY: ${VITE_TLDRAW_LICENSE_KEY:-}
     volumes:
       - type: bind
@@ -74,6 +75,20 @@ services:
       - backend
     init: true
 
+  motu:
+    image: open-ai-canvas-motu:dev
+    build:
+      context: ./apps/xc-aimutu
+      dockerfile: Dockerfile
+    environment:
+      CANVAS_BACKEND_INTERNAL_URL: http://backend:8080
+    volumes:
+      - motu-data:/data
+    depends_on:
+      - backend
+    init: true
+
 volumes:
   web-node-modules:
   web-bun-cache:
+  motu-data:

@@ -39,10 +39,11 @@ type renderTrack struct {
 }
 
 type renderProject struct {
-	Version    int           `json:"version"`
-	Tracks     []renderTrack `json:"tracks"`
-	Clips      []renderClip  `json:"clips"`
-	DurationMs int64         `json:"durationMs"`
+	Version     int           `json:"version"`
+	AspectRatio string        `json:"aspectRatio,omitempty"`
+	Tracks      []renderTrack `json:"tracks"`
+	Clips       []renderClip  `json:"clips"`
+	DurationMs  int64         `json:"durationMs"`
 }
 
 type renderSource struct {
@@ -68,6 +69,8 @@ type renderPlan struct {
 	Segments    []renderSegment
 	SubtitleSRT string
 	HasMedia    bool
+	Width       int
+	Height      int
 }
 
 // buildRenderPlan 挑选可见视频/图片轨片段按 startMs 排序，并把片段之间的
@@ -97,7 +100,16 @@ func buildRenderPlan(project renderProject) renderPlan {
 		return clips[i].StartMs < clips[j].StartMs
 	})
 
-	plan := renderPlan{SubtitleSRT: buildRenderSubtitleSRT(project)}
+	width, height := renderWidth, renderHeight
+	switch project.AspectRatio {
+	case "9:16":
+		width, height = 1080, 1920
+	case "1:1":
+		width, height = 1080, 1080
+	case "4:3":
+		width, height = 1440, 1080
+	}
+	plan := renderPlan{SubtitleSRT: buildRenderSubtitleSRT(project), Width: width, Height: height}
 	cursor := int64(0)
 	for _, clip := range clips {
 		if gap := clip.StartMs - cursor; gap > 0 {
@@ -169,8 +181,12 @@ func buildRenderFFmpegArgs(plan renderPlan, target string) []string {
 	if len(plan.Segments) == 0 {
 		return nil
 	}
+	width, height := plan.Width, plan.Height
+	if width == 0 || height == 0 {
+		width, height = renderWidth, renderHeight
+	}
 	scale := fmt.Sprintf("scale=%d:%d:force_original_aspect_ratio=decrease,pad=%d:%d:(ow-iw)/2:(oh-ih)/2",
-		renderWidth, renderHeight, renderWidth, renderHeight)
+		width, height, width, height)
 	args := []string{"-nostdin", "-y"}
 	for _, seg := range plan.Segments {
 		seconds := fmt.Sprintf("%.3f", float64(seg.DurationMs)/1000)
@@ -178,7 +194,7 @@ func buildRenderFFmpegArgs(plan renderPlan, target string) []string {
 		case "gap":
 			args = append(args,
 				"-f", "lavfi", "-t", seconds,
-				"-i", fmt.Sprintf("color=c=black:s=%dx%d:r=%d", renderWidth, renderHeight, renderFPS),
+				"-i", fmt.Sprintf("color=c=black:s=%dx%d:r=%d", width, height, renderFPS),
 				"-f", "lavfi", "-t", seconds,
 				"-i", fmt.Sprintf("anullsrc=r=%d:cl=stereo", renderSampleRate),
 			)
@@ -186,7 +202,7 @@ func buildRenderFFmpegArgs(plan renderPlan, target string) []string {
 			if seg.Source == nil {
 				args = append(args,
 					"-f", "lavfi", "-t", seconds,
-					"-i", fmt.Sprintf("color=c=black:s=%dx%d:r=%d", renderWidth, renderHeight, renderFPS),
+					"-i", fmt.Sprintf("color=c=black:s=%dx%d:r=%d", width, height, renderFPS),
 					"-f", "lavfi", "-t", seconds,
 					"-i", fmt.Sprintf("anullsrc=r=%d:cl=stereo", renderSampleRate),
 				)
@@ -201,7 +217,7 @@ func buildRenderFFmpegArgs(plan renderPlan, target string) []string {
 			if seg.Source == nil {
 				args = append(args,
 					"-f", "lavfi", "-t", seconds,
-					"-i", fmt.Sprintf("color=c=black:s=%dx%d:r=%d", renderWidth, renderHeight, renderFPS),
+					"-i", fmt.Sprintf("color=c=black:s=%dx%d:r=%d", width, height, renderFPS),
 					"-f", "lavfi", "-t", seconds,
 					"-i", fmt.Sprintf("anullsrc=r=%d:cl=stereo", renderSampleRate),
 				)
@@ -245,8 +261,8 @@ func buildRenderFFmpegArgs(plan renderPlan, target string) []string {
 			filters = append(filters,
 				fmt.Sprintf("[%d:v]fps=%d,%s,setsar=1[%s]", videoIn, renderFPS, scale, videoLabel))
 			filters = append(filters,
-				fmt.Sprintf("[%d:a]aformat=sample_fmts=fltp:sample_rates=%d:channel_layouts=stereo,volume=%.3f,apad[%s]",
-					audioIn, renderSampleRate, volume, audioLabel))
+				fmt.Sprintf("[%d:a]aformat=sample_fmts=fltp:sample_rates=%d:channel_layouts=stereo,volume=%.3f,apad,atrim=0:%.3f,asetpts=N/SR/TB[%s]",
+					audioIn, renderSampleRate, volume, float64(seg.DurationMs)/1000, audioLabel))
 		}
 		labels = append(labels, videoLabel, audioLabel)
 	}

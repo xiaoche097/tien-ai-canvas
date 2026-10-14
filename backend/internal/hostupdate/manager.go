@@ -253,7 +253,24 @@ func (m *Manager) runUpdate(fromVersion, targetVersion string) {
 	}
 
 	m.setPhase(PhaseBackingUp, "创建 PostgreSQL 与数据目录 ZIP 备份")
+	values, err := readEnvFile(m.envPath())
+	if err != nil {
+		m.failWithoutRollback(PhaseFailed, err)
+		return
+	}
+	hasMotu := strings.TrimSpace(values["CANVAS_MOTU_IMAGE"]) != ""
+	if hasMotu {
+		if err := m.compose(m.composePath(), fromVersion, 5*time.Minute, nil, "stop", "motu"); err != nil {
+			m.failWithoutRollback(PhaseFailed, err)
+			return
+		}
+	}
 	backup, err := m.createBackup(fromVersion)
+	if hasMotu {
+		if startErr := m.compose(m.composePath(), fromVersion, m.config.StepTimeout, nil, "up", "-d", "--no-deps", "--wait", "motu"); startErr != nil {
+			err = errors.Join(err, fmt.Errorf("恢复摹图服务失败：%w", startErr))
+		}
+	}
 	if err != nil {
 		m.failWithoutRollback(PhaseFailed, err)
 		return
@@ -274,7 +291,7 @@ func (m *Manager) runUpdate(fromVersion, targetVersion string) {
 
 	m.setPhase(PhasePulling, "拉取目标版本镜像")
 	targetImages := immutableImageRefs(m.config.Repository, targetVersion)
-	if err := m.composeWithImages(nextCompose, targetVersion, targetImages, m.config.StepTimeout, nil, "pull", "backend", "web", "yingce-agent"); err != nil {
+	if err := m.composeWithImages(nextCompose, targetVersion, targetImages, m.config.StepTimeout, nil, "pull", "backend", "web", "yingce-agent", "motu"); err != nil {
 		m.failWithoutRollback(PhaseFailed, err)
 		return
 	}
@@ -369,6 +386,11 @@ func (m *Manager) failWithRollback(cause error, targetVersion string, backup Bac
 
 func (m *Manager) runRollback(targetVersion string, backup Backup, automatic bool) {
 	var failures []error
+	if values, err := readEnvFile(m.envPath()); err == nil && strings.TrimSpace(values["CANVAS_MOTU_IMAGE"]) != "" {
+		if err := m.compose(m.composePath(), targetVersion, 5*time.Minute, nil, "stop", "motu"); err != nil {
+			failures = append(failures, err)
+		}
+	}
 	if err := m.compose(m.composePath(), targetVersion, 5*time.Minute, nil, "stop", "web", "backend"); err != nil {
 		failures = append(failures, err)
 	}
@@ -383,6 +405,9 @@ func (m *Manager) runRollback(targetVersion string, backup Backup, automatic boo
 		}
 	}
 	if err := m.restoreDatabase(backup); err != nil {
+		failures = append(failures, err)
+	}
+	if err := m.restoreMotuData(backup); err != nil {
 		failures = append(failures, err)
 	}
 	started := true

@@ -163,3 +163,23 @@ jobs:
         run: |
           google-chrome --version || chromium --version
           bun run test:previs:e2e
+
+  motu:
+    name: Motu integration build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/xc-aimutu/upstream
+    env:
+      CANVAS_INTEGRATION: "1"
+      NEXT_PUBLIC_CANVAS_INTEGRATION: "1"
+      DATABASE_URL: file:./dev.db
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/xc-aimutu/upstream/package-lock.json
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run build

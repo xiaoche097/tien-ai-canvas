@@ -1,4 +1,4 @@
-import { lazy, Suspense, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, type ReactNode } from "react";
 import { createBrowserRouter, Navigate, Outlet, useLocation } from "react-router";
 
 import { RequireAuth } from "@/components/auth/require-auth";
@@ -56,7 +56,6 @@ const PluginsPage = lazy(() => import("@/pages/plugins"));
 const EagleLibraryPage = lazy(() => import("@/pages/plugins/eagle"));
 const TasksPage = lazy(() => import("@/pages/tasks"));
 const ProjectsPage = lazy(loadProjectsPage);
-const CommerceStudioPage = lazy(() => import("@/pages/projects/commerce"));
 const ProjectDetailPage = lazy(loadProjectDetailPage);
 const SettingsPage = lazy(() => import("@/pages/settings"));
 const TestVoiceRecording = lazy(() => import("@/pages/test-voice-recording"));
@@ -71,6 +70,13 @@ function deferred(element: ReactNode) {
 
 function fullScreenDeferred(element: ReactNode) {
     return <Suspense fallback={<FullScreenLoader label="正在打开创作空间" detail="准备当前页面" />}>{element}</Suspense>;
+}
+
+function CommerceStudioRedirect() {
+    useEffect(() => {
+        window.location.replace("/motu");
+    }, []);
+    return <WorkspaceRouteLoader />;
 }
 
 function AuthenticatedWorkspaceLayout() {
@@ -192,7 +198,7 @@ export const router = createBrowserRouter([
             },
             {
                 path: "/projects/commerce-studio",
-                element: <RequireAuth><RequireFeature feature="shortDramaEnabled">{deferred(<CommerceStudioPage />)}</RequireFeature></RequireAuth>,
+                element: <RequireAuth><RequireFeature feature="shortDramaEnabled"><CommerceStudioRedirect /></RequireFeature></RequireAuth>,
             },
             {
                 path: "/projects/:projectId/:view",

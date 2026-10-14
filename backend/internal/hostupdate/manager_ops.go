@@ -261,6 +261,7 @@ type deploymentImages struct {
 	backend string
 	web     string
 	agent   string
+	motu    string
 }
 
 func immutableImageRefs(repository, version string) deploymentImages {
@@ -270,6 +271,7 @@ func immutableImageRefs(repository, version string) deploymentImages {
 		backend: "ghcr.io/" + owner + "/open-ai-canvas-backend:" + tag,
 		web:     "ghcr.io/" + owner + "/open-ai-canvas-web:" + tag,
 		agent:   "ghcr.io/" + owner + "/open-ai-canvas-yingce-agent:" + tag,
+		motu:    "ghcr.io/" + owner + "/open-ai-canvas-motu:" + tag,
 	}
 }
 
@@ -349,12 +351,16 @@ func (m *Manager) writeComposeEnvOverride(images deploymentImages) (string, erro
 		cleanup()
 		return "", err
 	}
+	if err := setEnvValue(path, "CANVAS_MOTU_IMAGE", images.motu); err != nil {
+		cleanup()
+		return "", err
+	}
 	return path, nil
 }
 
 func (m *Manager) verifyImages(targetVersion string) (deploymentImages, error) {
 	images := immutableImageRefs(m.config.Repository, targetVersion)
-	refs := []string{images.backend, images.web, images.agent}
+	refs := []string{images.backend, images.web, images.agent, images.motu}
 	digests := make([]string, 0, len(refs))
 	for _, image := range refs {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
@@ -382,7 +388,7 @@ func (m *Manager) verifyImages(targetVersion string) (deploymentImages, error) {
 		}
 		digests = append(digests, digest)
 	}
-	return deploymentImages{backend: digests[0], web: digests[1], agent: digests[2]}, nil
+	return deploymentImages{backend: digests[0], web: digests[1], agent: digests[2], motu: digests[3]}, nil
 }
 
 func setDeploymentImages(path, version string, images deploymentImages) error {
@@ -396,6 +402,9 @@ func setDeploymentImages(path, version string, images deploymentImages) error {
 		return err
 	}
 	if err := setEnvValue(path, "CANVAS_YINGCE_AGENT_IMAGE", images.agent); err != nil {
+		return err
+	}
+	if err := setEnvValue(path, "CANVAS_MOTU_IMAGE", images.motu); err != nil {
 		return err
 	}
 	return ensureAgentToken(path)
@@ -457,6 +466,15 @@ func (m *Manager) createBackup(version string) (Backup, error) {
 	}
 	if err := m.compose(m.composePath(), version, m.config.StepTimeout, dataEntry, "exec", "-T", "--user", "root", "backend", "tar", "-C", "/data", "-cf", "-", "."); err != nil {
 		return Backup{}, fmt.Errorf("备份数据目录：%w", err)
+	}
+	if strings.TrimSpace(values["CANVAS_MOTU_IMAGE"]) != "" {
+		motuEntry, err := archive.CreateHeader(&zip.FileHeader{Name: "motu-data.tar", Method: zip.Store})
+		if err != nil {
+			return Backup{}, err
+		}
+		if err := m.compose(m.composePath(), version, m.config.StepTimeout, motuEntry, "run", "--rm", "--no-deps", "--user", "root", "motu", "tar", "-C", "/data", "-cf", "-", "."); err != nil {
+			return Backup{}, fmt.Errorf("备份摹图数据目录：%w", err)
+		}
 	}
 	if err := archive.Close(); err != nil {
 		return Backup{}, fmt.Errorf("完成 ZIP 备份：%w", err)
@@ -523,6 +541,42 @@ func verifyZipBackup(path, expected string) error {
 		if !present {
 			return fmt.Errorf("ZIP 备份缺少有效文件 %s", name)
 		}
+	}
+	for _, entry := range archive.File {
+		if entry.Name == "motu-data.tar" && entry.UncompressedSize64 == 0 {
+			return errors.New("ZIP 备份中的 motu-data.tar 为空")
+		}
+	}
+	return nil
+}
+
+func (m *Manager) restoreMotuData(backup Backup) error {
+	if err := verifyZipBackup(backup.Path, backup.Checksum); err != nil {
+		return err
+	}
+	archive, err := zip.OpenReader(backup.Path)
+	if err != nil {
+		return err
+	}
+	defer archive.Close()
+	for _, entry := range archive.File {
+		if entry.Name != "motu-data.tar" {
+			continue
+		}
+		reader, err := entry.Open()
+		if err != nil {
+			return err
+		}
+		defer reader.Close()
+		ctx, cancel := context.WithTimeout(context.Background(), m.config.StepTimeout)
+		defer cancel()
+		args := []string{"compose", "--env-file", m.envPath(), "-f", m.composePath(), "run", "--rm", "--no-deps", "--user", "root", "motu", "tar", "-C", "/data", "-xf", "-"}
+		var stderr bytes.Buffer
+		command := execCommandWithInput{runner: m.runner, input: reader}
+		if err := command.Run(ctx, "docker", args, []string{"CANVAS_IMAGE_TAG=" + strings.TrimPrefix(backup.Version, "v")}, io.Discard, &stderr); err != nil {
+			return fmt.Errorf("恢复摹图数据目录：%s", strings.TrimSpace(stderr.String()))
+		}
+		return nil
 	}
 	return nil
 }

@@ -41,5 +41,20 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  motu:
+    image: open-ai-canvas-motu:local
+    build:
+      context: ./apps/xc-aimutu
+      dockerfile: Dockerfile
+    environment:
+      CANVAS_BACKEND_INTERNAL_URL: http://backend:8080
+    volumes:
+      - motu-data:/data
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   backend-data:
+  motu-data:

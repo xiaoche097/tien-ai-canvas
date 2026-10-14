@@ -5,6 +5,10 @@ description: 信封、错误码与 OpenAPI
 
 # HTTP API 合同
 
+## 时间线成片画幅
+
+`POST /api/timeline/renders` 的 `timeline` 快照可带 `aspectRatio`：`9:16` 渲染为 1080×1920，`1:1` 渲染为 1080×1080，`4:3` 渲染为 1440×1080；省略时保持 1920×1080。资源引用仍须使用当前用户可读取的 `directMedia.storageKey=resource:<id>`，任务与结果通过原有任务接口按用户隔离。
+
 ## 用户登录日志
 
 菜单“用户与运营 → 用户登录日志”，页面 `/admin/login-logs`。查询在 service 校验管理员权限：匿名 401、普通用户 403。
