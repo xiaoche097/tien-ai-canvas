@@ -141,9 +141,9 @@ export default function ModelDetailPage() {
         {views.map((view) => (
           <div
             key={view.label}
-            className="overflow-hidden rounded-[2rem] border border-white/80 bg-white/70 p-3 shadow-sm dark:border-white/10 dark:bg-[#141416]/70"
+            className="overflow-hidden rounded-lg border border-border bg-card p-3"
           >
-            <div className="aspect-[3/4] overflow-hidden rounded-[1.5rem] bg-slate-100 dark:bg-white/5">
+            <div className="aspect-[3/4] overflow-hidden rounded-md bg-muted">
               {view.path ? (
                 <img src={motuFileUrl(view.path)} alt={view.label} className="h-full w-full object-cover" />
               ) : (
@@ -160,7 +160,7 @@ export default function ModelDetailPage() {
       </div>
 
       {/* 模特信息 */}
-      <div className="rounded-[2rem] border border-white/80 bg-white/70 p-6 shadow-sm dark:border-white/10 dark:bg-[#141416]/70">
+      <div className="border-t border-border pt-6">
         <h3 className="font-semibold">模特信息</h3>
         <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
           <div>

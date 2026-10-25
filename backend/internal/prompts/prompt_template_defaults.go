@@ -119,6 +119,12 @@ func defaultPromptDefinitions() []PromptOperationDefinition {
 }
 
 func protectedPromptContext(operation string, values map[string]string) string {
+	if strings.HasPrefix(operation, ecommerceStylePrefix) {
+		return "【风格适用边界】\n风格模板仅控制视觉气质、配色、光影和排版；商品身份、已提供的事实、目标语言、图片比例与结构化输出格式仍服从当前任务要求。不要因风格更改商品或编造卖点。"
+	}
+	if context := tryOnProtectedContext(operation, values); context != "" {
+		return context
+	}
 	switch operation {
 	case OperationStoryboardPlan:
 		return storyboardProtectedContext(values)

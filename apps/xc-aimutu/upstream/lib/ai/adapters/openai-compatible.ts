@@ -55,7 +55,7 @@ function sizeToAspectRatio(size?: string) {
   }
 }
 
-function resolveAspectRatio(input: { aspectRatio?: "1:1" | "3:4" | "4:3" | "16:9" | "9:16"; size?: string }) {
+function resolveAspectRatio(input: { aspectRatio?: "1:1" | "3:4" | "4:3" | "16:9" | "9:16" | "21:9"; size?: string }) {
   if (input.aspectRatio) {
     return input.aspectRatio;
   }
@@ -63,7 +63,7 @@ function resolveAspectRatio(input: { aspectRatio?: "1:1" | "3:4" | "4:3" | "16:9
   return sizeToAspectRatio(input.size);
 }
 
-function resolveOpenAiSize(input: { aspectRatio?: "1:1" | "3:4" | "4:3" | "16:9" | "9:16"; size?: string }) {
+function resolveOpenAiSize(input: { aspectRatio?: "1:1" | "3:4" | "4:3" | "16:9" | "9:16" | "21:9"; size?: string }) {
   if (input.size) {
     return input.size;
   }
@@ -83,6 +83,7 @@ function resolveOpenAiSize(input: { aspectRatio?: "1:1" | "3:4" | "4:3" | "16:9"
   if (input.aspectRatio === "16:9") {
     return "1024x576";
   }
+  if (input.aspectRatio === "21:9") return "1792x768";
 
   return "1024x1536";
 }
@@ -824,7 +825,7 @@ export class OpenAICompatibleAdapter implements ProviderAdapter {
     referenceImages?: string[];
     baseImage?: string | null;
     size?: string;
-    aspectRatio?: "1:1" | "3:4" | "4:3" | "16:9" | "9:16";
+    aspectRatio?: "1:1" | "3:4" | "4:3" | "16:9" | "9:16" | "21:9";
     monitor?: AiMonitorContext;
   }) {
     const imageParts = [input.baseImage ?? null, ...(input.referenceImages ?? [])]

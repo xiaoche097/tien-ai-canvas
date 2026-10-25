@@ -12,6 +12,7 @@ type (
 	UserPromptCustomizationRequest = prompts.UserPromptCustomizationRequest
 	UserPromptPreference           = prompts.UserPromptPreference
 	CompiledPrompt                 = prompts.CompiledPrompt
+	EcommercePromptTemplate        = prompts.EcommercePromptTemplate
 	StyleProfileRequest            = prompts.StyleProfileRequest
 	StyleProfileFavoriteRequest    = prompts.StyleProfileFavoriteRequest
 )
@@ -102,6 +103,14 @@ func (s *Service) DeletePromptTemplate(actor *model.User, id string) error {
 
 func (s *Service) UserPromptPreferences(user *model.User) ([]UserPromptPreference, error) {
 	return s.promptDomain().UserPromptPreferences(user)
+}
+
+func (s *Service) CompileEcommerceStyle(user *model.User, style string) (CompiledPrompt, error) {
+	return s.promptDomain().CompileEcommerceStyle(user, style)
+}
+
+func (s *Service) EcommercePromptTemplates(user *model.User) ([]EcommercePromptTemplate, error) {
+	return s.promptDomain().EcommercePromptTemplates(user)
 }
 
 func (s *Service) UpdateUserPromptCustomization(user *model.User, operation string, req UserPromptCustomizationRequest) (*model.UserPromptCustomization, error) {

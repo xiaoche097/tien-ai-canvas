@@ -5,22 +5,26 @@
 
 import type { CanvasTheme } from "@/lib/canvas-theme";
 import { useAppearanceStore } from "@/stores/use-appearance-store";
-import { agentCopy, DEFAULT_CANVAS_APPEARANCE } from "@/lib/canvas/agent-appearance";
-import { type ComponentRef, type CSSProperties, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { agentAvatarClipForState, agentAvatarStateForRunStatus, agentCopy, DEFAULT_CANVAS_APPEARANCE, isAgentAvatarBundleManifest, type AgentAvatarBundleManifest } from "@/lib/canvas/agent-appearance";
+import { type CSSProperties, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { usePopoverAnchorAlign } from "@/hooks/use-popover-anchor-align";
 import { useAgentLauncherPosition } from "./use-agent-launcher-position";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { Live2DAvatar } from "./live2d-avatar";
-import { jingcheModelURL, jingcheTextureURL, live2DModelURL } from "@/services/api/appearance";
+import { agentAvatarBundleFileURL, jingcheModelURL, jingcheTextureURL, live2DModelURL } from "@/services/api/appearance";
 import { useActiveTheme } from "@/stores/canvas/use-canvas-theme-store";
+import { AgentAvatarVideo } from "@/components/canvas/agent-avatar-video";
 import { FluidOrb } from "@/components/ui/fluid-orb";
 import { ArrowLeft, Check, CircleDot, Clock3, Download, History, LoaderCircle, MessageSquarePlus, RotateCcw, Settings2, ShieldCheck, Sparkles, Trash2, X } from "lucide-react";
-import { Button, Dropdown, Input, Popover } from "antd";
+import { Button, Input, Popover } from "antd";
+import { CanvasAnchoredDropdown as Dropdown } from "./canvas-anchored-dropdown";
 import type { AgentContextPhase, AgentContextUsageView } from "@/lib/canvas/agent-context-usage";
-import type { CloudAgentConversation } from "@/services/cloud-agent-conversations";
+import { cloudAgentConversationServerId, type CloudAgentConversation } from "@/services/cloud-agent-conversations";
 import { AgentChatMessage, AgentOperationFeed, AgentReasoningFeed, AgentWorkingMessage, type CloudAgentChatMessage } from "./canvas-cloud-agent-chat-ui";
 import type { CanvasResourceReference } from "@/lib/canvas/canvas-resource-references";
 import type { CanvasNodeData } from "@/types/canvas";
+import type { AgentCanvasUndoState, AgentCanvasUndoTarget } from "@/lib/canvas/agent-canvas-undo";
 import type { AgentMediaSettings, AgentPermissionMode } from "@/services/api/agent";
 import { buildAgentFeedSegments } from "@/lib/canvas/agent-operation-feed";
 import { AgentWelcome } from "./canvas-agent-welcome";
@@ -35,31 +39,89 @@ import { markdownPlainText } from "@/lib/markdown-plain-text";
 import type { ApprovalState } from "./canvas-cloud-agent-events";
 
 // hidden 为 true 时入口保持挂载但不显示：Live2D 模型加载开销大，面板开合不能卸载它，
-// 否则每次重新挂载都要重新下载模型并重建渲染上下文，期间只能显示默认形象。
-export function AgentLauncher({ theme, statusColor, approvalPending, reducedMotion, hidden = false, onOpen }: { theme: CanvasTheme; statusColor: string; approvalPending: boolean; reducedMotion: boolean; hidden?: boolean; onOpen: () => void }) {
+// 否则每次重新挂载都要重新下载模型并重建渲染上下文。
+export function AgentLauncher({
+    theme,
+    statusColor,
+    approvalPending,
+    reducedMotion,
+    status,
+    hidden = false,
+    onOpen,
+}: {
+    theme: CanvasTheme;
+    statusColor: string;
+    approvalPending: boolean;
+    reducedMotion: boolean;
+    status: string;
+    hidden?: boolean;
+    onOpen: () => void;
+}) {
     const appearance = useAppearanceStore((state) => state.appearance.canvas) || DEFAULT_CANVAS_APPEARANCE;
     const colorMode = useActiveTheme();
     const jingche = appearance.avatarType === "jingche";
     const live = jingche || (appearance.avatarType === "live2d" && Boolean(appearance.live2dResourceId && appearance.live2dEntry));
+    const appearanceResolved = useAppearanceStore((state) => state.resolved);
+    const appearanceRevision = useAppearanceStore((state) => state.appearance.revision);
+    const avatarState = agentAvatarStateForRunStatus(status);
+    const bundleManifestURL = appearance.avatarBundleResourceId ? agentAvatarBundleFileURL(appearance.avatarBundleResourceId, "avatar.json", false, appearanceRevision) : "/doll/avatar.json";
+    const [bundleManifestState, setBundleManifestState] = useState<{ url: string; manifest: AgentAvatarBundleManifest | null } | null>(null);
+    useEffect(() => {
+        if (appearance.avatarType !== "bundle") {
+            setBundleManifestState(null);
+            return;
+        }
+        const controller = new AbortController();
+        void (async () => {
+            try {
+                const response = await fetch(bundleManifestURL, { credentials: "include", signal: controller.signal });
+                if (!response.ok) throw new Error(`无法读取 Agent 动画包（HTTP ${response.status}）`);
+                const manifest: unknown = await response.json();
+                if (!isAgentAvatarBundleManifest(manifest)) throw new Error("avatar.json 格式无效");
+                setBundleManifestState({ url: bundleManifestURL, manifest });
+            } catch {
+                if (!controller.signal.aborted) setBundleManifestState({ url: bundleManifestURL, manifest: null });
+            }
+        })();
+        return () => controller.abort();
+    }, [appearance.avatarType, bundleManifestURL]);
+    const currentBundleManifestState = bundleManifestState?.url === bundleManifestURL ? bundleManifestState : null;
+    const bundleManifest = currentBundleManifestState?.manifest ?? null;
+    const bundleManifestLoading = appearance.avatarType === "bundle" && currentBundleManifestState === null;
+    const clip = bundleManifest ? agentAvatarClipForState(appearance, avatarState, bundleManifest) : "";
+    const clipFile = bundleManifest?.clips[clip] || "";
+    const mediaURL = appearance.avatarType === "bundle" && clipFile ? (appearance.avatarBundleResourceId ? agentAvatarBundleFileURL(appearance.avatarBundleResourceId, clipFile, false, appearanceRevision) : `/doll/${encodeURIComponent(clipFile)}`) : "";
+    const [mediaError, setMediaError] = useState(false);
+    useEffect(() => setMediaError(false), [mediaURL]);
+    const [live2DError, setLive2DError] = useState("");
     const [viewport, setViewport] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }));
     useEffect(() => {
         const resize = () => setViewport({ width: window.innerWidth, height: window.innerHeight });
         window.addEventListener("resize", resize);
         return () => window.removeEventListener("resize", resize);
     }, []);
-    const height = live ? Math.max(40, Math.min(appearance.avatarHeight, viewport.height - 60, (viewport.width - 40) / (jingche ? 1 : 0.75))) : 76;
-    const width = live ? Math.round(height * (jingche ? 1 : 0.75)) : 76;
+    const media = Boolean(mediaURL && !mediaError);
+    const aspectRatio = live ? (jingche ? 1 : 0.75) : bundleManifest ? bundleManifest.width / bundleManifest.height : appearance.avatarType === "bundle" ? 480 / 432 : 1;
+    const keepsAvatarSize = live || media || bundleManifestLoading;
+    const height = keepsAvatarSize ? Math.max(40, Math.min(appearance.avatarHeight, viewport.height - 60, (viewport.width - 40) / aspectRatio)) : 76;
+    const width = keepsAvatarSize ? Math.round(height * aspectRatio) : 76;
     const { position, dragging, handlers } = useAgentLauncherPosition(onOpen, width, height);
     return (
         <motion.button
             type="button"
             aria-label={`打开${appearance.agentName}`}
-            title={`${approvalPending ? "Agent 等待你的审批" : "打开 Agent 助手"} · 拖动可调整位置，聚焦后可用方向键移动`}
-            className={cn("canvas-agent-launcher fixed z-[calc(var(--z-toast)+1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current/35", dragging && "is-dragging", live && "canvas-agent-launcher-live2d")}
+            title={live && live2DError ? live2DError : `${approvalPending ? "Agent 等待你的审批" : "打开 Agent 助手"} · 拖动可调整位置，聚焦后可用方向键移动`}
+            className={cn(
+                "canvas-agent-launcher fixed z-[calc(var(--z-toast)+1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current/35",
+                dragging && "is-dragging",
+                live && "canvas-agent-launcher-live2d",
+                mediaURL && !mediaError && "canvas-agent-launcher-media",
+            )}
             style={{ ...position, width, height, color: theme.node.text, "--canvas-agent-launcher-shadow": theme.spatial.shadow, ...(hidden ? { display: "none" } : null) } as CSSProperties}
             aria-hidden={hidden || undefined}
             tabIndex={hidden ? -1 : undefined}
             data-canvas-no-zoom
+            onDragStart={(event) => event.preventDefault()}
             {...handlers}
             whileHover={reducedMotion || dragging ? undefined : { scale: 1.035 }}
             whileTap={reducedMotion || dragging ? undefined : { scale: 0.96 }}
@@ -72,11 +134,25 @@ export function AgentLauncher({ theme, statusColor, approvalPending, reducedMoti
                     height={height}
                     reducedMotion={reducedMotion}
                     fallback={jingche ? <img src={jingcheTextureURL(colorMode)} alt="" width={width} height={height} draggable={false} /> : <FluidOrb size={60} color="#7164f6" />}
+                    onReady={() => setLive2DError("")}
+                    onError={setLive2DError}
                 />
+            ) : mediaURL && !mediaError ? (
+                <AgentAvatarVideo src={mediaURL} loop={!["completed", "failed", "cancelled", "rejected"].includes(avatarState)} onError={() => setMediaError(true)} />
+            ) : bundleManifestLoading || !appearanceResolved ? (
+                <span role="status" aria-busy="true">
+                    <LoaderCircle className={reducedMotion ? "size-6" : "size-6 motion-safe:animate-spin"} aria-hidden="true" />
+                    <span className="sr-only">正在加载助手形象</span>
+                </span>
             ) : (
                 <FluidOrb size={60} color="#7164f6" />
             )}
             {appearance.launcherLabel ? <span className="canvas-agent-launcher-label">{appearance.launcherLabel}</span> : null}
+            {live && live2DError ? (
+                <span className="sr-only" role="status">
+                    {live2DError}
+                </span>
+            ) : null}
             <span className={cn("canvas-agent-launcher-status", approvalPending && "is-pending")} style={{ "--canvas-agent-status-color": statusColor } as CSSProperties} />
             {approvalPending ? <span className="canvas-agent-launcher-badge">待审批</span> : null}
         </motion.button>
@@ -101,7 +177,7 @@ export function AgentHeader({
     hasMessages: boolean;
     statusLabel: string;
     statusColor: string;
-    nodeCount: number;
+    nodeCount: number | null;
     onNew: () => void;
     onHistory: () => void;
     onSettings: () => void;
@@ -125,7 +201,7 @@ export function AgentHeader({
                     </span>
                 </div>
                 <div className="agent-panel-context">
-                    {appearance.agentName} · 当前画布 {nodeCount} 个节点
+                    {appearance.agentName} · {nodeCount === null ? "未在画布中，可对话；进入画布后自动关联" : `当前画布 ${nodeCount} 个节点`}
                 </div>
             </div>
             <div className="agent-header-actions flex items-center gap-0.5" style={{ color: theme.node.muted }}>
@@ -166,11 +242,7 @@ export function formatContextBytes(bytes: number | undefined) {
 
 export function AgentContextRing({ view, theme }: { view: AgentContextUsageView; theme: CanvasTheme }) {
     const [open, setOpen] = useState(false);
-    const popover = useRef<ComponentRef<typeof Popover>>(null);
-    // 面板拖拽会改变锚点位置；body 中的浮层需要在布局提交后重新对齐。
-    useLayoutEffect(() => {
-        if (open) popover.current?.forceAlign();
-    });
+    const popoverRef = usePopoverAnchorAlign(open);
     const marker = view.compactRatio && view.compactRatio > 0 && view.compactRatio < 1 ? view.compactRatio : undefined;
     const percent = view.ratio === undefined ? view.label : `${Math.round(view.ratio * 100)}%`;
     const meterLabel = view.ratio === undefined ? "—" : percent;
@@ -185,15 +257,16 @@ export function AgentContextRing({ view, theme }: { view: AgentContextUsageView;
 
     return (
         <Popover
-            ref={popover}
+            ref={popoverRef}
             open={open}
             onOpenChange={setOpen}
             trigger="click"
             placement="rightTop"
+            autoAdjustOverflow
             arrow={false}
-            overlayClassName="agent-context-popover"
+            classNames={{ root: "agent-context-popover" }}
             getPopupContainer={() => document.body}
-            styles={{ root: { zIndex: "calc(var(--z-toast) + 2)", "--agent-ink": theme.node.text, "--agent-surface-base": theme.node.panel } as CSSProperties }}
+            styles={{ root: { zIndex: "calc(var(--z-toast) + 2)", "--agent-surface-base": theme.node.panel, "--agent-ink": theme.node.text, "--agent-accent": theme.accent.primary } as CSSProperties }}
             content={
                 <div className="agent-context-panel" data-phase={view.phase}>
                     <span className="agent-context-eyebrow">下一次请求 · 上下文窗口占用</span>
@@ -296,6 +369,10 @@ export function AgentHistory({
     onNew,
     onOpen,
     onDelete,
+    loading,
+    error,
+    openingId,
+    onRefresh,
 }: {
     conversations: CloudAgentConversation[];
     activeConversationId: string;
@@ -304,6 +381,10 @@ export function AgentHistory({
     onNew: () => void;
     onOpen: (conversation: CloudAgentConversation) => void;
     onDelete: (id: string) => void;
+    loading?: boolean;
+    error?: string;
+    openingId?: string;
+    onRefresh?: () => void;
 }) {
     return (
         <div className="canvas-agent-history-root flex min-h-0 min-w-0 flex-1 flex-col">
@@ -311,11 +392,17 @@ export function AgentHistory({
                 <Button type="text" shape="circle" icon={<ArrowLeft className="size-4" />} onClick={onBack} aria-label="返回对话" />
                 <div className="min-w-0 flex-1">
                     <div className="text-sm font-semibold">历史对话</div>
-                    <div className="mt-0.5 text-[11px] opacity-40">保存在当前账号与画布下</div>
+                    <div className="mt-0.5 text-[11px] opacity-40">当前画布云端对话与本机历史</div>
                 </div>
+                {onRefresh ? <Button type="text" shape="circle" loading={loading} icon={<RotateCcw className="size-4" />} onClick={onRefresh} aria-label="刷新云端对话" /> : null}
                 <Button type="text" shape="circle" icon={<MessageSquarePlus className="size-4" />} onClick={onNew} aria-label="新建对话" title="新建对话" />
             </header>
             <div className="canvas-agent-history-scroll thin-scrollbar min-h-0 min-w-0 flex-1 overflow-y-auto px-3 py-3">
+                {error ? (
+                    <div role="status" className="px-3 py-2 text-xs opacity-60">
+                        云端对话暂时未同步，本机历史已保留；可点击刷新重试。
+                    </div>
+                ) : null}
                 {conversations.length ? (
                     <div className="space-y-1">
                         {conversations.map((conversation) => {
@@ -327,30 +414,33 @@ export function AgentHistory({
                                     className="canvas-agent-history-item group flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors"
                                     style={{ background: active ? theme.toolbar.itemHover : "transparent", color: theme.node.text }}
                                 >
-                                    <button type="button" className="canvas-agent-history-open flex min-w-0 flex-1 items-center gap-3 text-left" onClick={() => onOpen(conversation)} aria-current={active ? "page" : undefined}>
+                                    <button type="button" className="canvas-agent-history-open flex min-w-0 flex-1 items-center gap-3 text-left" disabled={Boolean(openingId)} onClick={() => onOpen(conversation)} aria-current={active ? "page" : undefined}>
                                         <span className="grid size-8 shrink-0 place-items-center rounded-full" style={{ background: theme.node.fill, color: theme.node.muted }}>
-                                            <Clock3 className="size-3.5" />
+                                            {openingId === conversation.id ? <LoaderCircle className="size-3.5 motion-safe:animate-spin" /> : <Clock3 className="size-3.5" />}
                                         </span>
                                         <span className="canvas-agent-history-text min-w-0 flex-1">
                                             <span className="canvas-agent-history-title block truncate text-[13px] font-medium">{conversation.title}</span>
                                             <span className="canvas-agent-history-preview mt-0.5 block text-[11px] opacity-40" title={preview}>
+                                                {cloudAgentConversationServerId(conversation) ? "云端 · " : "本机 · "}
                                                 {preview}
                                             </span>
                                         </span>
                                         <span className="canvas-agent-history-time shrink-0 text-[10px] opacity-35">{formatConversationTime(conversation.updatedAt)}</span>
                                     </button>
-                                    <Button
-                                        type="text"
-                                        size="small"
-                                        danger
-                                        className="canvas-agent-history-delete !h-7 !px-2 !text-xs !opacity-80"
-                                        icon={<Trash2 className="size-3.5" />}
-                                        onClick={() => onDelete(conversation.id)}
-                                        aria-label={`删除对话 ${conversation.title}`}
-                                        title="删除对话"
-                                    >
-                                        删除
-                                    </Button>
+                                    {!cloudAgentConversationServerId(conversation) ? (
+                                        <Button
+                                            type="text"
+                                            size="small"
+                                            danger
+                                            className="canvas-agent-history-delete !h-7 !px-2 !text-xs !opacity-80"
+                                            icon={<Trash2 className="size-3.5" />}
+                                            onClick={() => onDelete(conversation.id)}
+                                            aria-label={`删除对话 ${conversation.title}`}
+                                            title="删除对话"
+                                        >
+                                            删除
+                                        </Button>
+                                    ) : null}
                                 </div>
                             );
                         })}
@@ -379,6 +469,8 @@ export function AgentConversation({
     onChooseSkill,
     onDraftPrompt,
     onFocusNode,
+    onUndo,
+    undoStates,
     onApprovalReasonChange,
     onApprove,
     onReject,
@@ -390,10 +482,12 @@ export function AgentConversation({
     approval: ApprovalState | null;
     approvalTargetGenerating?: CanvasNodeData;
     approvalSubmitting: boolean;
-    nodeCount: number;
+    nodeCount: number | null;
     onChooseSkill: () => void;
     onDraftPrompt: (prompt: string) => void;
     onFocusNode?: (nodeId: string) => void;
+    onUndo?: (target: AgentCanvasUndoTarget) => void;
+    undoStates?: Record<string, AgentCanvasUndoState>;
     onApprovalReasonChange: (reason: string) => void;
     onApprove: (settings?: AgentMediaSettings) => void;
     onReject: () => void;
@@ -442,11 +536,20 @@ export function AgentConversation({
                 {segments.map((segment, index) =>
                     segment.kind === "operations" ? (
                         // 只有"对话末尾那一段 + 还在跑"才流光：历史段落留在静态态，任务完成即停。
-                        <AgentOperationFeed key={segment.key} items={segment.items} theme={theme} references={references} onFocusNode={onFocusNode} live={busy && index === segments.length - 1} />
+                        <AgentOperationFeed key={segment.key} items={segment.items} theme={theme} references={references} onFocusNode={onFocusNode} onUndo={onUndo} undoStates={undoStates} live={busy && index === segments.length - 1} />
                     ) : segment.kind === "reasoning" ? (
                         <AgentReasoningFeed key={segment.key} items={segment.items} theme={theme} />
                     ) : (
-                        <AgentChatMessage key={segment.key} item={segment.item} theme={theme} references={references} onFocusNode={onFocusNode} isStreaming={busy && !approval && segment.item.streaming === true && segment.item === lastMessage} />
+                        <AgentChatMessage
+                            key={segment.key}
+                            item={segment.item}
+                            theme={theme}
+                            references={references}
+                            onFocusNode={onFocusNode}
+                            onUndo={onUndo}
+                            undoStates={undoStates}
+                            isStreaming={busy && !approval && segment.item.streaming === true && segment.item === lastMessage}
+                        />
                     ),
                 )}
                 {approval ? (
@@ -462,7 +565,7 @@ export function AgentConversation({
                         onReject={onReject}
                     />
                 ) : null}
-                {busy && !approval ? <AgentWorkingMessage theme={theme} label="正在处理当前画布" /> : null}
+                {busy && !approval ? <AgentWorkingMessage theme={theme} label="正在思考" /> : null}
             </div>
         </div>
     );

@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { ImageIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { PsdDownloads } from "@/components/shared/psd-downloads";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ImageLightbox } from "@/components/shared/image-lightbox";
+import { ProjectExportButton } from "@/components/export/project-export-button";
 import { assetTypeLabels, sectionTypeLabels } from "@/types/domain";
 
 function getPreviewConfig(project: any) {
@@ -31,18 +33,13 @@ export function ExportPanel({ project }: { project: any }) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <a
-            href={`/api/projects/${project.id}/export/images`}
-            className="flex rounded-2xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
+          <ProjectExportButton projectId={project.id} className="w-full justify-start">
             一键导出详情页全部图像 ZIP
-          </a>
-          <a
-            href={`/api/projects/${project.id}/export/json`}
-            className="flex rounded-2xl bg-primary/10 px-4 py-3 text-sm font-medium text-primary transition-colors hover:bg-primary/20"
-          >
+          </ProjectExportButton>
+          <ProjectExportButton projectId={project.id} format="json" variant="outline" className="w-full justify-start">
             导出项目 JSON
-          </a>
+          </ProjectExportButton>
+          <PsdDownloads projectId={project.id} sections={project.sections} />
 
           <div className="rounded-3xl bg-muted/60 p-4 text-sm">
             <p className="font-medium">本次导出说明</p>

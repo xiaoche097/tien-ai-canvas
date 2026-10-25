@@ -1,0 +1,8 @@
+export function moduleContentRequirements(section: { copy: string; visualPrompt: string }, amazonMain: boolean) {
+  if (amazonMain) return "";
+  return `CURRENT MODULE COPY AND LAYOUT REQUIREMENTS (apply to generation, regeneration and edits):
+The saved module brief below is authoritative for requested marketing content and layout. Preserve its required headlines, selling points, text placement, hierarchy, panels and close-up insets. A generic HERO rule that says text is optional, or demands a sparse layout, must not remove text or layout explicitly requested in this brief. Generic style, regeneration or enhancement instructions must not replace these requirements with a text-free product photograph.
+Render the intended customer-facing copy inside the generated artwork; do not leave it for webpage DOM text. Distinguish actual marketing copy from photography, product-fact and layout instructions: do not typeset prompt labels, procedural descriptions or the whole brief. Preserve wording, numbers and claims; translate only as required by the selected output language, without adding unsupported content. If the current brief explicitly requests no added text, respect that request.
+Apply the requested layout within the configured canvas aspect ratio. Product identity, verified facts and platform restrictions remain mandatory. Reference images, including clean white-background angle studies, guide product appearance only; their lack of text or layout must not erase the module's requested artwork.
+Saved module brief: ${JSON.stringify({ copy: section.copy, visualPrompt: section.visualPrompt })}`;
+}

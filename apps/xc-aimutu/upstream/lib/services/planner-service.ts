@@ -2,18 +2,26 @@ import { Prisma } from "@prisma/client";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 
-import { buildSectionPlanningPrompt, buildClothingPlanningPrompt } from "@/lib/ai/prompts";
+import { buildSectionPlanningPrompt, buildClothingPlanningPrompt, buildPreviewDecisionPrompt } from "@/lib/ai/prompts";
 import { sectionPlanOutputSchema } from "@/lib/ai/schemas/section-plan";
 import { prisma } from "@/lib/db/prisma";
 import { getProviderAdapter } from "@/lib/services/provider-service";
 import { completeTask, createTask, failTask, findRecentRunningTask } from "@/lib/services/task-service";
-import { normalizeContentLanguage, type ContentLanguage } from "@/lib/utils/content-language";
+import { normalizeContentLanguage, projectContentLanguage, type ContentLanguage } from "@/lib/utils/content-language";
+import { normalizeHeroComposition } from "@/lib/utils/section-aspect-ratio";
+import { ecommerceStylePrompt } from "@/lib/canvas/style-prompt";
+import { loadEcommercePromptTemplates } from "@/lib/canvas/prompt-templates";
+import type { EcommercePromptTemplates } from "@/lib/ai/prompts/ecommerce-templates";
 import type { SectionTypeKey } from "@/types/domain";
+import { prepareAmazonPlan } from "@/lib/ai/prompts/amazon";
+import { templatePlanningContext } from "@/lib/ai/prompts/template-planning";
+import { detailAspectRatios, normalizeDetailAspectRatio, type DetailAspectRatio } from "@/lib/utils/section-aspect-ratio";
 
 type PreviewConfigInput = {
   heroImageCount: number;
+  heroAspectRatio: "1:1" | "3:4";
   detailSectionCount: number;
-  imageAspectRatio: "3:4" | "9:16";
+  imageAspectRatio: DetailAspectRatio;
   contentLanguage: ContentLanguage;
 };
 
@@ -40,8 +48,9 @@ type NormalizedSection = {
 
 const previewConfigSchema = z.object({
   heroImageCount: z.number().int().min(3).max(5),
+  heroAspectRatio: z.enum(["1:1", "3:4"]).default("1:1"),
   detailSectionCount: z.number().int().min(4).max(15),
-  imageAspectRatio: z.enum(["3:4", "9:16"]).default("9:16"),
+  imageAspectRatio: z.enum(detailAspectRatios).default("9:16"),
   contentLanguage: z.enum(["zh-CN", "en-US", "ja-JP", "ko-KR"]).default("zh-CN"),
 });
 
@@ -607,18 +616,8 @@ function buildClothingSections(
   for (let i = 0; i < heroImageCount; i++) {
     const aiHero = heroPool[i];
     if (aiHero) {
-      // Force hero visualPrompt to 1:1 (AI may incorrectly put 3:4)
-      let heroPrompt = aiHero.visualPrompt;
-      if (heroPrompt) {
-        heroPrompt = heroPrompt
-          .replace(/竖版\s*3:4\s*构图/g, "正方形 1:1 构图")
-          .replace(/vertical\s*3:4\s*mobile\s*composition/gi, "square 1:1 composition")
-          .replace(/3:4/g, "1:1")
-          .replace(/3：4/g, "1：1");
-      }
       finalHeroes.push({
         ...aiHero,
-        visualPrompt: heroPrompt,
         sectionKey: `hero_${String(i + 1).padStart(2, "0")}`,
         order: i,
       });
@@ -740,20 +739,21 @@ function normalizeEditableFields(value: unknown) {
   return value as Record<string, unknown>;
 }
 
-function readPreviewConfig(snapshot: unknown): PreviewConfigInput {
+function readPreviewConfig(snapshot: unknown, platform?: string): PreviewConfigInput {
   const raw = ((snapshot as Record<string, unknown> | null) ?? {}).previewConfig;
   return previewConfigSchema.parse({
     heroImageCount: Number((raw as Record<string, unknown> | null)?.heroImageCount ?? 4),
+    heroAspectRatio: (raw as Record<string, unknown> | null)?.heroAspectRatio ?? "1:1",
     detailSectionCount: Number((raw as Record<string, unknown> | null)?.detailSectionCount ?? 6),
-    imageAspectRatio: ((raw as Record<string, unknown> | null)?.imageAspectRatio ?? "9:16") as "3:4" | "9:16",
-    contentLanguage: normalizeContentLanguage((raw as Record<string, unknown> | null)?.contentLanguage),
+    imageAspectRatio: normalizeDetailAspectRatio((raw as Record<string, unknown> | null)?.imageAspectRatio, platform),
+    contentLanguage: projectContentLanguage(platform, (raw as Record<string, unknown> | null)?.contentLanguage),
   });
 }
 
 function readPreviewMeta(snapshot: unknown) {
   const raw = ((snapshot as Record<string, unknown> | null) ?? {}).previewConfig as Record<string, unknown> | null;
   return {
-    imageAspectRatio: raw?.imageAspectRatio === "3:4" ? "3:4" : "9:16",
+    imageAspectRatio: normalizeDetailAspectRatio(raw?.imageAspectRatio),
     contentLanguage: normalizeContentLanguage(raw?.contentLanguage),
   } as const;
 }
@@ -904,34 +904,7 @@ async function assertSectionMutationAllowed(projectId: string, options: { adding
   }
 }
 
-function buildPreviewDecisionPrompt(analysis: Record<string, unknown>, contentLanguage: ContentLanguage) {
-  const context = {
-    productName: analysis.productName,
-    category: analysis.category,
-    subcategory: analysis.subcategory,
-    styleTags: Array.isArray(analysis.styleTags) ? analysis.styleTags.slice(0, 6) : [],
-    usageScenarios: Array.isArray(analysis.usageScenarios) ? analysis.usageScenarios.slice(0, 6) : [],
-    coreSellingPoints: Array.isArray(analysis.coreSellingPoints) ? analysis.coreSellingPoints.slice(0, 8) : [],
-    differentiationPoints: Array.isArray(analysis.differentiationPoints)
-      ? analysis.differentiationPoints.slice(0, 6)
-      : [],
-    suggestedSectionPlan: Array.isArray(analysis.suggestedSectionPlan) ? analysis.suggestedSectionPlan.slice(0, 8) : [],
-  };
 
-  return [
-    "You are a senior e-commerce creative strategist deciding the right image count plan for a product detail page.",
-    "Return strict JSON only.",
-    "heroImageCount must be an integer between 3 and 5.",
-    "detailSectionCount must be an integer between 4 and 10.",
-    `The target content language for the final page is ${contentLanguage}.`,
-    "Hero images should be enough to cover distinct first-screen communication angles such as hero visual, selling point emphasis, scenario mood, trust, or differentiation.",
-    "Detail sections should be enough to fully explain selling points, craftsmanship, specs, trust, and use cases without becoming repetitive.",
-    "If the product is simple, reduce quantity. If the product needs richer explanation, increase quantity.",
-    "",
-    "Product context:",
-    JSON.stringify(context, null, 2),
-  ].join("\n");
-}
 
 function buildFallbackDetail(index: number) {
   const template = detailFallbackSections[index % detailFallbackSections.length];
@@ -1048,7 +1021,7 @@ function shouldFallbackToTemplatePlan(error: unknown) {
   return /"sections"|expected array|invalid input: expected array|received undefined|section/i.test(error.message);
 }
 
-async function decidePreviewConfigWithAi(projectId: string, preferredModelId?: string | null) {
+async function decidePreviewConfigWithAi(projectId: string, preferredModelId?: string | null, templates?: EcommercePromptTemplates) {
   const project = await prisma.project.findUnique({
     where: { id: projectId },
     include: { analysis: true },
@@ -1070,10 +1043,11 @@ async function decidePreviewConfigWithAi(projectId: string, preferredModelId?: s
     throw new Error("当前没有可用的文案规划模型。");
   }
 
-  const currentPreviewConfig = readPreviewConfig(project.modelSnapshot);
+  const currentPreviewConfig = readPreviewConfig(project.modelSnapshot, project.platform);
   const prompt = buildPreviewDecisionPrompt(
     project.analysis.normalizedResult as Record<string, unknown>,
     currentPreviewConfig.contentLanguage,
+    templates,
   );
   const result = await adapter.generateStructured({
     model,
@@ -1087,9 +1061,10 @@ async function decidePreviewConfigWithAi(projectId: string, preferredModelId?: s
     },
   });
 
-  const current = readPreviewConfig(project.modelSnapshot);
+  const current = readPreviewConfig(project.modelSnapshot, project.platform);
   const decided = previewConfigSchema.parse({
     heroImageCount: result.parsed.heroImageCount,
+    heroAspectRatio: current.heroAspectRatio,
     detailSectionCount: result.parsed.detailSectionCount,
     imageAspectRatio: current.imageAspectRatio,
     contentLanguage: current.contentLanguage,
@@ -1152,14 +1127,19 @@ export async function planSections(
   }
 
   let previewConfig =
-    options?.previewConfig != null ? previewConfigSchema.parse(options.previewConfig) : readPreviewConfig(project.modelSnapshot);
+    options?.previewConfig != null ? previewConfigSchema.parse(options.previewConfig) : readPreviewConfig(project.modelSnapshot, project.platform);
   let previewDecisionReason = "";
+  const stylePrompt = await ecommerceStylePrompt(project.style);
+  const templateContext = templatePlanningContext(project.modelSnapshot);
+  const templates = await loadEcommercePromptTemplates();
 
   if (options?.autoDecideCounts) {
-    const decision = await decidePreviewConfigWithAi(projectId, model);
+    const decision = await decidePreviewConfigWithAi(projectId, model, templates);
     previewConfig = decision.previewConfig;
     previewDecisionReason = decision.reason;
   }
+  const detailFrameInstruction = ["16:9", "21:9"].includes(previewConfig.imageAspectRatio)
+    ? `\n\nEvery non-HERO detail section must use a horizontal landscape ${previewConfig.imageAspectRatio} canvas. Lay out the product and text across its width; do not use portrait poster composition. Keep HERO gallery roles separate. This canvas requirement overrides portrait layout conventions in category templates.` : "";
 
   const task = await createTask({
     projectId,
@@ -1168,7 +1148,7 @@ export async function planSections(
   });
 
   try {
-    await prisma.pageSection.deleteMany({ where: { projectId } });
+    if (!templateContext) await prisma.pageSection.deleteMany({ where: { projectId } });
 
     const analysisResult = project.analysis.normalizedResult as Record<string, unknown>;
     const isClothing = isClothingCategory(
@@ -1178,14 +1158,16 @@ export async function planSections(
 
     let sections: NormalizedSection[];
 
-    if (isClothing) {
+    if (isClothing && !templateContext) {
       const clothingPrompt = buildClothingPlanningPrompt(
         project.analysis.normalizedResult as never,
         project.style,
         project.platform,
         previewConfig.heroImageCount,
         previewConfig.contentLanguage,
-      );
+        previewConfig.heroAspectRatio,
+        templates,
+      ) + "\n\n" + stylePrompt + detailFrameInstruction + templateContext;
 
       const clothingResult = await adapter.generateStructured({
         model,
@@ -1208,8 +1190,9 @@ export async function planSections(
           ? buildClothingSections(rawClothingSections, previewConfig.heroImageCount)
           : buildClothingFixedPlan(previewConfig.heroImageCount);
 
-      previewConfig = { ...previewConfig, detailSectionCount: 11, imageAspectRatio: "3:4" as const };
-      previewDecisionReason = "服装类产品，AI 智能规划固定详情页模块模板（3:4 比例）。";
+      const keepRatio = project.platform === "amazon" || ["16:9", "21:9"].includes(previewConfig.imageAspectRatio);
+      previewConfig = { ...previewConfig, detailSectionCount: 11, imageAspectRatio: keepRatio ? previewConfig.imageAspectRatio : "3:4" };
+      previewDecisionReason = `服装类产品，AI 智能规划固定详情页模块模板（${previewConfig.imageAspectRatio} 比例）。`;
     } else {
       const prompt = buildSectionPlanningPrompt(
         project.analysis.normalizedResult as never,
@@ -1218,7 +1201,9 @@ export async function planSections(
         previewConfig.detailSectionCount,
         previewConfig.heroImageCount,
         previewConfig.contentLanguage,
-      );
+        previewConfig.heroAspectRatio,
+        templates,
+      ) + "\n\n" + stylePrompt + detailFrameInstruction + templateContext;
 
       const result = await adapter.generateStructured({
         model,
@@ -1233,6 +1218,9 @@ export async function planSections(
       });
 
       const rawSections = Array.isArray(result.parsed.sections) ? result.parsed.sections : [];
+      if (templateContext && (rawSections.filter((section) => section.type.toLowerCase() === "hero").length < previewConfig.heroImageCount || rawSections.filter((section) => section.type.toLowerCase() !== "hero").length < previewConfig.detailSectionCount)) {
+        throw new Error("套版规划返回的模块数量不完整，未采用通用模块补齐；请重新规划。");
+      }
       sections =
         rawSections.length > 0
           ? buildNormalizedSections(
@@ -1243,32 +1231,40 @@ export async function planSections(
           : buildFallbackPlanFromTemplates(previewConfig.heroImageCount, previewConfig.detailSectionCount);
     }
 
-    await prisma.pageSection.createMany({
-      data: sections.map((section) => ({
-        projectId,
-        sectionKey: section.sectionKey,
-        type: section.type as never,
-        title: section.title,
-        goal: section.goal,
-        copy: section.copy,
-        visualPrompt: section.visualPrompt,
-        order: section.order,
-        editableData: section.editableData as Prisma.InputJsonValue,
-      })),
-    });
+    if (templateContext) {
+      const styleContext = templatePlanningContext(project.modelSnapshot, false);
+      sections = sections.map((section) => ({ ...section, visualPrompt: section.visualPrompt + styleContext }));
+    }
+    sections = prepareAmazonPlan(project.platform, sections, previewConfig.contentLanguage);
+    await prisma.$transaction(async (tx) => {
+      if (templateContext) await tx.pageSection.deleteMany({ where: { projectId } });
+      await tx.pageSection.createMany({
+        data: sections.map((section) => ({
+          projectId,
+          sectionKey: section.sectionKey,
+          type: section.type as never,
+          title: section.title,
+          goal: section.goal,
+          copy: section.copy,
+          visualPrompt: section.type === "HERO" ? normalizeHeroComposition(section.visualPrompt, project.platform === "amazon" && section === sections.find((item) => item.type === "HERO") ? "1:1" : previewConfig.heroAspectRatio) : section.visualPrompt,
+          order: section.order,
+          editableData: section.editableData as Prisma.InputJsonValue,
+        })),
+      });
 
-    await prisma.project.update({
-      where: { id: projectId },
-      data: {
-        status: "PLANNED",
-        modelSnapshot: {
-          ...(project.modelSnapshot as Record<string, unknown> | null),
-          planningModelId: model,
-          previewConfig,
-          previewConfigSource: options?.autoDecideCounts ? "ai" : "manual",
-          previewConfigReason: previewDecisionReason,
-        } as Prisma.InputJsonValue,
-      },
+      await tx.project.update({
+        where: { id: projectId },
+        data: {
+          status: "PLANNED",
+          modelSnapshot: {
+            ...(project.modelSnapshot as Record<string, unknown> | null),
+            planningModelId: model,
+            previewConfig,
+            previewConfigSource: options?.autoDecideCounts ? "ai" : "manual",
+            previewConfigReason: previewDecisionReason,
+          } as Prisma.InputJsonValue,
+        },
+      });
     });
 
     const saved = await prisma.pageSection.findMany({
@@ -1282,13 +1278,13 @@ export async function planSections(
       previewDecisionReason,
     };
   } catch (error) {
-    if (shouldFallbackToTemplatePlan(error)) {
+    if (!templateContext && shouldFallbackToTemplatePlan(error)) {
       try {
         await prisma.pageSection.deleteMany({ where: { projectId } });
-        const fallbackSections = buildFallbackPlanFromTemplates(
+        const fallbackSections = prepareAmazonPlan(project.platform, buildFallbackPlanFromTemplates(
           previewConfig.heroImageCount,
           previewConfig.detailSectionCount,
-        );
+        ), previewConfig.contentLanguage);
         await prisma.pageSection.createMany({
           data: fallbackSections.map((section) => ({
             projectId,
@@ -1297,7 +1293,7 @@ export async function planSections(
             title: section.title,
             goal: section.goal,
             copy: section.copy,
-            visualPrompt: section.visualPrompt,
+            visualPrompt: section.type === "HERO" ? normalizeHeroComposition(section.visualPrompt, project.platform === "amazon" && section === fallbackSections.find((item) => item.type === "HERO") ? "1:1" : previewConfig.heroAspectRatio) : section.visualPrompt,
             order: section.order,
             editableData: section.editableData as Prisma.InputJsonValue,
           })),

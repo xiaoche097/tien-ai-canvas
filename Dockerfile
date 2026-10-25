@@ -11,6 +11,7 @@ COPY CHANGELOG.md /app/CHANGELOG.md
 COPY README.md /app/README.md
 COPY assets /app/assets
 COPY web ./
+COPY apps/xc-aimutu/upstream/lib/psd/layer-contract.ts /app/apps/xc-aimutu/upstream/lib/psd/layer-contract.ts
 ARG VITE_TLDRAW_LICENSE_KEY
 ARG BUILD_VERSION
 ARG BUILD_COMMIT=unknown

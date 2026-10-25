@@ -31,8 +31,9 @@ export const ModuleTreePanel = React.memo(function ModuleTreePanel({
             <button
               key={section.id}
               type="button"
+              aria-pressed={section.id === selectedSectionId}
               onClick={() => onSelectSection(section.id)}
-              className={`w-full rounded-2xl border p-4 text-left transition-colors duration-150 hover:bg-muted/40 active:scale-[0.99] ${
+              className={`w-full rounded-xl border p-3 text-left transition-colors duration-150 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                 section.id === selectedSectionId
                   ? "border-primary bg-primary/5 dark:border-white/20 dark:bg-white/10"
                   : "border-border bg-white dark:border-white/10 dark:bg-white/[0.04]"
@@ -40,13 +41,7 @@ export const ModuleTreePanel = React.memo(function ModuleTreePanel({
             >
               <div className="space-y-3">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 space-y-1">
-                    <p className="text-xs tracking-[0.18em] text-muted-foreground">#{index + 1}</p>
-                    <p className="truncate font-medium">{section.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {sectionTypeLabels[String(section.type).toLowerCase() as SectionKind] ?? section.type}
-                    </p>
-                  </div>
+                  <p className="text-xs tabular-nums text-muted-foreground">#{index + 1}</p>
                   <div className="shrink-0 space-y-1">
                     <StatusBadge value={section.status} />
                     {(section.editableData?.referenceAssetIds as string[] | undefined)?.length ? (
@@ -57,6 +52,7 @@ export const ModuleTreePanel = React.memo(function ModuleTreePanel({
                     ) : null}
                   </div>
                 </div>
+                <p className="line-clamp-2 text-sm font-medium leading-5" title={section.title}>{section.title}</p>
                 <div className="flex flex-wrap gap-2">
                   <Badge variant="outline" className="max-w-full">
                     <span className="truncate">

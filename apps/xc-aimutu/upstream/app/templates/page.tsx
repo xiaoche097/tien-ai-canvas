@@ -26,6 +26,12 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import type { TemplateRecord, TemplateModule } from "@/types/template";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { ImageUpload } from "@/components/shared/image-upload";
+import { PageHeader } from "@/components/shared/page-header";
+import { platformLabels, platformOptions, type PlatformOption } from "@/types/domain";
+import { detailAspectRatios, normalizeDetailAspectRatio, type DetailAspectRatio } from "@/lib/utils/section-aspect-ratio";
+import { contentLanguageOptions, contentLanguageLabels, projectContentLanguage, type ContentLanguage } from "@/lib/utils/content-language";
+import { fileToBase64Payload } from "@/lib/utils/base64-upload";
 
 export default function TemplatesPage() {
   const router = useRouter();
@@ -38,7 +44,6 @@ export default function TemplatesPage() {
   const [description, setDescription] = useState("");
   const [referenceImageUrl, setReferenceImageUrl] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
   const [structure, setStructure] = useState<{
     overallStyle: string;
@@ -51,7 +56,10 @@ export default function TemplatesPage() {
   const [deleting, setDeleting] = useState(false);
   const [applyTarget, setApplyTarget] = useState<TemplateRecord | null>(null);
   const [applyProductName, setApplyProductName] = useState("");
-  const [applyPlatform, setApplyPlatform] = useState("淘宝");
+  const [applyPlatform, setApplyPlatform] = useState<PlatformOption>("taobao_tmall");
+  const [applyDescription, setApplyDescription] = useState("");
+  const [applyFiles, setApplyFiles] = useState<File[]>([]);
+  const [applyConfig, setApplyConfig] = useState({ heroImageCount: 4, heroAspectRatio: "1:1", detailSectionCount: 6, imageAspectRatio: "9:16" as DetailAspectRatio, contentLanguage: "zh-CN" as ContentLanguage });
   const [applying, setApplying] = useState(false);
 
   const fetchTemplates = useCallback(async () => {
@@ -69,27 +77,6 @@ export default function TemplatesPage() {
   useEffect(() => {
     fetchTemplates();
   }, [fetchTemplates]);
-
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []);
-    if (files.length === 0) return;
-
-    const newFiles = [...uploadedFiles, ...files];
-    setUploadedFiles(newFiles);
-
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewUrls((prev) => [...prev, reader.result as string]);
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-
-  function removeFile(index: number) {
-    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
-    setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
-  }
 
   async function handleAnalyze() {
     if (!description.trim() && uploadedFiles.length === 0) {
@@ -132,8 +119,9 @@ export default function TemplatesPage() {
   }
 
   async function handleSave() {
-    if (!name.trim()) {
-      toast.error("请输入模板名称");
+    if (name.trim().length < 2) {
+      toast.error("请输入至少 2 个字的模板名称");
+      document.getElementById("template-save-name")?.focus();
       return;
     }
     if (!structure) {
@@ -146,7 +134,7 @@ export default function TemplatesPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name,
+          name: name.trim(),
           referenceImageUrl: referenceImageUrl || "/window.svg",
           structureJson: structure,
           styleProfile: {
@@ -200,12 +188,16 @@ export default function TemplatesPage() {
   async function handleApply(template: TemplateRecord) {
     setApplyTarget(template);
     setApplyProductName("");
-    setApplyPlatform("淘宝");
+    setApplyPlatform("taobao_tmall");
+    setApplyDescription("");
+    setApplyFiles([]);
+    setApplyConfig({ heroImageCount: 4, heroAspectRatio: "1:1", detailSectionCount: 6, imageAspectRatio: "9:16", contentLanguage: "zh-CN" });
   }
 
   async function confirmApply() {
-    if (!applyTarget || !applyProductName.trim()) return;
+    if (!applyTarget || !applyProductName.trim() || !applyDescription.trim()) return;
     setApplying(true);
+    let projectId: string | null = null;
     try {
       const res = await fetch(`/api/templates/${applyTarget.id}/apply`, {
         method: "POST",
@@ -213,23 +205,36 @@ export default function TemplatesPage() {
         body: JSON.stringify({
           name: `${applyProductName.trim()} 详情页`,
           platform: applyPlatform,
-          style: "套版生成",
           productName: applyProductName.trim(),
-          productCategory: "通用",
+          description: applyDescription.trim(),
+          previewConfig: applyConfig,
         }),
       });
       const data = await res.json();
-      if (data.success) {
-        toast.success("模板应用成功，正在跳转编辑器...");
-        router.push(`/projects/${data.data.projectId}/editor`);
+      if (res.ok && data.success) {
+        projectId = data.data.projectId;
+        for (const file of applyFiles) {
+          const upload = await fetch(`/api/projects/${projectId}/assets/upload`, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ type: "MAIN", ...await fileToBase64Payload(file) }),
+          });
+          const uploaded = await upload.json();
+          if (!upload.ok || !uploaded.success) throw new Error(uploaded.error?.message ?? "商品图片上传失败，请在分析页补充上传后再分析");
+        }
+        toast.success("商品与输出配置已保存，正在进入分析；确认分析结果后进行模板风格规划。");
+        setApplyTarget(null);
+        router.push(`/projects/${projectId}/analysis?source=template&autoRun=1`);
       } else {
         throw new Error(data.error?.message ?? "应用失败");
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "应用失败");
+      if (projectId) {
+        setApplyTarget(null);
+        router.push(`/projects/${projectId}/analysis`);
+      }
     } finally {
       setApplying(false);
-      setApplyTarget(null);
     }
   }
 
@@ -239,7 +244,6 @@ export default function TemplatesPage() {
     setDescription("");
     setReferenceImageUrl("");
     setUploadedFiles([]);
-    setPreviewUrls([]);
     setStructure(null);
     setExpandedModules(new Set());
   }
@@ -266,22 +270,13 @@ export default function TemplatesPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-6xl py-8 px-4">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <LayoutTemplate className="h-6 w-6" />
-            套版中心
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            分析参考详情页结构，保存为模板，套用在自己的商品上
-          </p>
-        </div>
+    <div className="w-full min-w-0 space-y-6">
+      <PageHeader title="套版中心" description="拆解参考页的版式与风格，保存为可复用的商品模板。" actions={
         <Button onClick={() => { resetForm(); setShowCreate(true); }}>
           <Plus className="mr-2 h-4 w-4" />
           新建模板
         </Button>
-      </div>
+      } />
 
       {showCreate && (
         <Card className="mb-8 overflow-hidden">
@@ -305,43 +300,15 @@ export default function TemplatesPage() {
 
                 {/* Image Upload */}
                 <div className="space-y-2">
-                  <Label>上传参考页长图（支持 vision 模型直接看图分析）</Label>
-                  <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:bg-muted/50 transition-colors">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handleFileChange}
-                      className="hidden"
-                      id="template-image-upload"
-                    />
-                    <label htmlFor="template-image-upload" className="cursor-pointer">
-                      <ImageIcon className="mx-auto h-8 w-8 text-muted-foreground" />
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        点击上传或拖拽图片到此处
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        支持 JPG、PNG，建议上传完整详情页长图
-                      </p>
-                    </label>
-                  </div>
-
-                  {/* Preview */}
-                  {previewUrls.length > 0 && (
-                    <div className="grid grid-cols-3 gap-2 mt-2">
-                      {previewUrls.map((url, i) => (
-                        <div key={i} className="relative aspect-square rounded-lg overflow-hidden border">
-                          <img src={url} alt="预览" className="h-full w-full object-cover" />
-                          <button
-                            onClick={() => removeFile(i)}
-                            className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-0.5"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <ImageUpload
+                    id="template-image-upload"
+                    label="上传参考页长图"
+                    description="支持图片上传，建议使用 JPG、PNG 完整详情页长图；支持 vision 模型直接看图分析。"
+                    files={uploadedFiles}
+                    onChange={setUploadedFiles}
+                    multiple
+                    disabled={analyzing}
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -378,6 +345,12 @@ export default function TemplatesPage() {
                     </>
                   )}
                 </Button>
+                {structure && (
+                  <Button variant="outline" onClick={() => setStep(2)} className="w-full">
+                    继续编辑已有分析（不重新调用 AI）
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                )}
               </div>
             )}
 
@@ -497,6 +470,18 @@ export default function TemplatesPage() {
                     包含 {structure?.modules.length ?? 0} 个模块
                   </p>
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="template-save-name">模板名称（必填，至少 2 个字）</Label>
+                  <Input
+                    id="template-save-name"
+                    placeholder="请输入模板名称"
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    required
+                    minLength={2}
+                    disabled={loading}
+                  />
+                </div>
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={() => setStep(2)} className="flex-1">
                     返回编辑
@@ -517,7 +502,7 @@ export default function TemplatesPage() {
       )}
 
       {templates.length === 0 ? (
-        <Card className="p-12 text-center">
+        <Card className="motu-empty-state">
           <LayoutTemplate className="mx-auto h-12 w-12 text-muted-foreground" />
           <h3 className="mt-4 text-lg font-medium">暂无模板</h3>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -601,17 +586,18 @@ export default function TemplatesPage() {
             type="button"
             aria-label="关闭"
             className="absolute inset-0 bg-black/45 backdrop-blur-[2px]"
-            onClick={() => setApplyTarget(null)}
+            onClick={() => !applying && setApplyTarget(null)}
           />
-          <div className="relative z-[121] w-full max-w-md rounded-[28px] border border-border bg-white p-6 shadow-[0_24px_80px_rgba(0,0,0,0.18)] dark:border-white/10 dark:bg-[#111214]">
+          <div role="dialog" aria-modal="true" aria-label="套用模板" className="relative z-[121] max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-border bg-card p-6 shadow-xl">
             <h3 className="text-lg font-semibold text-slate-950 dark:text-white">套用模板</h3>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               将「{applyTarget.name}」应用到新商品
             </p>
             <div className="mt-4 space-y-3">
               <div className="space-y-1">
-                <Label className="text-xs">商品名称</Label>
+                <Label htmlFor="apply-product-name" className="text-xs">商品名称</Label>
                 <Input
+                  id="apply-product-name"
                   value={applyProductName}
                   onChange={(e) => setApplyProductName(e.target.value)}
                   placeholder="例如：全麦山药茯苓馒头"
@@ -619,25 +605,44 @@ export default function TemplatesPage() {
                 />
               </div>
               <div className="space-y-1">
+                <Label htmlFor="apply-product-info">新商品信息（必填）</Label>
+                <Textarea id="apply-product-info" value={applyDescription} onChange={event => setApplyDescription(event.target.value)} placeholder="填写实际产品、材质、结构、卖点和目标人群；模板仅用于视觉风格，不沿用原商品内容。" />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="apply-product-images">新商品图片（可多选）</Label>
+                <ImageUpload id="apply-product-images" label="上传新商品图片" files={applyFiles} onChange={setApplyFiles} multiple disabled={applying} />
+                <p className="text-xs text-muted-foreground">请上传新商品原图，建议包含正面、侧面与关键细节。未上传时根据产品文字分析。</p>
+              </div>
+              <div className="space-y-1">
                 <Label className="text-xs">电商平台</Label>
                 <select
                   value={applyPlatform}
-                  onChange={(e) => setApplyPlatform(e.target.value)}
+                  onChange={(e) => {
+                    const platform = e.target.value as PlatformOption;
+                    setApplyPlatform(platform);
+                    setApplyConfig(current => ({ ...current, contentLanguage: projectContentLanguage(platform), imageAspectRatio: normalizeDetailAspectRatio(undefined, platform) }));
+                  }}
                   className="h-10 w-full rounded-xl border border-input bg-white px-3 text-sm dark:bg-black/30 dark:text-slate-100"
                 >
-                  <option>淘宝</option>
-                  <option>京东</option>
-                  <option>拼多多</option>
-                  <option>抖音</option>
+                  {platformOptions.map((platform) => <option key={platform} value={platform}>{platformLabels[platform]}</option>)}
                 </select>
+                {applyPlatform === "amazon" && <p className="text-xs text-muted-foreground">Amazon 默认英语、桌面预览和 16:9 横版详情图；可在输出配置调整为 21:9。</p>}
               </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1"><Label htmlFor="apply-hero-count">头图数量</Label><select id="apply-hero-count" className="h-10 w-full rounded-xl border border-input bg-card px-3" value={applyConfig.heroImageCount} onChange={event => setApplyConfig(current => ({ ...current, heroImageCount: Number(event.target.value) }))}>{[3,4,5].map(value => <option key={value} value={value}>{value} 张</option>)}</select></div>
+                <div className="space-y-1"><Label htmlFor="apply-hero-ratio">头图比例</Label><select id="apply-hero-ratio" className="h-10 w-full rounded-xl border border-input bg-card px-3" value={applyConfig.heroAspectRatio} onChange={event => setApplyConfig(current => ({ ...current, heroAspectRatio: event.target.value }))}>{["1:1","3:4"].map(value => <option key={value} value={value}>{value}</option>)}</select></div>
+                <div className="space-y-1"><Label htmlFor="apply-detail-count">详情数量</Label><select id="apply-detail-count" className="h-10 w-full rounded-xl border border-input bg-card px-3" value={applyConfig.detailSectionCount} onChange={event => setApplyConfig(current => ({ ...current, detailSectionCount: Number(event.target.value) }))}>{[4,5,6,7,8,9,10].map(value => <option key={value} value={value}>{value} 张</option>)}</select></div>
+                <div className="space-y-1"><Label htmlFor="apply-detail-ratio">详情图比例</Label><select id="apply-detail-ratio" className="h-10 w-full rounded-xl border border-input bg-card px-3" value={applyConfig.imageAspectRatio} onChange={event => setApplyConfig(current => ({ ...current, imageAspectRatio: event.target.value as DetailAspectRatio }))}>{detailAspectRatios.map(value => <option key={value} value={value}>{value}</option>)}</select></div>
+                <div className="space-y-1"><Label htmlFor="apply-language">文案语言</Label><select id="apply-language" className="h-10 w-full rounded-xl border border-input bg-card px-3" value={applyConfig.contentLanguage} onChange={event => setApplyConfig(current => ({ ...current, contentLanguage: event.target.value as ContentLanguage }))}>{contentLanguageOptions.map(value => <option key={value} value={value}>{contentLanguageLabels[value]}</option>)}</select></div>
+              </div>
+              <p className="text-xs text-muted-foreground">先分析新商品，确认结果后按所选模板风格重新规划。分析与规划使用已配置模型，按调用规则计费；不会直接生成图片。Amazon 第一张头图固定 1:1 白底，其余头图使用所选比例。</p>
             </div>
             <div className="mt-6 flex justify-end gap-3">
               <Button variant="outline" onClick={() => setApplyTarget(null)} disabled={applying} className="rounded-xl">
                 取消
               </Button>
-              <Button onClick={confirmApply} disabled={applying || !applyProductName.trim()} className="rounded-xl">
-                {applying ? "应用中..." : "确认套用"}
+              <Button onClick={confirmApply} disabled={applying || !applyProductName.trim() || !applyDescription.trim()} className="rounded-xl">
+                {applying ? "正在创建并上传..." : "创建并分析商品"}
               </Button>
             </div>
           </div>

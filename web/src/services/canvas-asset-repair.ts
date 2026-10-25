@@ -1,5 +1,5 @@
 import { canvasNodeToAsset } from "@/lib/canvas/canvas-node-asset";
-import { refreshResource, resourceIdFromStorageKey } from "@/services/api/resources";
+import { refreshResource, resourceIdFromStorageKey, type RemoteResource } from "@/services/api/resources";
 import { ApiError } from "@/services/api/request";
 import { useAssetStore, type Asset, type NewAsset } from "@/stores/use-asset-store";
 import { useCanvasStore, type CanvasProject } from "@/stores/canvas/use-canvas-store";
@@ -12,7 +12,47 @@ export type CanvasAssetRepairResult = {
     updatedProjects: number;
 };
 
-export function repairMissingCanvasAssets(projectIds?: Set<string>, partialAssets = false): CanvasAssetRepairResult {
+export async function resolveCanvasAssetRepairResources(projectIds?: Set<string>, lookup = refreshResource): Promise<Map<string, RemoteResource>> {
+    const scope = getActiveUserScope();
+    const resources = new Map<string, RemoteResource>();
+    const ids = new Set<string>();
+    const registeredAssets = useAssetStore.getState().assets;
+    for (const project of useCanvasStore.getState().projects) {
+        if (projectIds && !projectIds.has(project.id)) continue;
+        const nodes = [...project.nodes, ...(project.timeline?.clips ?? []).flatMap((clip) => clip.directMedia && clip.directMedia.kind !== "text" ? [timelineMediaNode(clip.directMedia)] : [])];
+        for (const node of nodes) {
+            if (!isDurableMediaNode(node)) continue;
+            const mime = node.metadata?.mimeType?.trim().toLowerCase();
+            if (!mime || mime === "application/octet-stream" || mime.startsWith(`${node.type}/`)) continue;
+            if (node.metadata?.assetId && registeredAssets.some((asset) => asset.id === node.metadata?.assetId && assetStorageKey(asset) === node.metadata?.storageKey)) continue;
+            const id = resourceIdFromStorageKey(node.metadata?.storageKey) || node.metadata?.content?.match(/\/resources\/([A-Za-z0-9_-]{1,80})\/file/)?.[1];
+            if (!id) throw new Error(`画布${node.type === "audio" ? "音频" : "媒体"}的文件类型与节点不一致，且缺少可核对的云端资源；请重新导入该文件。`);
+            ids.add(id);
+        }
+    }
+    for (const id of ids) {
+        const resource = await lookup(id);
+        if (getActiveUserScope() !== scope) throw new Error("账号已切换，已停止核对画布素材");
+        if (resource.id !== id || resource.status !== "ready" || !/^(image|video|audio)\//.test(resource.mimeType)) throw new Error("画布素材的实际文件类型尚未确认，未更改节点或文件。");
+        resources.set(id, resource);
+    }
+    return resources;
+}
+
+function resourceBackedAssetNode(node: CanvasNodeData, resources?: Map<string, RemoteResource>): CanvasNodeData {
+    const id = resourceIdFromStorageKey(node.metadata?.storageKey) || node.metadata?.content?.match(/\/resources\/([A-Za-z0-9_-]{1,80})\/file/)?.[1];
+    const resource = id ? resources?.get(id) : undefined;
+    if (!resource) return node;
+    // 素材库描述实际文件；画布/音轨的展示用途不等于文件类型。
+    // 只投影入库数据，不转换文件、不改写或删除用户正在编辑的节点。
+    return { ...node, type: resource.mimeType.startsWith("audio/") ? CanvasNodeType.Audio : resource.mimeType.startsWith("video/") ? CanvasNodeType.Video : CanvasNodeType.Image, metadata: {
+        ...node.metadata, storageKey: `resource:${resource.id}`, mimeType: resource.mimeType, bytes: resource.size,
+        naturalWidth: resource.width ?? node.metadata?.naturalWidth, naturalHeight: resource.height ?? node.metadata?.naturalHeight,
+        durationMs: resource.durationMs ?? node.metadata?.durationMs,
+    } };
+}
+
+export function repairMissingCanvasAssets(projectIds?: Set<string>, partialAssets = false, resources?: Map<string, RemoteResource>): CanvasAssetRepairResult {
     const assetStore = useAssetStore.getState();
     const canvasStore = useCanvasStore.getState();
     const assetIdByStorageKey = new Map<string, string>();
@@ -21,6 +61,15 @@ export function repairMissingCanvasAssets(projectIds?: Set<string>, partialAsset
     for (const asset of assetStore.assets) {
         knownAssetIds.add(asset.id);
         const storageKey = assetStorageKey(asset);
+        // 场景、道具图片保留版本化引用；服务器仍以版本表校验历史资源归属。
+        if (asset.category === "environment" || asset.category === "prop") {
+            const history = asset.metadata?.projectAssetImageHistory;
+            if (Array.isArray(history)) {
+                for (const key of history) {
+                    if (typeof key === "string" && key.startsWith("resource:") && !assetIdByStorageKey.has(key)) assetIdByStorageKey.set(key, asset.id);
+                }
+            }
+        }
         if (storageKey) {
             storageKeyByAssetId.set(asset.id, storageKey);
             if (!assetIdByStorageKey.has(storageKey)) assetIdByStorageKey.set(storageKey, asset.id);
@@ -50,7 +99,7 @@ export function repairMissingCanvasAssets(projectIds?: Set<string>, partialAsset
         const repaired = repairProject(project, knownAssetIds, assetIdByStorageKey, storageKeyByAssetId, (node) => {
             // 受管生成结果由完成流程绑定身份，后台修复不能另建随机素材。
             if (node.metadata?.taskId && node.metadata.storageKey?.startsWith("resource:")) return undefined;
-            const input = canvasNodeToAsset(node, { canvasId: project.id, source: "canvas-upload" });
+            const input = canvasNodeToAsset(resourceBackedAssetNode(node, resources), { canvasId: project.id, source: "canvas-upload" });
             if (!input) return undefined;
             const assetId = useAssetStore.getState().addAsset(input);
             knownAssetIds.add(assetId);
@@ -119,6 +168,7 @@ function timelineMediaNode(media: TimelineDirectMedia): CanvasNodeData {
         width: media.width || 320,
         height: media.height || (type === CanvasNodeType.Audio ? 120 : 240),
         metadata: {
+            assetId: media.assetId,
             content: mediaContent(media),
             storageKey: media.storageKey,
             naturalWidth: media.width,
@@ -215,7 +265,7 @@ const RESOURCE_ID_PATTERN = /^[A-Za-z0-9_-]{1,80}$/;
  * 服务端画布不变式只认「资源被 assetId 对应素材引用」，重绑后按素材先于画布
  * 推送即可在不破坏该不变式的前提下用本地画布覆盖云端。
  */
-export function rebindInconsistentCanvasAssets(records: Asset[], projectIds?: Set<string>): CanvasAssetRebindResult {
+export function rebindInconsistentCanvasAssets(records: Asset[], projectIds?: Set<string>, resources?: Map<string, RemoteResource>): CanvasAssetRebindResult {
     const identitiesByAssetId = new Map<string, Set<string>>();
     const assetIdByIdentity = new Map<string, string>();
     const registerAsset = (asset: Asset) => {
@@ -251,7 +301,7 @@ export function rebindInconsistentCanvasAssets(records: Asset[], projectIds?: Se
             if (!isCanvasMediaNodeType(node)) return node;
             const identity = mediaNodeIdentity(node.metadata?.storageKey, node.metadata?.content);
             if (!identity) return node;
-            const assetId = resolveAssetId(node.metadata?.assetId, identity, () => canvasNodeToAsset(node, { canvasId: project.id, source: "canvas-manual" }));
+            const assetId = resolveAssetId(node.metadata?.assetId, identity, () => canvasNodeToAsset(resourceBackedAssetNode(node, resources), { canvasId: project.id, source: "canvas-manual" }));
             if (!assetId || node.metadata?.assetId === assetId) return node;
             reboundNodes += 1;
             projectChanged = true;
@@ -264,7 +314,7 @@ export function rebindInconsistentCanvasAssets(records: Asset[], projectIds?: Se
                       const media = clip.directMedia;
                       const identity = media && media.kind !== "text" ? mediaNodeIdentity(media.storageKey, mediaContent(media)) : undefined;
                       if (!media || !identity) return clip;
-                      const assetId = resolveAssetId(media.assetId, identity, () => canvasNodeToAsset(timelineMediaNode(media), { canvasId: project.id, source: "canvas-manual" }));
+                      const assetId = resolveAssetId(media.assetId, identity, () => canvasNodeToAsset(resourceBackedAssetNode(timelineMediaNode(media), resources), { canvasId: project.id, source: "canvas-manual" }));
                       if (!assetId || media.assetId === assetId) return clip;
                       reboundNodes += 1;
                       projectChanged = true;
@@ -328,6 +378,7 @@ function assetIdentities(asset: Asset) {
     const identities = new Set<string>();
     const data = asset.kind === "text" || asset.kind === "entity" ? undefined : asset.data;
     const values = [
+        ...((asset.category === "environment" || asset.category === "prop") && Array.isArray(asset.metadata?.projectAssetImageHistory) ? asset.metadata.projectAssetImageHistory.filter((value): value is string => typeof value === "string") : []),
         typeof asset.metadata?.resourceKey === "string" ? asset.metadata.resourceKey : "",
         assetStorageKey(asset) || "",
         ...(data && "url" in data && typeof data.url === "string" ? [data.url] : []),

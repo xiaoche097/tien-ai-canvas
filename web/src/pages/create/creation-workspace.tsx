@@ -1,5 +1,7 @@
 import { ImageSizePicker } from "@/components/image-size-picker";
+import { ImageParameterFields } from "@/components/image-parameter-fields";
 import { imageResolutionUsesQuality } from "@/lib/image-size-presets";
+import { createPortal } from "react-dom";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode, type RefObject } from "react";
 import { Button, Popover } from "antd";
 import { Tooltip } from "@/components/ui/base/tooltip";
@@ -167,6 +169,11 @@ type ComposerProps = {
     setSeconds: (value: string) => void;
     quality: string;
     setQuality: (value: string) => void;
+    imageResolution: string;
+    setImageResolution: (value: string) => void;
+    imageParameters?: string;
+    setImageParameters: (value: string) => void;
+    setTransparentBackground: (value: string) => void;
     videoQuality: string;
     setVideoQuality: (value: string) => void;
     count: string;
@@ -669,110 +676,21 @@ function GenerationSettingsMenu(props: ComposerProps) {
     ].join(" · ");
     const videoRatioSupported = props.mode === "video" && ratios.length > 0;
     const summary = props.mode === "video" ? [...(videoRatioSupported ? [props.ratio] : []), ...(videoResolutionSupported ? [videoResolutionLabel(props.videoQuality)] : [])].join(" · ") : imageSummary;
-    const panel = (
-        <div className="creation-parameter-menu">
-            {props.mode === "image" ? (
-                <ImageSizePicker
-                    profile={mergedProfile}
-                    size={props.ratio}
-                    quality={props.quality}
-                    onChange={(size, quality) => {
-                        props.setRatio(size);
-                        if (quality) props.setQuality(quality);
-                    }}
-                />
-            ) : videoRatioSupported ? (
-                <SettingSection title="画幅" value={props.ratio}>
-                    <div className="creation-choice-grid is-ratio">
-                        {ratios.map((value) => (
-                            <button key={value} type="button" aria-pressed={value === props.ratio} className={value === props.ratio ? "is-selected" : ""} onClick={() => props.setRatio(value)}>
-                                <span className="creation-ratio-preview">
-                                    <span style={ratioPreviewStyle(value)} />
-                                </span>
-                                <span>{value}</span>
-                            </button>
-                        ))}
-                    </div>
-                </SettingSection>
-            ) : null}
-            {props.mode === "image" && referenceImageSizeValue ? (
-                <button type="button" className="creation-custom-trigger" onClick={selectReferenceImageSize}>
-                    使用参考图尺寸 · {referenceImageSizeLabel}
-                </button>
-            ) : null}
-            {props.mode === "video" ? (
-                videoResolutionSupported ? (
-                    <SettingSection title="清晰度" value={videoResolutionLabel(props.videoQuality)}>
-                        <div className="creation-choice-grid is-resolution">
-                            {resolutions.map((option) => (
-                                <button key={option.value} type="button" aria-pressed={option.value === props.videoQuality} className={option.value === props.videoQuality ? "is-selected" : ""} onClick={() => props.setVideoQuality(option.value)}>
-                                    {option.label}
-                                </button>
-                            ))}
-                        </div>
-                    </SettingSection>
-                ) : null
-            ) : (
-                <>
-                    {props.imageProfile.quality.supported && !imageResolutionUsesQuality(mergedProfile) ? (
-                        <SettingSection title={activeQualityOptions.some((item) => item.value === "1k" || item.value === "2k") ? "分辨率" : "图片质量"} value={qualityLabel}>
-                            <div className="creation-choice-grid is-quality">
-                                {activeQualityOptions.map((option) => (
-                                    <button key={option.value} type="button" aria-pressed={option.value === props.quality} className={option.value === props.quality ? "is-selected" : ""} onClick={() => props.setQuality(option.value)}>
-                                        <span>{option.label}</span>
-                                        <small>{option.description}</small>
-                                    </button>
-                                ))}
-                            </div>
-                        </SettingSection>
-                    ) : null}
-                    {props.imageProfile.maxOutputs > 1 ? (
-                        <SettingSection title="生成数量" value={`${props.count} 张`}>
-                            <div className="creation-parameter-content">
-                                <div className="creation-choice-grid is-count">
-                                    {countOptions
-                                        .filter((option) => Number(option) <= props.imageProfile.maxOutputs)
-                                        .map((option) => (
-                                            <button key={option} type="button" aria-pressed={option === props.count} className={option === props.count ? "is-selected" : ""} onClick={() => props.setCount(option)}>
-                                                {option}
-                                            </button>
-                                        ))}
-                                </div>
-                                <label className="creation-custom-value">
-                                    <span>自定义</span>
-                                    <input
-                                        inputMode="numeric"
-                                        pattern="[0-9]*"
-                                        value={props.count}
-                                        onChange={(event) => props.setCount(String(Math.max(1, Math.min(props.imageProfile.maxOutputs, Number(event.target.value) || 1))))}
-                                        aria-label={`生成数量，范围 1 到 ${props.imageProfile.maxOutputs}`}
-                                    />
-                                    <em>张</em>
-                                </label>
-                            </div>
-                        </SettingSection>
-                    ) : null}
-                </>
-            )}
-        </div>
-    );
-    return (
-        <Popover
-            open={open}
-            onOpenChange={setOpen}
-            trigger="click"
-            placement="bottom"
-            arrow={false}
-            classNames={{ root: "creation-control-popover", container: "creation-control-popover-surface", content: "creation-control-popover-content" }}
-            content={panel}
-        >
-            <button type="button" className="creation-chat-control" aria-label={`生成设置：${summary}`}>
-                <SlidersHorizontal />
-                <span>{summary}</span>
-                <ChevronDown className={open ? "is-open" : ""} />
-            </button>
-        </Popover>
-    );
+    const panel = props.mode === "image" && props.imageProfile.parameters ? <div className="creation-parameter-menu max-h-[65vh] overflow-y-auto"><ImageParameterFields profile={props.imageProfile} config={{ ...props.config, model: props.model, size: props.ratio, quality: props.quality, imageResolution: props.imageResolution, imageParameters: props.imageParameters, count: props.count }} onChange={(key, value) => {
+        const setters = { size: props.setRatio, quality: props.setQuality, imageResolution: props.setImageResolution, imageParameters: props.setImageParameters, count: props.setCount, transparentBackground: props.setTransparentBackground };
+        setters[key](value);
+    }} /></div> : <div className="creation-parameter-menu">
+        {props.mode === "image" ? <ImageSizePicker profile={mergedProfile} size={props.ratio} quality={props.quality} imageResolution={props.imageResolution} onChange={(size, quality, resolution) => { props.setRatio(size); if (quality) props.setQuality(quality); if (resolution) props.setImageResolution(resolution); }} /> : videoRatioSupported ? <SettingSection title="画幅" value={props.ratio}><div className="creation-choice-grid is-ratio">{ratios.map((value) => <button key={value} type="button" aria-pressed={value === props.ratio} className={value === props.ratio ? "is-selected" : ""} onClick={() => props.setRatio(value)}><span className="creation-ratio-preview"><span style={ratioPreviewStyle(value)} /></span><span>{value}</span></button>)}</div></SettingSection> : null}
+        {props.mode === "image" && referenceImageSizeValue ? <button type="button" className="creation-custom-trigger" onClick={selectReferenceImageSize}>使用参考图尺寸 · {referenceImageSizeLabel}</button> : null}
+        {props.mode === "video" ? (videoResolutionSupported ? <SettingSection title="清晰度" value={videoResolutionLabel(props.videoQuality)}><div className="creation-choice-grid is-resolution">{resolutions.map((option) => <button key={option.value} type="button" aria-pressed={option.value === props.videoQuality} className={option.value === props.videoQuality ? "is-selected" : ""} onClick={() => props.setVideoQuality(option.value)}>{option.label}</button>)}</div></SettingSection> : null) : <>
+
+            {props.imageProfile.quality.supported && !imageResolutionUsesQuality(mergedProfile) ? <SettingSection title={activeQualityOptions.some((item) => item.value === "1k" || item.value === "2k") ? "分辨率" : "图片质量"} value={qualityLabel}><div className="creation-choice-grid is-quality">{activeQualityOptions.map((option) => <button key={option.value} type="button" aria-pressed={option.value === props.quality} className={option.value === props.quality ? "is-selected" : ""} onClick={() => props.setQuality(option.value)}><span>{option.label}</span><small>{option.description}</small></button>)}</div></SettingSection> : null}
+            {props.imageProfile.maxOutputs > 1 ? <SettingSection title="生成张数" value={`${props.count} 张`}><div className="creation-parameter-content"><div className="creation-choice-grid is-count">{countOptions.filter((option) => Number(option) <= props.imageProfile.maxOutputs).map((option) => <button key={option} type="button" aria-pressed={option === props.count} className={option === props.count ? "is-selected" : ""} onClick={() => props.setCount(option)}>{option}</button>)}</div><label className="creation-custom-value"><span>自定义</span><input inputMode="numeric" pattern="[0-9]*" value={props.count} onChange={(event) => props.setCount(String(Math.max(1, Math.min(props.imageProfile.maxOutputs, Number(event.target.value) || 1))))} aria-label={`生成张数，范围 1 到 ${props.imageProfile.maxOutputs}`} /><em>张</em></label></div></SettingSection> : null}
+        </>}
+    </div>;
+    return <Popover open={open} onOpenChange={setOpen} trigger="click" placement="bottom" arrow={false} classNames={{ root: "creation-control-popover", container: "creation-control-popover-surface", content: "creation-control-popover-content" }} content={panel}>
+        <button type="button" className="creation-chat-control" aria-label={`生成设置：${summary}`}><SlidersHorizontal /><span>{summary}</span><ChevronDown className={open ? "is-open" : ""} /></button>
+    </Popover>;
 }
 
 function SettingSection({ title, value, children }: { title: string; value?: string; children: ReactNode }) {

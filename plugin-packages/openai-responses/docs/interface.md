@@ -42,7 +42,7 @@
 | `create.path` | `"/responses"` |
 | `create.contentType` | `"application/json"` |
 | `create.body.model` | `{"$ref":"request.model"}` |
-| `create.body.input` | `{"$filter":{"from":{"$ref":"request.messages"},"as":"message","where":{"$ne":[{"$ref":"message.role"},"system"]}}}` |
+| `create.body.input` | `{"$map":{"from":{"$filter":{"from":{"$ref":"request.messages"},"as":"message","where":{"$ne":[{"$ref":"message.role"},"system"]}}},"as":"message","in":{"role":{"$ref":"message.role"},"content":{"$if":{"condition":{"$ref":"message.content.0.type"},"then":{"$map":{"from":{"$ref":"message.content"},"as":"part","in":{"$if":{"condition":{"$eq":[{"$ref":"part.type"},"image_url"]},"then":{"type":"input_image","image_url":{"$ref":"part.image_url.url"},"detail":{"$omitEmpty":{"$ref":"part.image_url.detail"}}},"else":{"$if":{"condition":{"$eq":[{"$ref":"part.type"},"text"]},"then":{"type":{"$if":{"condition":{"$eq":[{"$ref":"message.role"},"assistant"]},"then":"output_text","else":"input_text"}},"text":{"$ref":"part.text"}},"else":{"$ref":"part"}}}}}}},"else":{"$ref":"message.content"}}}}}}` |
 | `create.body.instructions` | `{"$omitEmpty":{"$ref":"request.instructions"}}` |
 | `create.body.temperature` | `{"$omitEmpty":{"$ref":"request.providerOptions.openai-response.temperature"}}` |
 | `create.body.top_p` | `{"$omitEmpty":{"$ref":"request.providerOptions.openai-response.top_p"}}` |
@@ -236,18 +236,103 @@
               "$ref": "request.model"
             },
             "input": {
-              "$filter": {
+              "$map": {
                 "from": {
-                  "$ref": "request.messages"
+                  "$filter": {
+                    "from": {
+                      "$ref": "request.messages"
+                    },
+                    "as": "message",
+                    "where": {
+                      "$ne": [
+                        {
+                          "$ref": "message.role"
+                        },
+                        "system"
+                      ]
+                    }
+                  }
                 },
                 "as": "message",
-                "where": {
-                  "$ne": [
-                    {
-                      "$ref": "message.role"
-                    },
-                    "system"
-                  ]
+                "in": {
+                  "role": {
+                    "$ref": "message.role"
+                  },
+                  "content": {
+                    "$if": {
+                      "condition": {
+                        "$ref": "message.content.0.type"
+                      },
+                      "then": {
+                        "$map": {
+                          "from": {
+                            "$ref": "message.content"
+                          },
+                          "as": "part",
+                          "in": {
+                            "$if": {
+                              "condition": {
+                                "$eq": [
+                                  {
+                                    "$ref": "part.type"
+                                  },
+                                  "image_url"
+                                ]
+                              },
+                              "then": {
+                                "type": "input_image",
+                                "image_url": {
+                                  "$ref": "part.image_url.url"
+                                },
+                                "detail": {
+                                  "$omitEmpty": {
+                                    "$ref": "part.image_url.detail"
+                                  }
+                                }
+                              },
+                              "else": {
+                                "$if": {
+                                  "condition": {
+                                    "$eq": [
+                                      {
+                                        "$ref": "part.type"
+                                      },
+                                      "text"
+                                    ]
+                                  },
+                                  "then": {
+                                    "type": {
+                                      "$if": {
+                                        "condition": {
+                                          "$eq": [
+                                            {
+                                              "$ref": "message.role"
+                                            },
+                                            "assistant"
+                                          ]
+                                        },
+                                        "then": "output_text",
+                                        "else": "input_text"
+                                      }
+                                    },
+                                    "text": {
+                                      "$ref": "part.text"
+                                    }
+                                  },
+                                  "else": {
+                                    "$ref": "part"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "else": {
+                        "$ref": "message.content"
+                      }
+                    }
+                  }
                 }
               }
             },

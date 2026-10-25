@@ -3,11 +3,10 @@ import { PageHeader } from "@/components/shared/page-header";
 
 export default function NewProjectPage() {
   return (
-    <div className="space-y-8">
+    <div className="max-w-5xl space-y-6">
       <PageHeader
-        eyebrow="高级创建"
-        title="高级创建项目"
-        description="如果你希望在创建前一次性填写平台、风格并批量上传全部素材，可以使用这个高级入口。默认推荐还是从首页先上传头图开始。"
+        title="高级创建"
+        description="设置项目风格，按主图、角度和细节分类准备素材。"
       />
       <ProjectCreator />
     </div>
