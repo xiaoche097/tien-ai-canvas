@@ -19,7 +19,10 @@ export const sectionPatchSchema = z.object({
   copy: z.string().optional(),
   visualPrompt: z.string().optional(),
   status: z.enum(["IDLE", "QUEUED", "GENERATING", "SUCCESS", "FAILED"]).optional(),
-  editableData: z.record(z.string(), z.any()).optional(),
+  editableData: z.record(z.string(), z.any()).refine(
+    (data) => data.heroAspectRatio === undefined || data.heroAspectRatio === "1:1" || data.heroAspectRatio === "3:4",
+    { message: "头图比例仅支持 1:1 或 3:4" },
+  ).optional(),
 });
 
 export const sectionReorderSchema = z.object({

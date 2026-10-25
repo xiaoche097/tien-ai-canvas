@@ -1,4 +1,4 @@
-import { Clapperboard, Megaphone, Shapes, ShoppingBag, UserRound, type LucideIcon } from "lucide-react";
+import { Clapperboard, Megaphone, Shapes, Shirt, ShoppingBag, UserRound, type LucideIcon } from "lucide-react";
 
 export type CreativeApplication = {
     id: string;
@@ -58,6 +58,15 @@ export const creativeApplications: CreativeApplication[] = [
         category: "影视创意",
         icon: Clapperboard,
         description: "从一句话、小说或剧本开始，生成章节并管理角色、分镜、画布与制作进度。",
+        placeholder: "",
+        instructions: "",
+    },
+    {
+        id: "universal-try-on",
+        title: "万物上身",
+        category: "电商广告",
+        icon: Shirt,
+        description: "上传人物与服装或配饰图片，自然完成穿戴合成，还原商品版型、颜色与材质。",
         placeholder: "",
         instructions: "",
     },

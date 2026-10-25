@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback } from "react";
+import { PsdDownloads } from "@/components/shared/psd-downloads";
 import { ImagePlus, Loader2, RotateCcw, Save, Sparkles, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -9,8 +10,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useAuthStore } from "@/hooks/use-auth-store";
+import { SectionPromptEditor } from "./section-prompt-editor";
+import { moduleReferenceGuide } from "@/lib/ai/module-reference-guide";
+import { SectionReferenceGenerator } from "./section-reference-generator";
+import { isModuleReference, referenceMetadata } from "@/lib/ai/module-reference";
 import {
   sectionTypeOptions,
   sectionTypeLabels,
@@ -34,6 +38,11 @@ interface EditorPanelProps {
   onUploadReference: (file: File) => void;
   onRemoveReference: (assetId: string) => void;
   onToggleReference: (assetId: string, checked: boolean) => void;
+  onOpenPsd?: () => void;
+  onReferenceAsset: (asset: any) => void;
+  onAdoptReference: (sectionId: string, asset: any) => void;
+  onReferenceBusy: (busy: boolean) => void;
+  onRewriteSaved: (sectionId: string, value: { copy: string; visualPrompt: string }) => void;
 }
 
 export const EditorPanel = React.memo(function EditorPanel({
@@ -44,6 +53,7 @@ export const EditorPanel = React.memo(function EditorPanel({
   cancellingGeneration,
   onUpdateSection,
   onSave,
+  onOpenPsd,
   onRunGeneration,
   onCancelGeneration,
   onRunImageEdit,
@@ -51,9 +61,13 @@ export const EditorPanel = React.memo(function EditorPanel({
   onUploadReference,
   onRemoveReference,
   onToggleReference,
+  onReferenceAsset,
+  onAdoptReference,
+  onReferenceBusy,
+  onRewriteSaved,
 }: EditorPanelProps) {
   const referenceAssets = React.useMemo(
-    () => project.assets.filter((asset: any) => ["REFERENCE", "DETAIL", "ANGLE"].includes(asset.type)),
+    () => project.assets.filter((asset: any) => ["REFERENCE", "DETAIL", "ANGLE"].includes(asset.type) || isModuleReference(asset)),
     [project.assets]
   );
 
@@ -63,6 +77,7 @@ export const EditorPanel = React.memo(function EditorPanel({
   }, [selectedSection, project.assets]);
 
   const hasGeneratedImage = Boolean(selectedSection?.imageUrl);
+  const amazonMain = project.platform === "amazon" && selectedSection?.type === "HERO" && project.sections.find((section: any) => section.type === "HERO")?.id === selectedSection.id;
   const activeTask = project.tasks?.find((task: any) => task.sectionId === selectedSection?.id && task.status === "RUNNING" && ["GENERATE", "REGENERATE"].includes(task.taskType));
 
   const handleFileChange = useCallback(
@@ -78,9 +93,11 @@ export const EditorPanel = React.memo(function EditorPanel({
     <Card className="flex min-h-0 min-w-0 flex-col xl:h-[920px]">
       <CardHeader>
         <CardTitle>模块编辑面板</CardTitle>
+        {onOpenPsd && <Button size="sm" variant="outline" disabled={!selectedSection?.currentImageAssetId || !!runningAction || selectedSection?.status === "GENERATING"} onClick={onOpenPsd}>PSD 精修</Button>}
         <CardDescription>编辑模块内容、发起生成与重绘，并管理版本历史。</CardDescription>
       </CardHeader>
       <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto overflow-x-hidden">
+        {selectedSection && <PsdDownloads projectId={project.id} sections={[selectedSection]} />}
         {!selectedSection ? (
           <div className="rounded-3xl border border-dashed border-border p-6 text-sm text-muted-foreground">
             请选择一个模块开始编辑。
@@ -118,6 +135,24 @@ export const EditorPanel = React.memo(function EditorPanel({
               </select>
             </div>
 
+            {selectedSection.type === "HERO" ? (
+              <div className="space-y-2">
+                <Label htmlFor="hero-aspect-ratio">头图比例</Label>
+                <select
+                  id="hero-aspect-ratio"
+                  className="flex h-11 w-full rounded-xl border border-input bg-white px-3 text-sm"
+                  value={amazonMain ? "1:1" : selectedSection.editableData?.heroAspectRatio ?? ""}
+                  disabled={amazonMain || Boolean(runningAction) || selectedSection.status === "GENERATING"}
+                  onChange={(event) => onUpdateSection("editableData", { ...selectedSection.editableData, heroAspectRatio: event.target.value || undefined })}
+                >
+                  <option value="">跟随输出配置（{project?.modelSnapshot?.previewConfig?.heroAspectRatio === "3:4" ? "3:4" : "1:1"}）</option>
+                  <option value="1:1">1:1 · 正方形</option>
+                  <option value="3:4">3:4 · 竖版</option>
+                </select>
+                <p className="text-xs text-muted-foreground">{amazonMain ? "Amazon 第一张头图作为主图：固定 1:1、白底、无额外营销文字；需真实商品参考图。其他头图按附图处理。" : "保存后生效，生成与重绘使用所选比例；已有图片不拉伸、不裁切。"}</p>
+              </div>
+            ) : null}
+
             <div className="space-y-2">
               <Label>标题</Label>
               <Input value={selectedSection.title} onChange={(event) => onUpdateSection("title", event.target.value)} />
@@ -128,21 +163,20 @@ export const EditorPanel = React.memo(function EditorPanel({
               <Input value={selectedSection.goal} onChange={(event) => onUpdateSection("goal", event.target.value)} />
             </div>
 
-            <div className="space-y-2">
-              <Label>模块文案</Label>
-              <Textarea value={selectedSection.copy} onChange={(event) => onUpdateSection("copy", event.target.value)} />
-            </div>
+            <SectionPromptEditor key={`${project.id}:${selectedSection.id}`} projectId={project.id} section={selectedSection} constraints={JSON.stringify({ platform: project.platform, description: project.description, previewConfig: project.modelSnapshot?.previewConfig })} onChange={prompt => onUpdateSection("visualPrompt", prompt)} onCopyChange={copy => onUpdateSection("copy", copy)} onSaved={value => onRewriteSaved(selectedSection.id, value)} />
 
-            <div className="space-y-2">
-              <Label>双语视觉 Prompt</Label>
-              <Textarea
-                value={selectedSection.visualPrompt}
-                onChange={(event) => onUpdateSection("visualPrompt", event.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                系统会要求图像模型把标题、卖点和 CTA 直接生成进图片中，而不是在页面外拼接文字。
-              </p>
-            </div>
+            <SectionReferenceGenerator key={`reference:${project.id}:${selectedSection.id}`} projectId={project.id} section={selectedSection} assets={project.assets} disabled={!!runningAction || selectedSection.status === "GENERATING"} onAsset={onReferenceAsset} onAdopt={onAdoptReference} onBusy={onReferenceBusy} />
+
+            <details className="space-y-2 rounded-xl border border-border p-3" aria-label="本模块参考图建议">
+              <summary className="cursor-pointer text-sm font-medium">补充实拍与核对建议</summary>
+              <h3 className="text-sm font-medium">这个模块需要什么参考图？</h3>
+              <ul className="list-disc space-y-2 pl-4 text-xs leading-5">
+                {moduleReferenceGuide(selectedSection).map(shot => <li key={shot}>{shot}</li>)}
+              </ul>
+              <p className="text-xs text-muted-foreground">请在下方上传模块专属图或勾选对应参考图。优先同一 SKU，避免把不同颜色、扣具或款式混用。</p>
+              <p className="text-xs text-muted-foreground">当前项目有 {project.assets.filter((asset: any) => !["GENERATED", "EXPORTED"].includes(asset.type)).length} 张源素材；数量不代表角度已覆盖，以上为拍摄建议，需你核对。</p>
+              {project.assets.filter((asset: any) => !["GENERATED", "EXPORTED"].includes(asset.type)).length < 2 && <p className="text-xs text-amber-700 dark:text-amber-300">只有一张或没有产品图时，建议沿用已有视角；背面、结构、扣具开合和材质特写需补真实图片，裁切不能补出未展示的细节。</p>}
+            </details>
 
             <div className="space-y-2">
               <Label>模块专属参考图</Label>
@@ -161,6 +195,7 @@ export const EditorPanel = React.memo(function EditorPanel({
                       />
                       <button
                         type="button"
+                        aria-label={`从当前模块移除参考图：${asset.fileName}`}
                         onClick={() => onRemoveReference(asset.id)}
                         className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white opacity-0 shadow-sm transition-opacity group-hover:opacity-100"
                       >
@@ -231,14 +266,14 @@ export const EditorPanel = React.memo(function EditorPanel({
                         )}
                       </div>
                       <p className="mt-1.5 truncate text-xs text-muted-foreground">
-                        {assetTypeLabels[asset.type] ?? asset.fileName}
+                        {isModuleReference(asset) ? `AI 参考 · ${referenceMetadata(asset).referenceApproved ? "已核对" : "待核对"}` : assetTypeLabels[asset.type] ?? asset.fileName}
                       </p>
                     </label>
                   ))}
                 </div>
               )}
               <p className="text-xs text-muted-foreground">
-                系统会自动把主商品图作为产品锚点，这里勾选的是额外补充参考图，会一起发送给 AI。
+                系统会自动把主商品图作为产品锚点。生成的角度图在当前商品内共享，勾选 AI 参考图表示已核对结构，将用于当前模块；不会再次生成或计费。
               </p>
             </div>
 

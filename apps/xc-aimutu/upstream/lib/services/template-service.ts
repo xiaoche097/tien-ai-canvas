@@ -1,52 +1,9 @@
 import { prisma } from "@/lib/db/prisma";
 import { getProviderAdapter } from "@/lib/services/provider-service";
 import type { TemplateStructure, TemplateStyleProfile } from "@/types/template";
+import { buildTemplateAnalysisPrompt, buildTemplateAnalysisInput } from "@/lib/ai/prompts/template";
+import { loadEcommercePromptTemplates } from "@/lib/canvas/prompt-templates";
 
-const ANALYSIS_PROMPT = `你是一个电商视觉分析专家。请根据用户提供的详情页描述，输出结构化的视觉分析结果。
-
-输出必须是以下 JSON 格式（不要包含 markdown 代码块标记，只输出纯 JSON）：
-{
-  "overallStyle": "整体风格描述，如：温暖日系，浅米色底，手写体文案，暖光摄影",
-  "colorPalette": ["#FFFFFF", "#1A1A1A", "#C9A96E"],
-  "typography": {
-    "heading": "标题字体风格描述",
-    "subheading": "副标题字体风格描述",
-    "body": "正文字体风格描述",
-    "tags": "标签样式描述"
-  },
-  "modules": [
-    {
-      "type": "hero|feature|scene|spec|model|gallery|material|flatlay|detail|cert|brand_trust|selling_points|comparison|custom",
-      "order": 1,
-      "name": "模块名称",
-      "aspectRatio": "3:4|1:1|4:3|4:5|16:9",
-      "styleNotes": "该模块的视觉风格描述",
-      "textLayout": "文案排版方式",
-      "bgType": "纯白|浅灰纯色|实景照片|深色纹理|照片拼接|细节图深色",
-      "position": {
-        "topPercent": 0.0,
-        "bottomPercent": 0.15
-      }
-  ]
-}
-
-模块类型说明：
-- hero: 品牌头图/主视觉
-- feature: 卖点/特性展示
-- scene: 场景/门店展示
-- spec: 规格参数/尺码表
-- model: 真人模特试穿
-- gallery: 多角度展示/轮播
-- material: 面料/材质卖点
-- flatlay: 平铺展示
-- detail: 细节特写
-- cert: 证书/水洗标/吊牌
-- brand_trust: 品牌信任状
-- selling_points: 核心卖点
-- comparison: 对比展示
-- custom: 自定义模块
-
-请根据描述生成至少 5 个、最多 12 个模块。`;
 
 export async function analyzeTemplate(
   description: string,
@@ -74,13 +31,12 @@ export async function analyzeTemplate(
 
   const modelId = selectedModel?.modelId ?? provider.models[0]?.modelId ?? "";
 
-  const userPrompt = imageUrls?.length
-    ? `请分析这张电商详情页长图，拆解它的模块结构和视觉风格。${description ? "\n用户补充描述：\n" + description : ""}`
-    : `用户描述的详情页内容：\n${description}`;
+  const templates = await loadEcommercePromptTemplates();
+  const userPrompt = buildTemplateAnalysisInput(description, Boolean(imageUrls?.length), templates);
 
   const result = await adapter.generateText({
     model: modelId,
-    systemPrompt: ANALYSIS_PROMPT,
+    systemPrompt: buildTemplateAnalysisPrompt(templates),
     userPrompt,
     images: imageUrls,
     timeoutMs: 180000,

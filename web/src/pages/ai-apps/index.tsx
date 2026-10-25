@@ -28,6 +28,7 @@ import { modelOptionLabel, selectableModelsByCapability, useConfigStore, type Ai
 import type { ReferenceImage } from "@/types/image";
 import { AI_APPLICATIONS, AI_APP_CATEGORIES, getAiApplication, type AiAppCategory, type AiApplication } from "./catalog";
 import "./ai-apps.css";
+import TryOnPage from "./try-on";
 
 const categoryIcons: Record<AiAppCategory, typeof Sparkles> = {
     "广告与创意": WandSparkles,
@@ -242,6 +243,7 @@ function DetailPage({ app }: { app: AiApplication }) {
 export default function AiAppsPage() {
     const { appId } = useParams();
     const app = getAiApplication(appId);
+    if (appId === "universal-try-on") return <TryOnPage />;
     if (appId && !app) return <WorkspacePage className="ai-apps-page studio-collection-page"><div className="ai-apps-empty"><Boxes /><strong>应用不存在</strong><Link to="/ai-apps">返回应用中心</Link></div></WorkspacePage>;
     return app ? <DetailPage app={app} /> : <CatalogPage />;
 }

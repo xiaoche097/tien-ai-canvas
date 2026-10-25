@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Loader2, Settings2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -9,34 +9,43 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { TemplateStyleSummary } from "./template-style-summary";
+import { platformLabels, platformOptions } from "@/types/domain";
+import { detailAspectRatios, normalizeDetailAspectRatio, type DetailAspectRatio } from "@/lib/utils/section-aspect-ratio";
 import {
   contentLanguageLabels,
   contentLanguageOptions,
   normalizeContentLanguage,
+  projectContentLanguage,
   type ContentLanguage,
 } from "@/lib/utils/content-language";
 
 type PreviewConfig = {
+  platform: (typeof platformOptions)[number];
   heroImageCount: number;
+  heroAspectRatio: "1:1" | "3:4";
   detailSectionCount: number;
-  imageAspectRatio: "3:4" | "9:16";
+  imageAspectRatio: DetailAspectRatio;
   contentLanguage: ContentLanguage;
 };
 
 type ProjectConfigCardProject = {
   id: string;
+  platform?: string;
   modelSnapshot: unknown;
 } | null;
 
-function normalizePreviewConfig(snapshot: unknown): PreviewConfig {
+function normalizePreviewConfig(snapshot: unknown, platform?: string): PreviewConfig {
   const data = (snapshot as Record<string, unknown> | null) ?? {};
   const previewConfig = (data.previewConfig as Record<string, unknown> | null) ?? {};
 
   return {
+    platform: platformOptions.find((option) => option === platform) ?? "general_ecommerce",
     heroImageCount: Math.min(5, Math.max(3, Number(previewConfig.heroImageCount ?? 4))),
+    heroAspectRatio: previewConfig.heroAspectRatio === "3:4" ? "3:4" : "1:1",
     detailSectionCount: Math.min(10, Math.max(4, Number(previewConfig.detailSectionCount ?? 6))),
-    imageAspectRatio: previewConfig.imageAspectRatio === "3:4" ? "3:4" : "9:16",
-    contentLanguage: normalizeContentLanguage(previewConfig.contentLanguage),
+    imageAspectRatio: normalizeDetailAspectRatio(previewConfig.imageAspectRatio, platform),
+    contentLanguage: projectContentLanguage(platform, previewConfig.contentLanguage),
   };
 }
 
@@ -44,13 +53,14 @@ function OutputConfigSummary({ config }: { config: PreviewConfig }) {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-3 text-sm">
+        <Badge variant="outline">平台：{platformLabels[config.platform]}</Badge>
         <Badge variant="default">
           <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-slate-500" />
           内容语言：{contentLanguageLabels[config.contentLanguage]}
         </Badge>
         <Badge variant="success">
           <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500" />
-          头图：{config.heroImageCount} 张（1:1）
+          头图：{config.heroImageCount} 张（{config.heroAspectRatio}）
         </Badge>
         <Badge variant="warning">
           <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-amber-500" />
@@ -77,16 +87,19 @@ export function ProjectOutputConfigCard({
   editable?: boolean;
 }) {
   const router = useRouter();
-  const initialConfig = useMemo(() => normalizePreviewConfig(project?.modelSnapshot), [project?.modelSnapshot]);
+  const initialConfig = useMemo(() => normalizePreviewConfig(project?.modelSnapshot, project?.platform), [project?.modelSnapshot, project?.platform]);
   const [formState, setFormState] = useState<PreviewConfig>(initialConfig);
   const [saving, setSaving] = useState(false);
+  useEffect(() => { setFormState(initialConfig); }, [initialConfig, project?.id]);
 
   if (!project) {
     return null;
   }
 
   const hasChanges =
+    formState.platform !== initialConfig.platform ||
     formState.heroImageCount !== initialConfig.heroImageCount ||
+    formState.heroAspectRatio !== initialConfig.heroAspectRatio ||
     formState.detailSectionCount !== initialConfig.detailSectionCount ||
     formState.imageAspectRatio !== initialConfig.imageAspectRatio ||
     formState.contentLanguage !== initialConfig.contentLanguage;
@@ -99,11 +112,13 @@ export function ProjectOutputConfigCard({
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          platform: formState.platform,
           modelSnapshot: {
             ...snapshot,
             previewConfig: {
               ...((snapshot.previewConfig as Record<string, unknown> | null) ?? {}),
               heroImageCount: formState.heroImageCount,
+              heroAspectRatio: formState.heroAspectRatio,
               detailSectionCount: formState.detailSectionCount,
               imageAspectRatio: formState.imageAspectRatio,
               contentLanguage: formState.contentLanguage,
@@ -112,7 +127,7 @@ export function ProjectOutputConfigCard({
         }),
       });
       const payload = await response.json();
-      if (!payload.success) {
+      if (!response.ok || !payload.success) {
         throw new Error(payload.error?.message ?? "输出配置保存失败");
       }
 
@@ -128,7 +143,8 @@ export function ProjectOutputConfigCard({
   if (!editable) {
     return (
       <Card className="border-dashed bg-muted/30 dark:bg-white/[0.03]">
-        <CardContent className="p-4">
+        <CardContent className="space-y-3 p-4">
+          <TemplateStyleSummary snapshot={project.modelSnapshot} />
           <OutputConfigSummary config={initialConfig} />
         </CardContent>
       </Card>
@@ -142,10 +158,17 @@ export function ProjectOutputConfigCard({
           <Settings2 className="h-4 w-4 text-sky-600" />
           输出配置
         </CardTitle>
-        <CardDescription>这里调整的语言、头图数量、详情页数量和比例，会直接影响后续规划、生成与导出。</CardDescription>
+        <CardDescription>这里调整的语言、头图数量与比例、详情页数量与比例，会直接影响后续规划、生成与导出。</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <TemplateStyleSummary snapshot={project.modelSnapshot} />
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+          <div className="space-y-2">
+            <Label htmlFor="output-platform">平台</Label>
+            <select id="output-platform" className="flex h-10 w-full rounded-xl border border-input bg-card px-3 text-sm" value={formState.platform} onChange={(event) => setFormState((current) => ({ ...current, platform: event.target.value as PreviewConfig["platform"], contentLanguage: projectContentLanguage(event.target.value), imageAspectRatio: normalizeDetailAspectRatio(undefined, event.target.value) }))}>
+              {platformOptions.map((option) => <option key={option} value={option}>{platformLabels[option]}</option>)}
+            </select>
+          </div>
           <div className="space-y-2">
             <Label>内容语言</Label>
             <select
@@ -185,6 +208,18 @@ export function ProjectOutputConfigCard({
             </select>
           </div>
           <div className="space-y-2">
+            <Label htmlFor="output-hero-aspect-ratio">头图比例</Label>
+            <select
+              id="output-hero-aspect-ratio"
+              className="flex h-10 w-full rounded-xl border border-input bg-white px-3 text-sm dark:bg-black/30 dark:text-slate-100"
+              value={formState.heroAspectRatio}
+              onChange={(event) => setFormState((current) => ({ ...current, heroAspectRatio: event.target.value === "3:4" ? "3:4" : "1:1" }))}
+            >
+              <option value="1:1">1:1 · 正方形</option>
+              <option value="3:4">3:4 · 竖版</option>
+            </select>
+          </div>
+          <div className="space-y-2">
             <Label>详情页数量</Label>
             <select
               className="flex h-10 w-full rounded-xl border border-input bg-white px-3 text-sm dark:bg-black/30 dark:text-slate-100"
@@ -204,19 +239,19 @@ export function ProjectOutputConfigCard({
             </select>
           </div>
           <div className="space-y-2">
-            <Label>详情图比例</Label>
+            <Label htmlFor="output-detail-aspect-ratio">详情图比例</Label>
             <select
+              id="output-detail-aspect-ratio"
               className="flex h-10 w-full rounded-xl border border-input bg-white px-3 text-sm dark:bg-black/30 dark:text-slate-100"
               value={formState.imageAspectRatio}
               onChange={(event) =>
                 setFormState((current) => ({
                   ...current,
-                  imageAspectRatio: event.target.value === "3:4" ? "3:4" : "9:16",
+                  imageAspectRatio: normalizeDetailAspectRatio(event.target.value),
                 }))
               }
             >
-              <option value="9:16">9:16</option>
-              <option value="3:4">3:4</option>
+              {detailAspectRatios.map((ratio) => <option key={ratio} value={ratio}>{ratio}{ratio === "16:9" ? " · 横版" : ratio === "21:9" ? " · 宽屏横版" : " · 竖版"}</option>)}
             </select>
           </div>
         </div>

@@ -13,8 +13,20 @@ import { getProviderAdapter } from "@/lib/services/provider-service";
 import { completeTask, createTask, failTask, findRecentRunningTask, registerTaskAbort, unregisterTaskAbort } from "@/lib/services/task-service";
 import { readStorageFile, saveGeneratedImage } from "@/lib/storage/asset-manager";
 import { env } from "@/lib/utils/env";
-import { normalizeContentLanguage, type ContentLanguage } from "@/lib/utils/content-language";
+import { type ContentLanguage } from "@/lib/utils/content-language";
 import { sectionTypeLabels } from "@/types/domain";
+import { getSectionAspectRatio, type SectionImageAspectRatio } from "@/lib/utils/section-aspect-ratio";
+import { ecommerceStylePrompt } from "@/lib/canvas/style-prompt";
+import { loadEcommercePromptTemplates } from "@/lib/canvas/prompt-templates";
+import type { EcommercePromptTemplates } from "@/lib/ai/prompts/ecommerce-templates";
+import { buildReferenceStylePrompt } from "@/lib/ai/prompts/template";
+import { templatePlanningContext } from "@/lib/ai/prompts/template-planning";
+import { buildAmazonImagePrompt } from "@/lib/ai/prompts/amazon";
+import { projectContentLanguage } from "@/lib/utils/content-language";
+import { productFidelityGuard } from "@/lib/ai/module-reference-guide";
+import { isModuleReference, referenceAllowed } from "@/lib/ai/module-reference";
+import { moduleContentRequirements } from "@/lib/ai/module-content";
+import { normalizeDetailAspectRatio, sectionOutputSize, type DetailAspectRatio } from "@/lib/utils/section-aspect-ratio";
 
 const svgLayoutSchema = z.object({
   headline: z.string().min(1),
@@ -58,39 +70,32 @@ const svgCopyByLanguage: Record<
 
 type ProviderContext = Awaited<ReturnType<typeof getProviderAdapter>>["provider"];
 type AdapterContext = Awaited<ReturnType<typeof getProviderAdapter>>["adapter"];
-type AssetRecord = Pick<ProductAsset, "id" | "filePath" | "fileName" | "mimeType" | "type" | "isMain">;
-type SectionImageAspectRatio = "1:1" | "3:4" | "9:16";
+type AssetRecord = Pick<ProductAsset, "id" | "filePath" | "fileName" | "mimeType" | "type" | "isMain"> & { metadata?: unknown };
 
-function getGenerationSettings(project: { modelSnapshot: unknown } | null) {
+function getGenerationSettings(project: { modelSnapshot: unknown; platform?: string } | null) {
   const snapshot = (project?.modelSnapshot as Record<string, unknown> | null) ?? {};
   const settings = (snapshot.generationSettings as Record<string, unknown> | null) ?? {};
   const previewConfig = (snapshot.previewConfig as Record<string, unknown> | null) ?? {};
 
   return {
     allowSvgFallback: settings.allowSvgFallback === true,
-    imageAspectRatio: previewConfig.imageAspectRatio === "3:4" ? "3:4" : "9:16",
-    contentLanguage: normalizeContentLanguage(previewConfig.contentLanguage),
+    heroAspectRatio: previewConfig.heroAspectRatio === "3:4" ? "3:4" : "1:1",
+    imageAspectRatio: normalizeDetailAspectRatio(previewConfig.imageAspectRatio, project?.platform),
+    contentLanguage: projectContentLanguage(project?.platform, previewConfig.contentLanguage),
   } as {
     allowSvgFallback: boolean;
-    imageAspectRatio: "3:4" | "9:16";
+    heroAspectRatio: "1:1" | "3:4";
+    imageAspectRatio: DetailAspectRatio;
     contentLanguage: ContentLanguage;
   };
 }
 
-function getSectionAspectRatio(
-  section: Pick<PageSection, "type">,
-  detailAspectRatio: "3:4" | "9:16",
-): SectionImageAspectRatio {
-  return section.type === "HERO" ? "1:1" : detailAspectRatio;
+async function isAmazonMainSection(project: { id: string; platform: string }, sectionId: string) {
+  if (project.platform !== "amazon") return false;
+  const first = await prisma.pageSection.findFirst({ where: { projectId: project.id, type: "HERO" }, orderBy: [{ order: "asc" }, { id: "asc" }], select: { id: true } });
+  return first?.id === sectionId;
 }
 
-function getOutputSize(aspectRatio: SectionImageAspectRatio) {
-  if (aspectRatio === "1:1") {
-    return "1024x1024";
-  }
-
-  return "1024x1536";
-}
 
 function isStableImageModel(modelId: string) {
   return !/(preview|experimental|beta|test)/i.test(modelId);
@@ -306,20 +311,22 @@ function pickPrimaryProductAsset(projectAssets: AssetRecord[]) {
 }
 
 function mergeReferenceAssets(projectAssets: AssetRecord[], explicitReferenceAssets: AssetRecord[]) {
-  const primaryAsset = pickPrimaryProductAsset(projectAssets);
+  const primaryAsset = pickPrimaryProductAsset(projectAssets.filter(asset => !isModuleReference(asset)));
   const merged = [primaryAsset, ...explicitReferenceAssets].filter(Boolean) as AssetRecord[];
 
   return merged.filter((asset, index, list) => list.findIndex((entry) => entry.id === asset.id) === index);
 }
 
-async function resolveReferenceAssets(referenceAssetIds: string[]) {
+async function resolveReferenceAssets(referenceAssetIds: string[], projectId: string, sectionId: string) {
   if (!referenceAssetIds.length) {
     return [];
   }
 
-  return prisma.productAsset.findMany({
-    where: { id: { in: referenceAssetIds } },
+  const assets = await prisma.productAsset.findMany({
+    where: { projectId, id: { in: referenceAssetIds } },
   });
+  if (assets.length !== new Set(referenceAssetIds).size || assets.some(asset => !referenceAllowed(asset, sectionId))) throw new Error("参考图不属于当前项目或尚未确认用于此模块。");
+  return assets;
 }
 
 async function persistSectionVersion(params: {
@@ -554,6 +561,7 @@ function composeSectionSvg(params: {
 }
 
 async function generateSvgFallback(params: {
+  templates: EcommercePromptTemplates;
   section: PageSection;
   adapter: AdapterContext;
   provider: ProviderContext;
@@ -576,6 +584,7 @@ async function generateSvgFallback(params: {
       params.referenceAssets as ProductAsset[],
       params.aspectRatio,
       params.contentLanguage,
+      params.templates,
     ),
     images: imageInputs,
     projectId: params.section.projectId,
@@ -634,15 +643,19 @@ async function generateSectionImageInternal(
 
   const { provider, adapter } = await getProviderAdapter("image");
   const generationSettings = getGenerationSettings(project);
-  const sectionAspectRatio = getSectionAspectRatio(section, generationSettings.imageAspectRatio);
-  const outputSize = getOutputSize(sectionAspectRatio);
+  const amazonMain = await isAmazonMainSection(project, sectionId);
+  const sectionAspectRatio = amazonMain ? "1:1" : getSectionAspectRatio(section, generationSettings.imageAspectRatio, generationSettings.heroAspectRatio);
+  const stylePrompt = templatePlanningContext(project.modelSnapshot, false) || await ecommerceStylePrompt(project.style);
+  const templates = await loadEcommercePromptTemplates();
+  const outputSize = sectionOutputSize(sectionAspectRatio, section.type);
   const modelCandidates = buildImageModelCandidates(provider, options);
   const selectedModel = modelCandidates[0] ?? null;
-  const explicitReferenceAssets = await resolveReferenceAssets(options?.referenceAssetIds ?? []);
+  const explicitReferenceAssets = await resolveReferenceAssets(options?.referenceAssetIds ?? [], projectId, sectionId);
   const sectionReferenceAssetIds = ((section.editableData as Record<string, unknown> | null)?.referenceAssetIds as string[] | undefined) ?? [];
-  const sectionReferenceAssets = await resolveReferenceAssets(sectionReferenceAssetIds);
+  const sectionReferenceAssets = await resolveReferenceAssets(sectionReferenceAssetIds, projectId, sectionId);
   const allExplicitAssets = [...sectionReferenceAssets, ...explicitReferenceAssets];
   const effectiveReferenceAssets = mergeReferenceAssets(project.assets as AssetRecord[], allExplicitAssets as AssetRecord[]);
+  if (amazonMain && !effectiveReferenceAssets.length) throw new Error("Amazon 主图需要真实商品参考图片，请先上传商品图再生成。");
   const referenceImages = await Promise.all(effectiveReferenceAssets.map((asset) => assetToDataUrl(asset)));
 
   // Load selected model template images for clothing consistency
@@ -730,25 +743,31 @@ async function generateSectionImageInternal(
 
   const signal = registerTaskAbort(task.id);
   try {
-    let prompt = options?.regenerate
+    let prompt = project.platform === "amazon" ? buildAmazonImagePrompt(section, amazonMain, generationSettings.contentLanguage, sectionAspectRatio) : options?.regenerate
       ? buildRegenerationPrompt(
           section,
           effectiveReferenceAssets as ProductAsset[],
           sectionAspectRatio,
           generationSettings.contentLanguage,
+          templates,
         )
       : buildSectionImagePrompt(
           section,
           effectiveReferenceAssets as ProductAsset[],
           sectionAspectRatio,
           generationSettings.contentLanguage,
+          templates,
         );
+    if (project.platform !== "amazon") prompt += "\n\n" + stylePrompt;
+    prompt += "\n\n" + productFidelityGuard(effectiveReferenceAssets.length);
+    if (effectiveReferenceAssets.some(isModuleReference)) prompt += "\nThe first reference remains the original product identity anchor. Approved AI reference photographs provide supplementary module-specific viewpoints or close-ups only, not new product facts. Preserve the original geometry and verified details; do not copy their plain white reference-sheet background into a module that requests another setting.";
 
     // 方案B: 参考图引导生成 - 注入模板参考图风格指令
-    if (templateReferenceImageDataUrl) {
-      prompt += `\n\n【风格参照指令】\n我已经提供了一张参考图（第一张参考图）。请严格参照这张图的整体风格、配色方案、排版布局、字体风格和光影氛围来生成新图片。\n具体要求：\n1. 背景和整体色调要与参考图保持一致\n2. 文字排版方式（位置、大小、颜色）参照参考图\n3. 商品在画面中的位置、大小、角度参照参考图\n4. 装饰元素、标签、icon 的风格参照参考图\n5. 只替换商品主体，保留参考图的版式和风格\n`;
+    if (project.platform !== "amazon" && templateReferenceImageDataUrl && section.type !== "HERO") {
+      prompt += "\n\n" + buildReferenceStylePrompt(templates) + "\n";
     }
 
+    prompt += "\n\n" + moduleContentRequirements(section, amazonMain);
     let imageAsset;
     let version;
     let usedModel: string;
@@ -760,7 +779,7 @@ async function generateSectionImageInternal(
       }
 
       // 方案B: 把模板参考图和模特库参考图加到 referenceImages 中（模板图优先，模特图其次，产品图最后）
-      const allReferenceImages = [
+      const allReferenceImages = amazonMain ? referenceImages : [
         ...(templateReferenceImageDataUrl ? [templateReferenceImageDataUrl] : []),
         ...modelTemplateDataUrls,
         ...referenceImages,
@@ -797,6 +816,7 @@ async function generateSectionImageInternal(
       generationMode = "image_api";
     } catch (error) {
       signal.throwIfAborted();
+      if (project.platform === "amazon" || ["16:9", "21:9"].includes(sectionAspectRatio)) throw new Error("图片生成失败，未使用竖版 SVG 替代当前输出：" + summarizeProviderImageFailure(error instanceof Error ? error.message : "Image generation failed", "generate"));
       if (!generationSettings.allowSvgFallback) {
         const detail = error instanceof Error ? error.message : "Unknown image generation error";
         if (/monthly spending limit|spending limit|billing|quota/i.test(detail)) {
@@ -809,6 +829,7 @@ async function generateSectionImageInternal(
       }
 
       const fallback = await generateSvgFallback({
+        templates,
         section,
         adapter,
         provider,
@@ -946,17 +967,20 @@ export async function editSectionImage(
 
   const { provider, adapter } = await getProviderAdapter("image");
   const generationSettings = getGenerationSettings(project);
-  const sectionAspectRatio = getSectionAspectRatio(section, generationSettings.imageAspectRatio);
-  const outputSize = getOutputSize(sectionAspectRatio);
+  const amazonMain = await isAmazonMainSection(project, sectionId);
+  const sectionAspectRatio = amazonMain ? "1:1" : getSectionAspectRatio(section, generationSettings.imageAspectRatio, generationSettings.heroAspectRatio);
+  const stylePrompt = templatePlanningContext(project.modelSnapshot, false) || await ecommerceStylePrompt(project.style);
+  const templates = await loadEcommercePromptTemplates();
+  const outputSize = sectionOutputSize(sectionAspectRatio, section.type);
   const modelCandidates = buildImageModelCandidates(provider, {
     preferredModelId: options?.preferredModelId,
     edit: true,
     regenerate: true,
   });
   const selectedModel = modelCandidates[0] ?? null;
-  const explicitReferenceAssets = await resolveReferenceAssets(options?.referenceAssetIds ?? []);
+  const explicitReferenceAssets = await resolveReferenceAssets(options?.referenceAssetIds ?? [], projectId, sectionId);
   const sectionReferenceAssetIds = ((section.editableData as Record<string, unknown> | null)?.referenceAssetIds as string[] | undefined) ?? [];
-  const sectionReferenceAssets = await resolveReferenceAssets(sectionReferenceAssetIds);
+  const sectionReferenceAssets = await resolveReferenceAssets(sectionReferenceAssetIds, projectId, sectionId);
   const allExplicitAssets = [...sectionReferenceAssets, ...explicitReferenceAssets];
   const productReferenceAssets = mergeReferenceAssets(project.assets as AssetRecord[], allExplicitAssets as AssetRecord[]);
   const baseImage = await assetToDataUrl(section.currentImageAsset as AssetRecord);
@@ -1018,13 +1042,17 @@ export async function editSectionImage(
   });
 
   try {
-    const prompt = buildImageEditPrompt(
+    let prompt = project.platform === "amazon" ? buildAmazonImagePrompt(section, amazonMain, generationSettings.contentLanguage, sectionAspectRatio) + `\nEdit mode: ${editMode}.` : buildImageEditPrompt(
       section,
       productReferenceAssets as ProductAsset[],
       editMode,
       sectionAspectRatio,
       generationSettings.contentLanguage,
-    );
+      templates,
+    ) + "\n\n" + stylePrompt;
+    prompt += "\n\n" + productFidelityGuard(productReferenceAssets.filter(asset => asset.id !== section.currentImageAssetId).length);
+    if (productReferenceAssets.some(isModuleReference)) prompt += "\nApproved AI reference photographs are supplementary viewpoint or close-up guides, not new product facts. Original product references remain authoritative for geometry, connectors, material and SKU.";
+    prompt += "\n\n" + moduleContentRequirements(section, amazonMain);
 
     let imageAsset;
     let version;
@@ -1036,7 +1064,7 @@ export async function editSectionImage(
         throw new Error("当前 Provider 没有探测到可用于真实图片编辑的模型。");
       }
 
-      const allEditReferenceImages = [...editModelTemplateDataUrls, ...referenceImages];
+      const allEditReferenceImages = amazonMain ? referenceImages : [...editModelTemplateDataUrls, ...referenceImages];
 
       const generation = await editWithFallback({
         adapter,
@@ -1069,6 +1097,7 @@ export async function editSectionImage(
       usedModel = generation.model;
       generationMode = "image_api";
     } catch (error) {
+      if (project.platform === "amazon" || ["16:9", "21:9"].includes(sectionAspectRatio)) throw new Error("图片编辑失败，未使用竖版 SVG 替代当前输出：" + summarizeProviderImageFailure(error instanceof Error ? error.message : "Image edit failed", "edit"));
       if (!generationSettings.allowSvgFallback) {
         const detail = error instanceof Error ? error.message : "Unknown image edit error";
         if (/monthly spending limit|spending limit|billing|quota/i.test(detail)) {
@@ -1081,6 +1110,7 @@ export async function editSectionImage(
       }
 
       const fallback = await generateSvgFallback({
+        templates,
         section,
         adapter,
         provider,

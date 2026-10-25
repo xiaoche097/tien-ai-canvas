@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, UploadCloud, FileText } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -9,9 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { ImageUpload } from "@/components/shared/image-upload";
 import { fileToBase64Payload } from "@/lib/utils/base64-upload";
 import { useAuthStore } from "@/hooks/use-auth-store";
 import { getAuthHeaders } from "@/lib/utils/auth-client";
+import { platformOptions, platformLabels, type PlatformOption } from "@/types/domain";
+import { contentLanguageOptions, contentLanguageLabels, projectContentLanguage, type ContentLanguage } from "@/lib/utils/content-language";
 
 function buildDraftProjectName() {
   const now = new Date();
@@ -30,11 +33,12 @@ export function QuickStartWorkspace() {
   const { keyInfo } = useAuthStore();
   const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
   const [productInfo, setProductInfo] = useState("");
   const [category, setCategory] = useState("");
   const [sellingPoints, setSellingPoints] = useState("");
   const [targetAudience, setTargetAudience] = useState("");
+  const [platform, setPlatform] = useState<PlatformOption>("general_ecommerce");
+  const [contentLanguage, setContentLanguage] = useState<ContentLanguage>("zh-CN");
 
   const isPerUseExhausted = keyInfo?.type === "PER_USE" && (keyInfo.usedCount ?? 0) >= 1;
 
@@ -90,7 +94,8 @@ export function QuickStartWorkspace() {
         headers,
         body: JSON.stringify({
           name: buildDraftProjectName(),
-          platform: "general_ecommerce",
+          platform,
+          contentLanguage,
           style: "generic_clean",
           description: productInfo,
           productInfo,
@@ -159,97 +164,69 @@ export function QuickStartWorkspace() {
   };
 
   return (
-    <section className="mx-auto max-w-6xl space-y-8">
-      <div className="space-y-4 text-center">
-        <h1 className="text-4xl font-semibold tracking-[-0.06em] text-slate-950 dark:text-white md:text-5xl">
-          创建商品详情页
-        </h1>
-        <p className="mx-auto max-w-2xl text-lg leading-8 text-slate-500 dark:text-slate-400">
-          填写产品信息，AI 自动生成完整的详情页方案
-        </p>
-      </div>
+    <section className="motu-quick-start min-w-0">
+      <header className="motu-page-header">
+        <h1 className="text-2xl font-semibold tracking-tight">创建商品详情页</h1>
+        <p className="mt-2 text-sm text-muted-foreground">添加商品图片与资料，开始分析和规划。</p>
+      </header>
 
-      <div className="rounded-[2rem] border border-slate-200 bg-white/84 p-6 shadow-soft backdrop-blur-xl dark:border-white/10 dark:bg-white/6 md:p-10">
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="space-y-2 md:col-span-2">
-            <Label>产品信息 <span className="text-rose-500">*</span></Label>
-            <Textarea
-              value={productInfo}
-              onChange={(e) => setProductInfo(e.target.value)}
-              placeholder="例如：全麦山药茯苓馒头，低GI认证，药食同源，适合控糖人群..."
-              rows={3}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>品类</Label>
-            <Input
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              placeholder="例如：食品 / 3C数码 / 服装"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>目标人群</Label>
-            <Input
-              value={targetAudience}
-              onChange={(e) => setTargetAudience(e.target.value)}
-              placeholder="例如：上班族、减脂人群"
-            />
-          </div>
-          <div className="space-y-2 md:col-span-2">
-            <Label>核心卖点</Label>
-            <Textarea
-              value={sellingPoints}
-              onChange={(e) => setSellingPoints(e.target.value)}
-              placeholder="例如：1.低GI认证 2.三重高纤 3.乳酸菌发酵..."
-              rows={2}
-            />
-          </div>
-        </div>
-
-        <div
-          className={`mt-6 rounded-[1.75rem] border border-dashed p-6 transition-colors ${dragOver ? "border-primary bg-primary/5" : "border-slate-300 bg-white/50 dark:border-white/10 dark:bg-white/[0.03]"}`}
-          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-          onDragLeave={(e) => { e.preventDefault(); setDragOver(false); }}
-          onDrop={(e) => {
-            e.preventDefault();
-            setDragOver(false);
-            const dropped = e.dataTransfer.files?.[0] ?? null;
-            if (dropped && dropped.type.startsWith("image/")) {
-              setFile(dropped);
-            } else if (dropped) {
-              toast.error("请上传图片文件");
-            }
-          }}
-        >
-          <p className="text-sm font-medium mb-3">📤 上传产品图片（选填）</p>
-          <Input
+      <div className="motu-quick-layout">
+        <aside className="motu-quick-material" aria-label="产品素材">
+          <h2 className="mb-4 text-sm font-semibold">商品图片</h2>
+          <ImageUpload
             id="quick-start-file"
-            type="file"
-            accept="image/*"
-            onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-            className="mb-2"
+            label="添加商品图片"
+            files={file ? [file] : []}
+            onChange={files => setFile(files[0] ?? null)}
+            disabled={submitting}
+            description="使用同一款商品的清晰实物图；不同颜色、扣具请分开创建。也可以只填写商品资料。"
           />
-          {file ? (
-            <p className="text-xs text-slate-500">已选择：{file.name}</p>
-          ) : (
-            <p className="text-xs text-slate-500">点击选择或拖拽图片到此处</p>
-          )}
-        </div>
+        </aside>
 
-        <div className="mt-6 flex justify-center">
-          <Button
-            onClick={handleStart}
-            disabled={submitting || (!productInfo.trim() && !file) || isPerUseExhausted}
-            className="min-w-[220px] rounded-full px-8"
-          >
-            {submitting ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <FileText className="mr-2 h-4 w-4" />
-            )}
-            {submitting ? "正在分析产品…" : isPerUseExhausted ? "次卡已用完" : "开始生成详情页方案"}
-          </Button>
+        <div className="motu-quick-details min-w-0">
+          <h2 className="mb-4 text-sm font-semibold">商品资料</h2>
+          <fieldset disabled={submitting}>
+            <legend className="sr-only">商品信息</legend>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="quick-start-platform">销售平台</Label>
+                <select id="quick-start-platform" className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm" disabled={submitting} value={platform} onChange={(event) => { const next = event.target.value as PlatformOption; setPlatform(next); setContentLanguage(projectContentLanguage(next)); }}>
+                  {platformOptions.map((option) => <option key={option} value={option}>{platformLabels[option]}</option>)}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="quick-start-language">图片与文案语言</Label>
+                <select id="quick-start-language" className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm" disabled={submitting} value={contentLanguage} onChange={(event) => setContentLanguage(event.target.value as ContentLanguage)}>
+                  {contentLanguageOptions.map((option) => <option key={option} value={option}>{contentLanguageLabels[option]}</option>)}
+                </select>
+              </div>
+              {platform === "amazon" && <p className="text-sm leading-6 text-muted-foreground sm:col-span-2">Amazon 默认英语和 16:9 横版详情图，可在输出配置改为 21:9。第一张头图作为白底无额外文字的主图，其余为附图；主图生成需上传真实商品参考图，生成后仍需核对类目规范。</p>}
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="quick-start-product-info">产品信息</Label>
+                <Textarea id="quick-start-product-info" value={productInfo} onChange={event => setProductInfo(event.target.value)} placeholder="商品名称、材质、规格，以及需要展示的细节" rows={4} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="quick-start-category">品类</Label>
+                <Input id="quick-start-category" value={category} onChange={event => setCategory(event.target.value)} placeholder="如：食品、服装、数码配件" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="quick-start-audience">目标人群</Label>
+                <Input id="quick-start-audience" value={targetAudience} onChange={event => setTargetAudience(event.target.value)} placeholder="主要使用或购买这款商品的人群" />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="quick-start-selling-points">核心卖点</Label>
+                <Textarea id="quick-start-selling-points" value={sellingPoints} onChange={event => setSellingPoints(event.target.value)} placeholder="列出需要重点呈现的卖点，建议每行一条" rows={3} />
+              </div>
+            </div>
+          </fieldset>
+          <div className="motu-studio-actions mt-6 flex flex-wrap items-center gap-4 border-t border-border pt-5" aria-busy={submitting}>
+            <Button onClick={handleStart} disabled={submitting || (!productInfo.trim() && !file) || isPerUseExhausted} className="motu-studio-primary w-full px-5 sm:w-auto">
+              {submitting && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
+              {submitting ? "正在分析产品…" : isPerUseExhausted ? "次卡已用完" : "开始生成详情页方案"}
+              {!submitting && <ArrowRight className="h-4 w-4" aria-hidden />}
+            </Button>
+            <p className="text-xs leading-5 text-muted-foreground" role="status">{submitting ? "正在提交资料，请稍候…" : "分析完成后，可继续确认规划。"}</p>
+          </div>
         </div>
       </div>
     </section>

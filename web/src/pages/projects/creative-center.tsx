@@ -16,6 +16,7 @@ export function CreativeCenter({ onShortDrama }: { onShortDrama: () => void }) {
     const open = (application: CreativeApplication) => {
         if (application.id === "short-drama") onShortDrama();
         else if (application.id === "commerce-studio") navigate("/projects/commerce-studio");
+        else if (application.id === "universal-try-on") navigate("/ai-apps/universal-try-on");
         else setSelected(application);
     };
     const items = creativeApplications.filter((application) => (category === "全部" || application.category === category) && `${application.title} ${application.description}`.toLowerCase().includes(search.trim().toLowerCase()));

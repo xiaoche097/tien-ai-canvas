@@ -138,7 +138,7 @@ export default function TryOnPage() {
   };
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="w-full min-w-0 space-y-6">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="sm" className="rounded-2xl" onClick={() => router.back()}>
           <ArrowLeft className="h-4 w-4 mr-1" />
@@ -151,7 +151,7 @@ export default function TryOnPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* 左侧：上传衣服 */}
-        <div className="space-y-4 rounded-[2rem] border border-white/80 bg-white/70 p-5 shadow-sm dark:border-white/10 dark:bg-[#141416]/70">
+        <div className="space-y-4 rounded-lg border border-border bg-card p-5">
           <h3 className="font-semibold text-sm">1. 选择衣服</h3>
 
           <div className="space-y-2">

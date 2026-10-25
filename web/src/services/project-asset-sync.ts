@@ -12,7 +12,6 @@ import { uploadGeneratedAssetToConfiguredSources } from "@/services/external-ass
 import { getImageBlob, resolveImageUrl, setImageBlob } from "@/services/image-storage";
 import { generationArtifactStorageKey, loadOrStoreGenerationArtifact } from "@/services/generation-artifact-sink";
 import { createProviderNeutralGenerationTaskEffectStore } from "@/services/provider-neutral-generation-effects";
-import { getCachedResourceBlob } from "@/services/resource-blob-cache";
 import { hasRemoteUserDataSyncSession, loadAssetsForUse, saveRemoteUserDataNow } from "@/services/user-data-sync";
 import { getActiveUserScope } from "@/lib/user-scope";
 import { normalizeAssetCategory } from "@/lib/asset-category";
@@ -87,7 +86,7 @@ export async function retryCanvasAssetSyncAfterRateLimit<T>(operation: () => Pro
 export function ensureCanvasNodeAsset(options: EnsureCanvasNodeAssetOptions) {
     const scope = getActiveUserScope();
     const taskIdentity = options.taskId || options.node.metadata?.taskId || options.node.metadata?.storageKey || options.node.id;
-    const identity = options.node.metadata?.imageLayerGroup || options.node.metadata?.layerExtraction ? `${taskIdentity}:${options.node.metadata.storageKey || ""}` : taskIdentity;
+    const identity = options.node.metadata?.imageLayerGroup || options.node.metadata?.layerExtraction || options.node.metadata?.emotionEdit?.editRegion ? `${taskIdentity}:${options.node.metadata.storageKey || ""}` : taskIdentity;
     const key = [scope, options.domainProjectId || "personal", options.canvasId, options.node.id, identity].join(":");
     const pending = pendingAssetSyncs.get(key);
     if (pending) return pending;
@@ -125,7 +124,7 @@ async function persistCanvasNodeAsset(options: EnsureCanvasNodeAssetOptions): Pr
     // 继续上传素材和画布，不能把一个可恢复的本地成功报告成失败。
     if (!hasRemoteUserDataSyncSession()) return { assetId: asset.id, created, linkedToProject: false };
     if (!options.domainProjectId) {
-        await saveRemoteUserDataNow();
+        await saveRemoteUserDataNow([]);
         throwIfAborted(options.signal);
         return { assetId: asset.id, created, linkedToProject: false };
     }
@@ -144,7 +143,7 @@ async function syncAssetToProject(assetId: string, domainProjectId: string, cate
     }
 
     // 项目关联依赖后端 assets 记录，先强制完成素材同步，不能依赖延迟自动同步的时序。
-    await saveRemoteUserDataNow();
+    await saveRemoteUserDataNow([]);
     throwIfAborted(signal);
     const { asset: linkedAsset } = await linkProjectAsset(
         domainProjectId,
@@ -165,7 +164,7 @@ async function syncAssetToProject(assetId: string, domainProjectId: string, cate
         primaryVersionId: linked.primaryVersionId,
         metadata: { ...asset.metadata, projectIds: [...new Set([...linkedProjectIds, domainProjectId])] },
     });
-    await saveRemoteUserDataNow();
+    await saveRemoteUserDataNow([]);
     throwIfAborted(signal);
 }
 
@@ -276,12 +275,10 @@ async function storedGenerationMedia(dataUrl: string, effectKey: string, mediaTy
     };
 }
 
-async function cachedRemoteGenerationVideo(video: NonNullable<BackendGenerationResult["video"]>, signal?: AbortSignal) {
+async function remoteGenerationVideo(video: NonNullable<BackendGenerationResult["video"]>, signal?: AbortSignal) {
     if (!video.storageKey) throw new Error("生成视频缺少云端资源标识");
     throwIfAborted(signal);
-    const blob = await getCachedResourceBlob(video.storageKey);
-    throwIfAborted(signal);
-    if (!blob) throw new Error("生成视频资源缓存失败，未标记为成功");
+    // 服务端已保存结果；登记素材只需资源引用，不依赖跨域下载整段视频。
     const url = await resolveMediaUrl(video.storageKey, video.dataUrl);
     throwIfAborted(signal);
     if (!url) throw new Error("生成视频资源地址为空，未标记为成功");
@@ -291,8 +288,8 @@ async function cachedRemoteGenerationVideo(video: NonNullable<BackendGenerationR
         width: video.width || 0,
         height: video.height || 0,
         durationMs: video.durationMs,
-        bytes: video.bytes || blob.size,
-        mimeType: video.mimeType || blob.type || "video/mp4",
+        bytes: video.bytes || 0,
+        mimeType: video.mimeType || "video/mp4",
     };
 }
 
@@ -337,7 +334,7 @@ async function generationOutputAsset(input: Parameters<MaterializeGenerationTask
         const video = result.video;
         if (!video) throw new Error("生成任务缺少视频输出");
         const stored = video.storageKey
-            ? await cachedRemoteGenerationVideo(video, input.signal)
+            ? await remoteGenerationVideo(video, input.signal)
             : await storedGenerationMedia(
                   video.dataUrl,
                   input.effectKey,

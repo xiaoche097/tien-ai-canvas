@@ -5,6 +5,7 @@ import { planSections } from "@/lib/services/planner-service";
 import { checkAndDeductCredits, refundCredits } from "@/lib/services/credit-service";
 import { getAccessKeyFromHeader } from "@/lib/utils/auth";
 import { handleRouteError, ok } from "@/lib/utils/route";
+import { detailAspectRatios } from "@/lib/utils/section-aspect-ratio";
 
 export const maxDuration = 300;
 
@@ -14,8 +15,9 @@ const planRequestSchema = z.object({
   previewConfig: z
     .object({
       heroImageCount: z.number().int().min(3).max(5),
+      heroAspectRatio: z.enum(["1:1", "3:4"]).default("1:1"),
       detailSectionCount: z.number().int().min(4).max(10),
-      imageAspectRatio: z.enum(["3:4", "9:16"]),
+      imageAspectRatio: z.enum(detailAspectRatios),
       contentLanguage: z.enum(["zh-CN", "en-US", "ja-JP", "ko-KR"]),
     })
     .optional(),

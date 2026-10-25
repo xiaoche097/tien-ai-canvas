@@ -5,7 +5,6 @@ import { Loader2 } from "lucide-react";
 
 import { RecentProjectList } from "@/components/projects/recent-project-list";
 import { PageHeader } from "@/components/shared/page-header";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface ProjectItem {
   id: string;
@@ -45,19 +44,12 @@ export default function HistoryPage() {
   }, []);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <PageHeader
-        eyebrow="历史记录"
-        title="最近项目"
-        description="按作品墙方式查看已有项目，快速回到分析、规划、编辑或删除不再需要的内容。"
+        title="历史记录"
+        description="查看商品项目，继续分析、规划与编辑。"
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>项目历史</CardTitle>
-          <CardDescription>这里集中展示当前账号下的全部历史项目。</CardDescription>
-        </CardHeader>
-        <CardContent>
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -65,8 +57,6 @@ export default function HistoryPage() {
           ) : (
             <RecentProjectList initialProjects={projects} />
           )}
-        </CardContent>
-      </Card>
     </div>
   );
 }

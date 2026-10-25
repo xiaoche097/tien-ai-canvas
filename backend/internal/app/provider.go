@@ -75,6 +75,8 @@ type providerConfig struct {
 	Model                 string                 `json:"model"`
 	Size                  string                 `json:"size"`
 	Quality               string                 `json:"quality"`
+	ImageResolution       string                 `json:"imageResolution"`
+	ImageParameters       map[string]any         `json:"imageParameters,omitempty"`
 	TransparentBackground string                 `json:"transparentBackground"`
 	Count                 string                 `json:"count"`
 	VideoSeconds          string                 `json:"videoSeconds"`
@@ -142,7 +144,7 @@ func (s *Service) processCanvasGenerationTask(ctx context.Context, userID string
 	}
 	promptTemplateOperation := metadataString(input.Metadata, "promptTemplateOperation")
 	// 视频节点的最终 Prompt 只取输入框内容，不能被分镜模板替换；图片和文本仍沿用模板能力。
-	if input.Mode != "video" && promptTemplateOperation != "" {
+	if input.Mode != "video" && promptTemplateOperation != "" && !isTryOnInput(input) {
 		values := metadataStringValues(input.Metadata["promptTemplateVariables"])
 		compiled, compileErr := s.compilePrompt(userID, promptTemplateOperation, values)
 		if compileErr != nil {
@@ -164,6 +166,13 @@ func (s *Service) processCanvasGenerationTask(ctx context.Context, userID string
 		return nil, err
 	}
 	input.Config = config
+	if isTryOnInput(input) {
+		compiled, err := s.compileTryOnPrompt(userID, input)
+		if err != nil {
+			return nil, err
+		}
+		input.Prompt = compiled
+	}
 	if input.Mode == "text" && input.Config.CapabilityConfig != nil && input.Config.CapabilityConfig.Text != nil {
 		// The same capability contract drives provider output limits, billing
 		// estimates and Agent context budgeting. Never silently fall back to a

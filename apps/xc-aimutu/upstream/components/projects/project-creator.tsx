@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, Trash2, UploadCloud } from "lucide-react";
+import { Loader2, UploadCloud } from "lucide-react";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ImageUpload } from "@/components/shared/image-upload";
 import { fileToBase64Payload } from "@/lib/utils/base64-upload";
 import { assetTypeLabels, platformLabels, platformOptions, styleLabels, styleOptions } from "@/types/domain";
 import { projectCreateSchema } from "@/lib/validations/project";
@@ -20,46 +21,6 @@ import { projectCreateSchema } from "@/lib/validations/project";
 type ProjectCreateValues = z.input<typeof projectCreateSchema>;
 type UploadBucketKey = "MAIN" | "ANGLE" | "DETAIL" | "REFERENCE" | "PACKAGING" | "NUTRITION" | "INGREDIENT";
 type UploadBuckets = Record<UploadBucketKey, File[]>;
-
-function PreviewGrid(props: {
-  type: UploadBucketKey;
-  files: File[];
-  onRemove: (index: number) => void;
-}) {
-  if (props.files.length === 0) {
-    return (
-      <div className="rounded-2xl bg-muted/70 p-4 text-xs text-muted-foreground">
-        暂未选择文件
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid grid-cols-2 gap-3">
-      {props.files.map((file, index) => {
-        const previewUrl = URL.createObjectURL(file);
-        return (
-          <div key={`${file.name}-${index}`} className="overflow-hidden rounded-2xl border border-border bg-white">
-            <div className="aspect-square bg-slate-100">
-              <img src={previewUrl} alt={file.name} className="h-full w-full object-cover" />
-            </div>
-            <div className="space-y-2 p-3">
-              <p className="truncate text-xs text-muted-foreground">{file.name}</p>
-              <button
-                type="button"
-                onClick={() => props.onRemove(index)}
-                className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium text-rose-500 transition-all duration-200 hover:-translate-y-0.5 hover:bg-rose-50 hover:text-rose-600 active:scale-[0.98]"
-              >
-                <Trash2 className="mr-1 h-3.5 w-3.5" />
-                删除
-              </button>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 
 export function ProjectCreator() {
   const router = useRouter();
@@ -151,18 +112,6 @@ export function ProjectCreator() {
     }));
   };
 
-  const handleFileChange = (type: UploadBucketKey, fileList: FileList | null, multiple: boolean) => {
-    const files = fileList ? Array.from(fileList) : [];
-    updateBucket(type, multiple ? files : files.slice(0, 1));
-  };
-
-  const removeQueuedFile = (type: UploadBucketKey, index: number) => {
-    updateBucket(
-      type,
-      uploads[type].filter((_, currentIndex) => currentIndex !== index),
-    );
-  };
-
   const onSubmit = form.handleSubmit(async (values) => {
     setSubmitting(true);
     try {
@@ -208,12 +157,12 @@ export function ProjectCreator() {
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>新建商品项目</CardTitle>
-        <CardDescription>创建项目后会自动跳转到分析页，继续完成 AI 结构化解析与 section 规划。</CardDescription>
+    <Card className="motu-project-creator border-0 bg-transparent">
+      <CardHeader className="px-0 pt-0">
+        <CardTitle>商品资料</CardTitle>
+        <CardDescription>填写基础信息与视觉风格。</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 px-0">
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2 md:col-span-2">
             <Label>项目名称</Label>
@@ -261,33 +210,20 @@ export function ProjectCreator() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-dashed border-border p-4">
-          <p className="text-sm font-medium mb-2">📤 上传产品图片（选填）</p>
-          <p className="text-xs text-muted-foreground mb-4">如果不传图片，AI 将基于上方文字信息进行分析。上传图片可获得更准确的视觉效果。</p>
+        <div className="border-t border-border pt-6">
+          <p className="mb-2 text-sm font-semibold">商品素材</p>
+          <p className="mb-5 text-xs text-muted-foreground">按用途添加图片；没有图片时，将基于商品资料分析。</p>
           <div className="grid gap-4 md:grid-cols-2">
           {assetGroups.map((group) => (
-            <div key={group.type} className="space-y-3 rounded-3xl border border-dashed border-border p-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Label>{group.label}</Label>
-                  <span className={`text-xs ${group.required ? "text-rose-500" : "text-muted-foreground"}`}>
-                    {group.required ? "必填" : "选填"}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground">{group.hint}</p>
-              </div>
-
-              <Input
-                type="file"
-                multiple={group.multiple}
-                accept="image/*"
-                onChange={(event) => handleFileChange(group.type, event.target.files, group.multiple)}
-              />
-
-              <PreviewGrid
-                type={group.type}
+            <div key={group.type} className="min-w-0">
+              <ImageUpload
+                id={`project-upload-${group.type}`}
+                label={group.label}
+                description={group.hint}
                 files={uploads[group.type]}
-                onRemove={(index) => removeQueuedFile(group.type, index)}
+                multiple={group.multiple}
+                disabled={submitting}
+                onChange={files => updateBucket(group.type, files)}
               />
             </div>
           ))}

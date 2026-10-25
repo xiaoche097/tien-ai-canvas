@@ -1,11 +1,59 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 
-import { collectCanvasMediaAssetIds, rebindInconsistentCanvasAssets, repairMissingCanvasAssets, repairMissingCanvasVideoPreviews } from "@/services/canvas-asset-repair";
+import { collectCanvasMediaAssetIds, rebindInconsistentCanvasAssets, repairMissingCanvasAssets, repairMissingCanvasVideoPreviews, resolveCanvasAssetRepairResources } from "@/services/canvas-asset-repair";
 import { ApiError } from "@/services/api/request";
 import { useAssetStore, type Asset } from "@/stores/use-asset-store";
 import { useCanvasStore, type CanvasProject } from "@/stores/canvas/use-canvas-store";
 import { CanvasNodeType, type CanvasNodeData } from "@/types/canvas";
 import type { TimelineClip } from "@/types/timeline";
+
+test("同步补登记按实际资源修正陈旧 MIME，保留音频节点与时间线用途", async () => {
+    useAssetStore.setState({ assets: [] });
+    const audio = { ...videoNode("audio", undefined, "resource:audio-file"), type: CanvasNodeType.Audio, metadata: { storageKey: "resource:audio-file", content: "/api/resources/audio-file/file", mimeType: "image/png" } };
+    const clip = { id: "audio-track", kind: "audio", nodeId: "asset:video-file", trackId: "audio-1", startMs: 0, durationMs: 1000, directMedia: { id: "video-file", kind: "audio", title: "视频中的声音", storageKey: "resource:video-file", url: "/api/resources/video-file/file", mimeType: "video/mp4" } } as TimelineClip;
+    useCanvasStore.setState({ projects: [project("repair-mime", [audio], [clip])] });
+    const calls: string[] = [];
+    const lookup = async (id: string) => {
+        calls.push(id);
+        return { id, status: "ready", kind: id === "audio-file" ? "audio" : "video", mimeType: id === "audio-file" ? "audio/wav" : "video/mp4", size: 32, width: 640, height: 360 } as any;
+    };
+    const resources = await resolveCanvasAssetRepairResources(undefined, lookup);
+    expect(repairMissingCanvasAssets(undefined, false, resources)).toEqual({ createdAssets: 2, updatedProjects: 1 });
+    const assets = useAssetStore.getState().assets;
+    expect(assets.find(asset => asset.kind === "audio")?.data).toMatchObject({ mimeType: "audio/wav", storageKey: "resource:audio-file" });
+    expect(assets.find(asset => asset.kind === "video")?.data).toMatchObject({ mimeType: "video/mp4", storageKey: "resource:video-file" });
+    const saved = useCanvasStore.getState().projects[0];
+    expect(saved.nodes[0].type).toBe(CanvasNodeType.Audio);
+    expect(saved.nodes[0].metadata?.content).toBe(audio.metadata.content);
+    expect(saved.timeline?.clips[0].kind).toBe("audio");
+    expect(saved.timeline?.clips[0].directMedia?.kind).toBe("audio");
+    expect(calls).toEqual(["audio-file", "video-file"]);
+    await resolveCanvasAssetRepairResources(undefined, lookup);
+    expect(calls).toHaveLength(2);
+    useAssetStore.setState({ assets: [] });
+    const rebound = rebindInconsistentCanvasAssets([], undefined, resources);
+    expect(rebound.createdAssets).toBe(2);
+});
+
+test("资源查询失败或文件类型无法确认时不伪造音频格式或丢弃节点", async () => {
+    useAssetStore.setState({ assets: [] });
+    const node = { ...videoNode("audio", undefined, "resource:unknown"), type: CanvasNodeType.Audio, metadata: { storageKey: "resource:unknown", content: "/api/resources/unknown/file", mimeType: "image/png" } };
+    useCanvasStore.setState({ projects: [project("unconfirmed", [node])] });
+    await expect(resolveCanvasAssetRepairResources(undefined, async () => { throw new Error("network failure"); })).rejects.toThrow("network failure");
+    await expect(resolveCanvasAssetRepairResources(undefined, async () => ({ id: "unknown", status: "ready", mimeType: "application/octet-stream" } as any))).rejects.toThrow("实际文件类型尚未确认");
+    expect(useCanvasStore.getState().projects[0].nodes[0]).toEqual(node);
+    expect(useAssetStore.getState().assets).toHaveLength(0);
+});
+
+test("场景换图后的旧画布保留资产历史图片引用，不创建重复素材", () => {
+    const image: Asset = { id: "scene", kind: "image", category: "environment", title: "阁楼", coverUrl: "", tags: [], createdAt: "", updatedAt: "", metadata: { projectAssetImageHistory: ["resource:old-image"] }, data: { dataUrl: "/api/resources/new-image/file", storageKey: "resource:new-image", width: 800, height: 600, bytes: 100, mimeType: "image/png" } };
+    useAssetStore.setState({ assets: [image] });
+    const node = { ...videoNode("scene-node", "scene", "resource:old-image"), type: CanvasNodeType.Image };
+    useCanvasStore.setState({ projects: [project("canvas", [node])] });
+    expect(repairMissingCanvasAssets()).toEqual({ createdAssets: 0, updatedProjects: 0 });
+    expect(useCanvasStore.getState().projects[0].nodes[0].metadata?.storageKey).toBe("resource:old-image");
+    expect(useAssetStore.getState().assets).toHaveLength(1);
+});
 
 function videoAsset(id: string, storageKey?: string, url = ""): Asset {
     return {

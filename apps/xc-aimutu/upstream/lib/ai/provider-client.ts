@@ -40,7 +40,7 @@ export interface ImageGenerationRequest {
   model: string;
   prompt: string;
   size?: string;
-  aspectRatio?: "1:1" | "3:4" | "4:3" | "16:9" | "9:16";
+  aspectRatio?: "1:1" | "3:4" | "4:3" | "16:9" | "9:16" | "21:9";
   referenceImages?: string[];
   monitor?: AiMonitorContext;
 }
@@ -51,7 +51,7 @@ export interface ImageEditRequest {
   image: string;
   mask?: string;
   size?: string;
-  aspectRatio?: "1:1" | "3:4" | "4:3" | "16:9" | "9:16";
+  aspectRatio?: "1:1" | "3:4" | "4:3" | "16:9" | "9:16" | "21:9";
   referenceImages?: string[];
   monitor?: AiMonitorContext;
 }

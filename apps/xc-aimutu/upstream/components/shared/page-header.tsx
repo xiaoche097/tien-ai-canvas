@@ -5,17 +5,17 @@ export function PageHeader(props: {
   actions?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-      <div className="space-y-2">
+    <div className="motu-page-header flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="min-w-0 space-y-2">
         {props.eyebrow ? (
-          <p className="text-xs font-medium uppercase tracking-[0.26em] text-slate-500 dark:text-slate-400">{props.eyebrow}</p>
+          <p className="text-xs text-muted-foreground">{props.eyebrow}</p>
         ) : null}
         <div className="space-y-1">
-          <h1 className="text-3xl font-semibold tracking-[-0.03em] text-slate-950 dark:text-white">{props.title}</h1>
-          <p className="max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">{props.description}</p>
+          <h1 className="break-words text-2xl font-semibold leading-snug tracking-tight text-foreground">{props.title}</h1>
+          <p className="max-w-3xl text-sm leading-6 text-muted-foreground">{props.description}</p>
         </div>
       </div>
-      {props.actions ? <div className="flex items-center gap-3">{props.actions}</div> : null}
+      {props.actions ? <div className="flex min-w-0 flex-wrap items-center gap-2">{props.actions}</div> : null}
     </div>
   );
 }

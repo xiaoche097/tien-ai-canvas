@@ -1,0 +1,434 @@
+[
+  {
+    "module": "analysis",
+    "name": "buildProductAnalysisPrompt",
+    "args": [
+      [
+        {
+          "fileName": "sample-product.png",
+          "sortOrder": 0,
+          "isMain": true,
+          "type": "MAIN"
+        }
+      ]
+    ],
+    "expected": "You are a senior e-commerce product strategist and detail-page planner.\nAnalyze the provided product images and asset hints, then return one strict JSON object only.\nDo not output markdown, code fences, explanations, comments, or extra keys.\nAll copy values should be written in Simplified Chinese.\nIf some attributes are uncertain, infer the most likely answer from the images and keep the field non-empty.\n\nAvailable assets:\n1. type=MAIN; file=sample-product.png; isMain=yes\n\nRequired rules:\n1. Every required key must exist.\n2. Every array field must be an array of short Chinese strings.\n3. suggestedSectionPlan must contain at least 6 sections.\n4. suggestedSectionPlan.type must be one of: hero, selling_points, scenario, detail_closeup, specs, material, comparison, gift_scene, brand_trust, summary.\n5. detectedStyle should be a concise Chinese style description like '温暖养生·中式食补·现代简约' or '科技极简·未来感'.\n6. Focus on e-commerce conversion, visual hierarchy, and section planning.\n7. All copy (productName, coreSellingPoints, differentiationPoints, etc.) must avoid absolute superlatives (最, 第一, 顶级, 最佳, 唯一, 根治, 治愈, etc.) and false medical/therapeutic claims.\n8. adLawCategory must be inferred from the product images (e.g. food, cosmetic, health_food, baby, textile, digital, home, general).\n9. adLawRisks must list any detected risky words or phrases found in the analysis output, along with safer alternatives.\n10. If the product is food/health-related and nutrition information is visible in the images, populate nutritionFacts with exact values. Do not estimate or guess. If uncertain, leave empty or omit.\n\nReturn exactly this JSON shape:\n{\n  \"productName\": \"string\",\n  \"category\": \"string\",\n  \"subcategory\": \"string\",\n  \"material\": \"string\",\n  \"color\": \"string\",\n  \"detectedStyle\": \"string (e.g. 温暖养生·中式食补·现代简约, 科技极简, 奢华高端, 极简北欧)\",\n  \"styleTags\": [\"string\"],\n  \"targetAudience\": [\"string\"],\n  \"usageScenarios\": [\"string\"],\n  \"coreSellingPoints\": [\"string\"],\n  \"differentiationPoints\": [\"string\"],\n  \"userConcerns\": [\"string\"],\n  \"recommendedFocusPoints\": [\"string\"],\n  \"suggestedSectionPlan\": [\n    {\n      \"type\": \"hero | selling_points | scenario | detail_closeup | specs | material | comparison | gift_scene | brand_trust | summary\",\n      \"title\": \"string\",\n      \"goal\": \"string\"\n    }\n  ],\n  \"adLawCategory\": \"string (e.g. food, cosmetic, health_food, baby, textile, digital, home, general)\",\n  \"adLawRisks\": [\n    {\n      \"field\": \"string (which field has risk, e.g. coreSellingPoints)\",\n      \"risk\": \"string (the problematic word or phrase)\",\n      \"suggestion\": \"string (safer alternative wording)\"\n    }\n  ],\n  \"nutritionFacts\": {\n    \"热量\": \"string (e.g. 约XXX大卡/100g)\",\n    \"蛋白质\": \"string\",\n    \"脂肪\": \"string\",\n    \"碳水化合物\": \"string\",\n    \"膳食纤维\": \"string\",\n    \"钠\": \"string\",\n    \"其他\": \"string (any other nutrients)\"\n  }\n}"
+  },
+  {
+    "module": "analysis",
+    "name": "buildProductAnalysisPrompt",
+    "args": [
+      []
+    ],
+    "expected": "You are a senior e-commerce product strategist and detail-page planner.\nAnalyze the provided product images and asset hints, then return one strict JSON object only.\nDo not output markdown, code fences, explanations, comments, or extra keys.\nAll copy values should be written in Simplified Chinese.\nIf some attributes are uncertain, infer the most likely answer from the images and keep the field non-empty.\n\nAvailable assets:\nNo uploaded assets.\n\nRequired rules:\n1. Every required key must exist.\n2. Every array field must be an array of short Chinese strings.\n3. suggestedSectionPlan must contain at least 6 sections.\n4. suggestedSectionPlan.type must be one of: hero, selling_points, scenario, detail_closeup, specs, material, comparison, gift_scene, brand_trust, summary.\n5. detectedStyle should be a concise Chinese style description like '温暖养生·中式食补·现代简约' or '科技极简·未来感'.\n6. Focus on e-commerce conversion, visual hierarchy, and section planning.\n7. All copy (productName, coreSellingPoints, differentiationPoints, etc.) must avoid absolute superlatives (最, 第一, 顶级, 最佳, 唯一, 根治, 治愈, etc.) and false medical/therapeutic claims.\n8. adLawCategory must be inferred from the product images (e.g. food, cosmetic, health_food, baby, textile, digital, home, general).\n9. adLawRisks must list any detected risky words or phrases found in the analysis output, along with safer alternatives.\n10. If the product is food/health-related and nutrition information is visible in the images, populate nutritionFacts with exact values. Do not estimate or guess. If uncertain, leave empty or omit.\n\nReturn exactly this JSON shape:\n{\n  \"productName\": \"string\",\n  \"category\": \"string\",\n  \"subcategory\": \"string\",\n  \"material\": \"string\",\n  \"color\": \"string\",\n  \"detectedStyle\": \"string (e.g. 温暖养生·中式食补·现代简约, 科技极简, 奢华高端, 极简北欧)\",\n  \"styleTags\": [\"string\"],\n  \"targetAudience\": [\"string\"],\n  \"usageScenarios\": [\"string\"],\n  \"coreSellingPoints\": [\"string\"],\n  \"differentiationPoints\": [\"string\"],\n  \"userConcerns\": [\"string\"],\n  \"recommendedFocusPoints\": [\"string\"],\n  \"suggestedSectionPlan\": [\n    {\n      \"type\": \"hero | selling_points | scenario | detail_closeup | specs | material | comparison | gift_scene | brand_trust | summary\",\n      \"title\": \"string\",\n      \"goal\": \"string\"\n    }\n  ],\n  \"adLawCategory\": \"string (e.g. food, cosmetic, health_food, baby, textile, digital, home, general)\",\n  \"adLawRisks\": [\n    {\n      \"field\": \"string (which field has risk, e.g. coreSellingPoints)\",\n      \"risk\": \"string (the problematic word or phrase)\",\n      \"suggestion\": \"string (safer alternative wording)\"\n    }\n  ],\n  \"nutritionFacts\": {\n    \"热量\": \"string (e.g. 约XXX大卡/100g)\",\n    \"蛋白质\": \"string\",\n    \"脂肪\": \"string\",\n    \"碳水化合物\": \"string\",\n    \"膳食纤维\": \"string\",\n    \"钠\": \"string\",\n    \"其他\": \"string (any other nutrients)\"\n  }\n}"
+  },
+  {
+    "module": "analysis",
+    "name": "buildTextAnalysisPrompt",
+    "args": [
+      {
+        "name": "样品商品",
+        "category": "general",
+        "description": "真实商品描述",
+        "sellingPoints": "商品特点",
+        "targetAudience": "成年人"
+      }
+    ],
+    "expected": "You are a senior e-commerce product strategist and detail-page planner.\nBased on the provided product text information, analyze and return one strict JSON object only.\nDo not output markdown, code fences, explanations, comments, or extra keys.\nAll copy values should be written in Simplified Chinese.\nInfer reasonable values for any missing fields based on the provided information.\n\nProduct Information:\nProduct Name: 样品商品\nDescription: 真实商品描述\nCategory: general\nSelling Points: 商品特点\nTarget Audience: 成年人\n\nRequired rules:\n1. Every required key must exist.\n2. Every array field must be an array of short Chinese strings (4-10 items each).\n3. suggestedSectionPlan must contain at least 8 sections for a complete detail page.\n4. suggestedSectionPlan.type must be one of: hero, selling_points, scenario, detail_closeup, specs, material, comparison, gift_scene, brand_trust, summary.\n5. detectedStyle should be a concise Chinese style description (e.g. '温暖养生·中式食补·现代简约', '科技极简·冷色调', '奢华高端·黑金配色'). Infer from product category and selling points.\n6. Focus on e-commerce conversion, visual hierarchy, and section planning.\n7. If category is food/health, emphasize ingredients, nutrition, and wellness. If tech, emphasize specs and innovation. If fashion, emphasize style and occasion.\n8. All copy must avoid absolute superlatives (最, 第一, 顶级, 最佳, 唯一, 根治, 治愈, etc.) and false medical/therapeutic claims.\n9. adLawCategory must be inferred from the product category (e.g. food, cosmetic, health_food, baby, textile, digital, home, general).\n10. adLawRisks must list any detected risky words or phrases found in the provided sellingPoints/description, along with safer alternatives.\n11. If the product is food/health-related, populate nutritionFacts with exact values from the provided sellingPoints/description. Do not estimate or guess. If uncertain, leave empty or omit.\n ## 广告法合规（必须遵守）： 类目：通用/其他 禁用词：最、第一、顶级、最佳、唯一 注意：不得使用国家级、最高级、最佳等绝对化用语 注意：不得虚假宣传或夸大产品功效 所有文案必须避免绝对化用语和虚假医疗/功效宣称。\n\nReturn exactly this JSON shape:\n{\n  \"productName\": \"string\",\n  \"category\": \"string\",\n  \"subcategory\": \"string\",\n  \"material\": \"string\",\n  \"color\": \"string\",\n  \"detectedStyle\": \"string (e.g. 温暖养生·中式食补·现代简约, 科技极简, 奢华高端, 极简北欧)\",\n  \"styleTags\": [\"string\"],\n  \"targetAudience\": [\"string\"],\n  \"usageScenarios\": [\"string\"],\n  \"coreSellingPoints\": [\"string\"],\n  \"differentiationPoints\": [\"string\"],\n  \"userConcerns\": [\"string\"],\n  \"recommendedFocusPoints\": [\"string\"],\n  \"suggestedSectionPlan\": [\n    {\n      \"type\": \"hero | selling_points | scenario | detail_closeup | specs | material | comparison | gift_scene | brand_trust | summary\",\n      \"title\": \"string\",\n      \"goal\": \"string\"\n    }\n  ],\n  \"adLawCategory\": \"string (e.g. food, cosmetic, health_food, baby, textile, digital, home, general)\",\n  \"adLawRisks\": [\n    {\n      \"field\": \"string (which field has risk, e.g. coreSellingPoints)\",\n      \"risk\": \"string (the problematic word or phrase)\",\n      \"suggestion\": \"string (safer alternative wording)\"\n    }\n  ],\n  \"nutritionFacts\": {\n    \"热量\": \"string (e.g. 约XXX大卡/100g)\",\n    \"蛋白质\": \"string\",\n    \"脂肪\": \"string\",\n    \"碳水化合物\": \"string\",\n    \"膳食纤维\": \"string\",\n    \"钠\": \"string\",\n    \"其他\": \"string (any other nutrients)\"\n  }\n}"
+  },
+  {
+    "module": "analysis",
+    "name": "buildTextAnalysisPrompt",
+    "args": [
+      {}
+    ],
+    "expected": "You are a senior e-commerce product strategist and detail-page planner.\nBased on the provided product text information, analyze and return one strict JSON object only.\nDo not output markdown, code fences, explanations, comments, or extra keys.\nAll copy values should be written in Simplified Chinese.\nInfer reasonable values for any missing fields based on the provided information.\n\nProduct Information:\nProduct Name: Not specified\nDescription: Not specified\nCategory: Not specified\nSelling Points: Not specified\nTarget Audience: Not specified\n\nRequired rules:\n1. Every required key must exist.\n2. Every array field must be an array of short Chinese strings (4-10 items each).\n3. suggestedSectionPlan must contain at least 8 sections for a complete detail page.\n4. suggestedSectionPlan.type must be one of: hero, selling_points, scenario, detail_closeup, specs, material, comparison, gift_scene, brand_trust, summary.\n5. detectedStyle should be a concise Chinese style description (e.g. '温暖养生·中式食补·现代简约', '科技极简·冷色调', '奢华高端·黑金配色'). Infer from product category and selling points.\n6. Focus on e-commerce conversion, visual hierarchy, and section planning.\n7. If category is food/health, emphasize ingredients, nutrition, and wellness. If tech, emphasize specs and innovation. If fashion, emphasize style and occasion.\n8. All copy must avoid absolute superlatives (最, 第一, 顶级, 最佳, 唯一, 根治, 治愈, etc.) and false medical/therapeutic claims.\n9. adLawCategory must be inferred from the product category (e.g. food, cosmetic, health_food, baby, textile, digital, home, general).\n10. adLawRisks must list any detected risky words or phrases found in the provided sellingPoints/description, along with safer alternatives.\n11. If the product is food/health-related, populate nutritionFacts with exact values from the provided sellingPoints/description. Do not estimate or guess. If uncertain, leave empty or omit.\n ## 广告法合规（必须遵守）： 类目：通用/其他 禁用词：最、第一、顶级、最佳、唯一 注意：不得使用国家级、最高级、最佳等绝对化用语 注意：不得虚假宣传或夸大产品功效 所有文案必须避免绝对化用语和虚假医疗/功效宣称。\n\nReturn exactly this JSON shape:\n{\n  \"productName\": \"string\",\n  \"category\": \"string\",\n  \"subcategory\": \"string\",\n  \"material\": \"string\",\n  \"color\": \"string\",\n  \"detectedStyle\": \"string (e.g. 温暖养生·中式食补·现代简约, 科技极简, 奢华高端, 极简北欧)\",\n  \"styleTags\": [\"string\"],\n  \"targetAudience\": [\"string\"],\n  \"usageScenarios\": [\"string\"],\n  \"coreSellingPoints\": [\"string\"],\n  \"differentiationPoints\": [\"string\"],\n  \"userConcerns\": [\"string\"],\n  \"recommendedFocusPoints\": [\"string\"],\n  \"suggestedSectionPlan\": [\n    {\n      \"type\": \"hero | selling_points | scenario | detail_closeup | specs | material | comparison | gift_scene | brand_trust | summary\",\n      \"title\": \"string\",\n      \"goal\": \"string\"\n    }\n  ],\n  \"adLawCategory\": \"string (e.g. food, cosmetic, health_food, baby, textile, digital, home, general)\",\n  \"adLawRisks\": [\n    {\n      \"field\": \"string (which field has risk, e.g. coreSellingPoints)\",\n      \"risk\": \"string (the problematic word or phrase)\",\n      \"suggestion\": \"string (safer alternative wording)\"\n    }\n  ],\n  \"nutritionFacts\": {\n    \"热量\": \"string (e.g. 约XXX大卡/100g)\",\n    \"蛋白质\": \"string\",\n    \"脂肪\": \"string\",\n    \"碳水化合物\": \"string\",\n    \"膳食纤维\": \"string\",\n    \"钠\": \"string\",\n    \"其他\": \"string (any other nutrients)\"\n  }\n}"
+  },
+  {
+    "module": "analysis",
+    "name": "buildProductAnalysisRepairPrompt",
+    "args": [
+      "synthetic invalid output"
+    ],
+    "expected": "You repair malformed product-analysis output into one strict JSON object.\nReturn JSON only. No markdown, no explanations, no extra keys.\nAll string values should be in Simplified Chinese when possible.\nIf a field is missing, infer a reasonable non-empty value from the source content.\nIf suggestedSectionPlan is missing or too short, create at least 6 valid sections.\nValid section types: hero, selling_points, scenario, detail_closeup, specs, material, comparison, gift_scene, brand_trust, summary.\n\nTarget JSON shape:\n{\n  \"productName\": \"string\",\n  \"category\": \"string\",\n  \"subcategory\": \"string\",\n  \"material\": \"string\",\n  \"color\": \"string\",\n  \"detectedStyle\": \"string (e.g. 温暖养生·中式食补·现代简约, 科技极简, 奢华高端, 极简北欧)\",\n  \"styleTags\": [\"string\"],\n  \"targetAudience\": [\"string\"],\n  \"usageScenarios\": [\"string\"],\n  \"coreSellingPoints\": [\"string\"],\n  \"differentiationPoints\": [\"string\"],\n  \"userConcerns\": [\"string\"],\n  \"recommendedFocusPoints\": [\"string\"],\n  \"suggestedSectionPlan\": [\n    {\n      \"type\": \"hero | selling_points | scenario | detail_closeup | specs | material | comparison | gift_scene | brand_trust | summary\",\n      \"title\": \"string\",\n      \"goal\": \"string\"\n    }\n  ],\n  \"adLawCategory\": \"string (e.g. food, cosmetic, health_food, baby, textile, digital, home, general)\",\n  \"adLawRisks\": [\n    {\n      \"field\": \"string (which field has risk, e.g. coreSellingPoints)\",\n      \"risk\": \"string (the problematic word or phrase)\",\n      \"suggestion\": \"string (safer alternative wording)\"\n    }\n  ],\n  \"nutritionFacts\": {\n    \"热量\": \"string (e.g. 约XXX大卡/100g)\",\n    \"蛋白质\": \"string\",\n    \"脂肪\": \"string\",\n    \"碳水化合物\": \"string\",\n    \"膳食纤维\": \"string\",\n    \"钠\": \"string\",\n    \"其他\": \"string (any other nutrients)\"\n  }\n}\n\nSource content to repair:\nsynthetic invalid output"
+  },
+  {
+    "module": "planning",
+    "name": "buildSectionPlanningPrompt",
+    "args": [
+      {
+        "productName": "样品商品",
+        "category": "general",
+        "subcategory": "日用品",
+        "styleTags": [
+          "自然"
+        ],
+        "targetAudience": [
+          "成年人"
+        ],
+        "usageScenarios": [
+          "日常"
+        ],
+        "coreSellingPoints": [
+          "真实材质"
+        ],
+        "differentiationPoints": [
+          "细节"
+        ],
+        "suggestedSectionPlan": []
+      },
+      "premium",
+      "taobao_tmall",
+      6,
+      4,
+      "zh-CN",
+      "1:1"
+    ],
+    "expected": "You are a senior e-commerce detail-page strategist.\nPlatform: 淘宝 / 天猫 | Style: 高级质感 | Language: Simplified Chinese\nGenerate 10 sections total: 4 hero images + 6 detail sections.\nReturn strict JSON only. No markdown.\n\n## Output format:\n{\"sections\": [{\"id\":\"...\",\"type\":\"...\",\"title\":\"...\",\"goal\":\"...\",\"copy\":\"...\",\"visualPrompt\":\"...\"}]}\n\n## Section types:\nhero, pain_point, selling_points, scenario, detail_closeup, specs, material, comparison, brand_trust, summary, conversion, gift_scene, origin, nutrition, audience, formula, custom\n\n## Each section fields (keep concise):\n- id: unique string\n- type: section type\n- title: Chinese section name\n- goal: 1-sentence design purpose\n- copy: marketing copy (main title + key bullets, Chinese)\n- visualPrompt: bilingual prompt with Chinese visual direction + English Prompt (30-50 words, photography terms). HERO composition: 1:1; detail composition: vertical 9:16.\n\n## Rules:\n- First 4 sections must be type=hero\n- Remaining 6 sections are detail sections\n- All copy in Simplified Chinese\n- visualPrompt format: '中文提示：... English Prompt: ...'\n- Keep visualPrompt under 100 words total\n- Visual flow: Grab → Empathize → Trust → Convert\n- ALL marketing copy (title, bullets, headlines) must comply with Chinese Advertising Law: no absolute superlatives (最, 第一, 顶级, 最佳, 唯一, 根治, 治愈, 100%, etc.), no false medical claims, no unverified certifications.\n- If nutritionFacts data is provided in the context, use those exact values in the copy for specs/nutrition sections. Do not estimate, round, or invent numbers. If data is missing, omit specific numbers rather than guessing.\n ## 广告法合规（必须遵守）： 类目：通用/其他 禁用词：最、第一、顶级、最佳、唯一 注意：不得使用国家级、最高级、最佳等绝对化用语 注意：不得虚假宣传或夸大产品功效 所有文案必须避免绝对化用语和虚假医疗/功效宣称。\n\n## Context:\n{\"productName\":\"样品商品\",\"category\":\"general\",\"subcategory\":\"日用品\",\"styleTags\":[\"自然\"],\"targetAudience\":[\"成年人\"],\"usageScenarios\":[\"日常\"],\"coreSellingPoints\":[\"真实材质\"],\"differentiationPoints\":[\"细节\"],\"suggestedSectionPlan\":[],\"nutritionFacts\":{}}"
+  },
+  {
+    "module": "planning",
+    "name": "buildClothingPlanningPrompt",
+    "args": [
+      {
+        "productName": "样品商品",
+        "category": "general",
+        "subcategory": "日用品",
+        "styleTags": [
+          "自然"
+        ],
+        "targetAudience": [
+          "成年人"
+        ],
+        "usageScenarios": [
+          "日常"
+        ],
+        "coreSellingPoints": [
+          "真实材质"
+        ],
+        "differentiationPoints": [
+          "细节"
+        ],
+        "suggestedSectionPlan": []
+      },
+      "户外风格",
+      "amazon",
+      3,
+      "en-US",
+      "1:1"
+    ],
+    "expected": "You are a senior e-commerce fashion detail-page strategist specializing in clothing products.\nPlatform: Amazon | Style: 户外风格 | Language: English\nGenerate 13 sections total: 3 hero images + 10 fixed clothing detail sections.\nReturn strict JSON only. No markdown.\n\n## CRITICAL: Fixed module structure (MUST follow exactly)\nThe output MUST contain exactly these sections in this order:\n\n1. type=scenario | title must include '模特全身展示' | purpose: 模特站立全身照，展示整体穿搭效果\n2. type=selling_points | title must include '产品正反面展示' | purpose: 服装正面与背面平铺/挂拍展示\n3. type=detail_closeup | title must include '设计细节展示' | purpose: 领口、袖口、纽扣、缝线等工艺特写\n4. type=material | title must include '材质展示' | purpose: 面料纹理、光泽、触感等材质特写\n5. type=specs | title must include '尺码表' | purpose: 尺码对照表与测量方法示意\n6. type=scenario | title must include '模特正面展示' | purpose: 模特正面半身/全身照\n7. type=scenario | title must include '模特背面展示' | purpose: 模特背面展示照\n8. type=scenario | title must include '模特侧身展示' | purpose: 模特侧身展示照，突出版型线条\n9. type=detail_closeup | title must include '产品正面大图' | purpose: 服装正面高清全貌图\n10. type=detail_closeup | title must include '产品背面大图' | purpose: 服装背面高清全貌图\n11. type=detail_closeup | title must include '产品细节大图' | purpose: 关键细节部位高清大图\n\nBefore these 10 detail modules, there must be exactly 3 hero sections (type=hero).\n\n## Output format:\n{\"sections\": [{\"id\":\"...\",\"type\":\"...\",\"title\":\"...\",\"goal\":\"...\",\"copy\":\"...\",\"visualPrompt\":\"...\"}]}\n\n## Each section fields (be specific and product-relevant):\n- id: unique string\n- type: one of the fixed types above (DO NOT deviate)\n- title: Chinese section name. MUST incorporate the product name, style, color, or fabric. Generic titles like '模特全身展示' are forbidden — make it specific, e.g. '法式碎花连衣裙·模特全身展示' or '复古牛仔外套·模特正面展示'.\n- goal: 1-sentence design purpose that references the specific product's selling point\n- copy: marketing copy (main title + 2-3 key bullets) in Simplified Chinese. MUST reference actual product features from context — color, fabric, cut, style, occasion. Do NOT use generic filler text like '优质面料，亲肤透气'.\n- visualPrompt: bilingual prompt with specific product details injected. Format: '中文提示：... English Prompt: ...'\n\n## visualPrompt rules for clothing:\n- HERO sections (头图): MUST use '正方形 1:1 构图 / square 1:1 composition'.\n- DETAIL sections (the 10 fixed modules): MUST use '竖版 3:4 构图' / 'vertical 3:4 mobile composition'.\n- For ANY detail section that shows a model (全身/正面/背面/侧身), the prompt MUST end with: '请严格保持与参考图中模特一致的人物形象、发型、五官和身材比例。' / 'Strictly maintain the same model appearance, hairstyle, facial features, and body proportions as the reference image.'\n- Include specific product descriptors from context: color, fabric type, silhouette, pattern, neckline, sleeve length, hem style\n- Keep visualPrompt under 120 words total\n\n## Copy rules:\n- ALL marketing copy must comply with Chinese Advertising Law: no absolute superlatives (最, 第一, 顶级, 最佳, 唯一, 根治, 治愈, 100%, etc.)\n- Copy must be SPECIFIC to this product. Mention actual colors, fabrics, design features, target occasions.\n- Avoid generic phrases like '优质面料' or '精工细作' unless paired with specific material names.\n ## 广告法合规（必须遵守）： 类目：通用/其他 禁用词：最、第一、顶级、最佳、唯一 注意：不得使用国家级、最高级、最佳等绝对化用语 注意：不得虚假宣传或夸大产品功效 所有文案必须避免绝对化用语和虚假医疗/功效宣称。\n\n## Context:\n{\"productName\":\"样品商品\",\"category\":\"general\",\"subcategory\":\"日用品\",\"styleTags\":[\"自然\"],\"targetAudience\":[\"成年人\"],\"usageScenarios\":[\"日常\"],\"coreSellingPoints\":[\"真实材质\"],\"differentiationPoints\":[\"细节\"],\"suggestedSectionPlan\":[],\"nutritionFacts\":{}}"
+  },
+  {
+    "module": "generation",
+    "name": "buildSectionImagePrompt",
+    "args": [
+      {
+        "type": "HERO",
+        "title": "样品头图",
+        "goal": "介绍商品",
+        "copy": "商品文案{{保留原文}}",
+        "visualPrompt": "正方形 1:1 构图 / square 1:1 composition"
+      },
+      [
+        {
+          "fileName": "sample-product.png",
+          "sortOrder": 0,
+          "isMain": true,
+          "type": "MAIN"
+        }
+      ],
+      "1:1",
+      "zh-CN"
+    ],
+    "expected": "You are a senior e-commerce key-visual designer creating marketplace-ready product artwork.\nSection type: HERO\nSection title: 样品头图\nSection goal: 介绍商品\nSection copy: 商品文案{{保留原文}}\nVisual prompt guidance: 正方形 1:1 构图 / square 1:1 composition\nReference images: sample-product.png\nThe uploaded main product image is the source of truth for product identity. Keep the same product shape, material, color family, proportions, and key recognisable details across every generated hero image and detail image. Do not invent a different product. Use the provided image as the visual anchor, then change composition, scene, angle, crop, lighting, and selling-point emphasis according to the section goal.\nThe final image must be a square 1:1 e-commerce hero composition, optimized for tappable product gallery covers.\nAll user-facing marketing copy that appears inside the image must be written in Simplified Chinese. The section title, key selling points, short supporting copy, disclaimers, and CTA should all be in Simplified Chinese when they appear in the image. Do not mix in Simplified Chinese unless the target language is Simplified Chinese. Keep the typography native, polished, and commercially readable for the target language.\nGenerate one high-conversion mobile e-commerce visual for this section.\nThe image should emphasize product clarity, composition hierarchy, material texture, and marketplace aesthetics.\nThe headline, selling points, supporting copy, and CTA should be visually designed inside the image rather than left for later DOM text insertion.\nMake the result feel like finished commercial artwork, not a blank template.\nIMPORTANT: Any text embedded in the image must comply with Chinese Advertising Law. Do not include absolute superlatives (最, 第一, 顶级, 最佳, 唯一, 根治, 治愈, 100%, etc.), false medical claims, or unverified certifications inside the image text.\nCRITICAL: If the section involves nutrition facts, ingredients, or specifications, do NOT invent or estimate any numbers, percentages, or values. Only use exact data provided in the section copy. If specific numbers are not provided, show the layout/design without filling in fabricated data."
+  },
+  {
+    "module": "generation",
+    "name": "buildRegenerationPrompt",
+    "args": [
+      {
+        "type": "HERO",
+        "title": "样品头图",
+        "goal": "介绍商品",
+        "copy": "商品文案{{保留原文}}",
+        "visualPrompt": "正方形 1:1 构图 / square 1:1 composition"
+      },
+      [],
+      "1:1",
+      "en-US"
+    ],
+    "expected": "You are a senior e-commerce key-visual designer creating marketplace-ready product artwork.\nSection type: HERO\nSection title: 样品头图\nSection goal: 介绍商品\nSection copy: 商品文案{{保留原文}}\nVisual prompt guidance: 正方形 1:1 构图 / square 1:1 composition\nNo reference images were provided.\nIf no product image reference is provided, infer the product carefully from the structured analysis and keep the same product identity across all generated sections.\nThe final image must be a square 1:1 e-commerce hero composition, optimized for tappable product gallery covers.\nAll user-facing marketing copy that appears inside the image must be written in English. The section title, key selling points, short supporting copy, disclaimers, and CTA should all be in English when they appear in the image. Do not mix in Simplified Chinese unless the target language is Simplified Chinese. Keep the typography native, polished, and commercially readable for the target language.\nGenerate one high-conversion mobile e-commerce visual for this section.\nThe image should emphasize product clarity, composition hierarchy, material texture, and marketplace aesthetics.\nThe headline, selling points, supporting copy, and CTA should be visually designed inside the image rather than left for later DOM text insertion.\nMake the result feel like finished commercial artwork, not a blank template.\nIMPORTANT: Any text embedded in the image must comply with Chinese Advertising Law. Do not include absolute superlatives (最, 第一, 顶级, 最佳, 唯一, 根治, 治愈, 100%, etc.), false medical claims, or unverified certifications inside the image text.\nCRITICAL: If the section involves nutrition facts, ingredients, or specifications, do NOT invent or estimate any numbers, percentages, or values. Only use exact data provided in the section copy. If specific numbers are not provided, show the layout/design without filling in fabricated data.\nThis is a regeneration task. Keep the same product identity and selling-point direction, but improve composition accuracy, completion quality, and conversion appeal."
+  },
+  {
+    "module": "generation",
+    "name": "buildImageEditPrompt",
+    "args": [
+      {
+        "type": "HERO",
+        "title": "样品头图",
+        "goal": "介绍商品",
+        "copy": "商品文案{{保留原文}}",
+        "visualPrompt": "正方形 1:1 构图 / square 1:1 composition"
+      },
+      [
+        {
+          "fileName": "sample-product.png",
+          "sortOrder": 0,
+          "isMain": true,
+          "type": "MAIN"
+        }
+      ],
+      "repaint",
+      "1:1",
+      "zh-CN"
+    ],
+    "expected": "You are a senior e-commerce key-visual designer creating marketplace-ready product artwork.\nSection type: HERO\nSection title: 样品头图\nSection goal: 介绍商品\nSection copy: 商品文案{{保留原文}}\nVisual prompt guidance: 正方形 1:1 构图 / square 1:1 composition\nReference images: sample-product.png\nThe uploaded main product image is the source of truth for product identity. Keep the same product shape, material, color family, proportions, and key recognisable details across every generated hero image and detail image. Do not invent a different product. Use the provided image as the visual anchor, then change composition, scene, angle, crop, lighting, and selling-point emphasis according to the section goal.\nThe final image must be a square 1:1 e-commerce hero composition, optimized for tappable product gallery covers.\nAll user-facing marketing copy that appears inside the image must be written in Simplified Chinese. The section title, key selling points, short supporting copy, disclaimers, and CTA should all be in Simplified Chinese when they appear in the image. Do not mix in Simplified Chinese unless the target language is Simplified Chinese. Keep the typography native, polished, and commercially readable for the target language.\nGenerate one high-conversion mobile e-commerce visual for this section.\nThe image should emphasize product clarity, composition hierarchy, material texture, and marketplace aesthetics.\nThe headline, selling points, supporting copy, and CTA should be visually designed inside the image rather than left for later DOM text insertion.\nMake the result feel like finished commercial artwork, not a blank template.\nIMPORTANT: Any text embedded in the image must comply with Chinese Advertising Law. Do not include absolute superlatives (最, 第一, 顶级, 最佳, 唯一, 根治, 治愈, 100%, etc.), false medical claims, or unverified certifications inside the image text.\nCRITICAL: If the section involves nutrition facts, ingredients, or specifications, do NOT invent or estimate any numbers, percentages, or values. Only use exact data provided in the section copy. If specific numbers are not provided, show the layout/design without filling in fabricated data.\nThis is a repaint task. Use the current image as the base, keep the same product identity, and redesign the composition, atmosphere, styling, and conversion emphasis according to the section goal.\nThe current section image must be treated as the editable base image.\nKeep the product identical to the uploaded main product image and do not replace it with a different item.\nOutput one marketplace-ready mobile e-commerce image only."
+  },
+  {
+    "module": "generation",
+    "name": "buildImageEditPrompt",
+    "args": [
+      {
+        "type": "HERO",
+        "title": "样品头图",
+        "goal": "介绍商品",
+        "copy": "商品文案{{保留原文}}",
+        "visualPrompt": "正方形 1:1 构图 / square 1:1 composition"
+      },
+      [],
+      "enhance",
+      "1:1",
+      "en-US"
+    ],
+    "expected": "You are a senior e-commerce key-visual designer creating marketplace-ready product artwork.\nSection type: HERO\nSection title: 样品头图\nSection goal: 介绍商品\nSection copy: 商品文案{{保留原文}}\nVisual prompt guidance: 正方形 1:1 构图 / square 1:1 composition\nNo reference images were provided.\nIf no product image reference is provided, infer the product carefully from the structured analysis and keep the same product identity across all generated sections.\nThe final image must be a square 1:1 e-commerce hero composition, optimized for tappable product gallery covers.\nAll user-facing marketing copy that appears inside the image must be written in English. The section title, key selling points, short supporting copy, disclaimers, and CTA should all be in English when they appear in the image. Do not mix in Simplified Chinese unless the target language is Simplified Chinese. Keep the typography native, polished, and commercially readable for the target language.\nGenerate one high-conversion mobile e-commerce visual for this section.\nThe image should emphasize product clarity, composition hierarchy, material texture, and marketplace aesthetics.\nThe headline, selling points, supporting copy, and CTA should be visually designed inside the image rather than left for later DOM text insertion.\nMake the result feel like finished commercial artwork, not a blank template.\nIMPORTANT: Any text embedded in the image must comply with Chinese Advertising Law. Do not include absolute superlatives (最, 第一, 顶级, 最佳, 唯一, 根治, 治愈, 100%, etc.), false medical claims, or unverified certifications inside the image text.\nCRITICAL: If the section involves nutrition facts, ingredients, or specifications, do NOT invent or estimate any numbers, percentages, or values. Only use exact data provided in the section copy. If specific numbers are not provided, show the layout/design without filling in fabricated data.\nThis is an enhancement task. Use the current image as the base, preserve the overall framing, and improve realism, texture, lighting, clarity, edge quality, and commercial polish.\nThe current section image must be treated as the editable base image.\nKeep the product identical to the uploaded main product image and do not replace it with a different item.\nOutput one marketplace-ready mobile e-commerce image only."
+  },
+  {
+    "module": "generation",
+    "name": "buildSectionSvgLayoutPrompt",
+    "args": [
+      {
+        "type": "HERO",
+        "title": "样品头图",
+        "goal": "介绍商品",
+        "copy": "商品文案{{保留原文}}",
+        "visualPrompt": "正方形 1:1 构图 / square 1:1 composition"
+      },
+      [
+        {
+          "fileName": "sample-product.png",
+          "sortOrder": 0,
+          "isMain": true,
+          "type": "MAIN"
+        }
+      ],
+      "1:1",
+      "zh-CN"
+    ],
+    "expected": "You are designing a mobile e-commerce section poster that will be rendered as SVG.\nReturn one strict JSON object only.\nAll user-facing copy must be written in Simplified Chinese.\nSection type: HERO\nSection title: 样品头图\nSection goal: 介绍商品\nSection copy: 商品文案{{保留原文}}\nVisual prompt guidance: 正方形 1:1 构图 / square 1:1 composition\nTarget aspect ratio: 1:1\nReference images: sample-product.png\nUse the main uploaded product image as the product identity reference when composing the layout.\nTarget JSON shape:\n{\n  \"headline\": \"string\",\n  \"subheadline\": \"string\",\n  \"badge\": \"string\",\n  \"highlights\": [\"string\", \"string\", \"string\"],\n  \"backgroundColor\": \"#F5E9D8\",\n  \"accentColor\": \"#A85A2A\",\n  \"panelColor\": \"#FFF8F0\"\n}\nKeep the headline concise and commercial.\nhighlights should contain 2 to 4 short selling points."
+  },
+  {
+    "module": "planning",
+    "name": "buildSectionPlanningPrompt",
+    "args": [
+      {
+        "productName": "样品商品",
+        "category": "general",
+        "subcategory": "日用品",
+        "styleTags": [
+          "自然"
+        ],
+        "targetAudience": [
+          "成年人"
+        ],
+        "usageScenarios": [
+          "日常"
+        ],
+        "coreSellingPoints": [
+          "真实材质"
+        ],
+        "differentiationPoints": [
+          "细节"
+        ],
+        "suggestedSectionPlan": []
+      },
+      "premium",
+      "taobao_tmall",
+      6,
+      4,
+      "zh-CN",
+      "3:4"
+    ],
+    "expected": "You are a senior e-commerce detail-page strategist.\nPlatform: 淘宝 / 天猫 | Style: 高级质感 | Language: Simplified Chinese\nGenerate 10 sections total: 4 hero images + 6 detail sections.\nReturn strict JSON only. No markdown.\n\n## Output format:\n{\"sections\": [{\"id\":\"...\",\"type\":\"...\",\"title\":\"...\",\"goal\":\"...\",\"copy\":\"...\",\"visualPrompt\":\"...\"}]}\n\n## Section types:\nhero, pain_point, selling_points, scenario, detail_closeup, specs, material, comparison, brand_trust, summary, conversion, gift_scene, origin, nutrition, audience, formula, custom\n\n## Each section fields (keep concise):\n- id: unique string\n- type: section type\n- title: Chinese section name\n- goal: 1-sentence design purpose\n- copy: marketing copy (main title + key bullets, Chinese)\n- visualPrompt: bilingual prompt with Chinese visual direction + English Prompt (30-50 words, photography terms). HERO composition: 3:4; detail composition: vertical 9:16.\n\n## Rules:\n- First 4 sections must be type=hero\n- Remaining 6 sections are detail sections\n- All copy in Simplified Chinese\n- visualPrompt format: '中文提示：... English Prompt: ...'\n- Keep visualPrompt under 100 words total\n- Visual flow: Grab → Empathize → Trust → Convert\n- ALL marketing copy (title, bullets, headlines) must comply with Chinese Advertising Law: no absolute superlatives (最, 第一, 顶级, 最佳, 唯一, 根治, 治愈, 100%, etc.), no false medical claims, no unverified certifications.\n- If nutritionFacts data is provided in the context, use those exact values in the copy for specs/nutrition sections. Do not estimate, round, or invent numbers. If data is missing, omit specific numbers rather than guessing.\n ## 广告法合规（必须遵守）： 类目：通用/其他 禁用词：最、第一、顶级、最佳、唯一 注意：不得使用国家级、最高级、最佳等绝对化用语 注意：不得虚假宣传或夸大产品功效 所有文案必须避免绝对化用语和虚假医疗/功效宣称。\n\n## Context:\n{\"productName\":\"样品商品\",\"category\":\"general\",\"subcategory\":\"日用品\",\"styleTags\":[\"自然\"],\"targetAudience\":[\"成年人\"],\"usageScenarios\":[\"日常\"],\"coreSellingPoints\":[\"真实材质\"],\"differentiationPoints\":[\"细节\"],\"suggestedSectionPlan\":[],\"nutritionFacts\":{}}"
+  },
+  {
+    "module": "planning",
+    "name": "buildClothingPlanningPrompt",
+    "args": [
+      {
+        "productName": "样品商品",
+        "category": "general",
+        "subcategory": "日用品",
+        "styleTags": [
+          "自然"
+        ],
+        "targetAudience": [
+          "成年人"
+        ],
+        "usageScenarios": [
+          "日常"
+        ],
+        "coreSellingPoints": [
+          "真实材质"
+        ],
+        "differentiationPoints": [
+          "细节"
+        ],
+        "suggestedSectionPlan": []
+      },
+      "户外风格",
+      "amazon",
+      3,
+      "en-US",
+      "3:4"
+    ],
+    "expected": "You are a senior e-commerce fashion detail-page strategist specializing in clothing products.\nPlatform: Amazon | Style: 户外风格 | Language: English\nGenerate 13 sections total: 3 hero images + 10 fixed clothing detail sections.\nReturn strict JSON only. No markdown.\n\n## CRITICAL: Fixed module structure (MUST follow exactly)\nThe output MUST contain exactly these sections in this order:\n\n1. type=scenario | title must include '模特全身展示' | purpose: 模特站立全身照，展示整体穿搭效果\n2. type=selling_points | title must include '产品正反面展示' | purpose: 服装正面与背面平铺/挂拍展示\n3. type=detail_closeup | title must include '设计细节展示' | purpose: 领口、袖口、纽扣、缝线等工艺特写\n4. type=material | title must include '材质展示' | purpose: 面料纹理、光泽、触感等材质特写\n5. type=specs | title must include '尺码表' | purpose: 尺码对照表与测量方法示意\n6. type=scenario | title must include '模特正面展示' | purpose: 模特正面半身/全身照\n7. type=scenario | title must include '模特背面展示' | purpose: 模特背面展示照\n8. type=scenario | title must include '模特侧身展示' | purpose: 模特侧身展示照，突出版型线条\n9. type=detail_closeup | title must include '产品正面大图' | purpose: 服装正面高清全貌图\n10. type=detail_closeup | title must include '产品背面大图' | purpose: 服装背面高清全貌图\n11. type=detail_closeup | title must include '产品细节大图' | purpose: 关键细节部位高清大图\n\nBefore these 10 detail modules, there must be exactly 3 hero sections (type=hero).\n\n## Output format:\n{\"sections\": [{\"id\":\"...\",\"type\":\"...\",\"title\":\"...\",\"goal\":\"...\",\"copy\":\"...\",\"visualPrompt\":\"...\"}]}\n\n## Each section fields (be specific and product-relevant):\n- id: unique string\n- type: one of the fixed types above (DO NOT deviate)\n- title: Chinese section name. MUST incorporate the product name, style, color, or fabric. Generic titles like '模特全身展示' are forbidden — make it specific, e.g. '法式碎花连衣裙·模特全身展示' or '复古牛仔外套·模特正面展示'.\n- goal: 1-sentence design purpose that references the specific product's selling point\n- copy: marketing copy (main title + 2-3 key bullets) in Simplified Chinese. MUST reference actual product features from context — color, fabric, cut, style, occasion. Do NOT use generic filler text like '优质面料，亲肤透气'.\n- visualPrompt: bilingual prompt with specific product details injected. Format: '中文提示：... English Prompt: ...'\n\n## visualPrompt rules for clothing:\n- HERO sections (头图): MUST use '竖版 3:4 构图 / vertical 3:4 composition'.\n- DETAIL sections (the 10 fixed modules): MUST use '竖版 3:4 构图' / 'vertical 3:4 mobile composition'.\n- For ANY detail section that shows a model (全身/正面/背面/侧身), the prompt MUST end with: '请严格保持与参考图中模特一致的人物形象、发型、五官和身材比例。' / 'Strictly maintain the same model appearance, hairstyle, facial features, and body proportions as the reference image.'\n- Include specific product descriptors from context: color, fabric type, silhouette, pattern, neckline, sleeve length, hem style\n- Keep visualPrompt under 120 words total\n\n## Copy rules:\n- ALL marketing copy must comply with Chinese Advertising Law: no absolute superlatives (最, 第一, 顶级, 最佳, 唯一, 根治, 治愈, 100%, etc.)\n- Copy must be SPECIFIC to this product. Mention actual colors, fabrics, design features, target occasions.\n- Avoid generic phrases like '优质面料' or '精工细作' unless paired with specific material names.\n ## 广告法合规（必须遵守）： 类目：通用/其他 禁用词：最、第一、顶级、最佳、唯一 注意：不得使用国家级、最高级、最佳等绝对化用语 注意：不得虚假宣传或夸大产品功效 所有文案必须避免绝对化用语和虚假医疗/功效宣称。\n\n## Context:\n{\"productName\":\"样品商品\",\"category\":\"general\",\"subcategory\":\"日用品\",\"styleTags\":[\"自然\"],\"targetAudience\":[\"成年人\"],\"usageScenarios\":[\"日常\"],\"coreSellingPoints\":[\"真实材质\"],\"differentiationPoints\":[\"细节\"],\"suggestedSectionPlan\":[],\"nutritionFacts\":{}}"
+  },
+  {
+    "module": "generation",
+    "name": "buildSectionImagePrompt",
+    "args": [
+      {
+        "type": "HERO",
+        "title": "样品头图",
+        "goal": "介绍商品",
+        "copy": "商品文案{{保留原文}}",
+        "visualPrompt": "正方形 1:1 构图 / square 1:1 composition"
+      },
+      [
+        {
+          "fileName": "sample-product.png",
+          "sortOrder": 0,
+          "isMain": true,
+          "type": "MAIN"
+        }
+      ],
+      "3:4",
+      "zh-CN"
+    ],
+    "expected": "You are a senior e-commerce key-visual designer creating marketplace-ready product artwork.\nSection type: HERO\nSection title: 样品头图\nSection goal: 介绍商品\nSection copy: 商品文案{{保留原文}}\nVisual prompt guidance: 竖版 3:4 构图 / vertical 3:4 composition\nReference images: sample-product.png\nThe uploaded main product image is the source of truth for product identity. Keep the same product shape, material, color family, proportions, and key recognisable details across every generated hero image and detail image. Do not invent a different product. Use the provided image as the visual anchor, then change composition, scene, angle, crop, lighting, and selling-point emphasis according to the section goal.\nThe final image must be a vertical 3:4 marketplace poster composition.\nAll user-facing marketing copy that appears inside the image must be written in Simplified Chinese. The section title, key selling points, short supporting copy, disclaimers, and CTA should all be in Simplified Chinese when they appear in the image. Do not mix in Simplified Chinese unless the target language is Simplified Chinese. Keep the typography native, polished, and commercially readable for the target language.\nGenerate one high-conversion mobile e-commerce visual for this section.\nThe image should emphasize product clarity, composition hierarchy, material texture, and marketplace aesthetics.\nThe headline, selling points, supporting copy, and CTA should be visually designed inside the image rather than left for later DOM text insertion.\nMake the result feel like finished commercial artwork, not a blank template.\nIMPORTANT: Any text embedded in the image must comply with Chinese Advertising Law. Do not include absolute superlatives (最, 第一, 顶级, 最佳, 唯一, 根治, 治愈, 100%, etc.), false medical claims, or unverified certifications inside the image text.\nCRITICAL: If the section involves nutrition facts, ingredients, or specifications, do NOT invent or estimate any numbers, percentages, or values. Only use exact data provided in the section copy. If specific numbers are not provided, show the layout/design without filling in fabricated data."
+  },
+  {
+    "module": "generation",
+    "name": "buildRegenerationPrompt",
+    "args": [
+      {
+        "type": "HERO",
+        "title": "样品头图",
+        "goal": "介绍商品",
+        "copy": "商品文案{{保留原文}}",
+        "visualPrompt": "正方形 1:1 构图 / square 1:1 composition"
+      },
+      [],
+      "3:4",
+      "en-US"
+    ],
+    "expected": "You are a senior e-commerce key-visual designer creating marketplace-ready product artwork.\nSection type: HERO\nSection title: 样品头图\nSection goal: 介绍商品\nSection copy: 商品文案{{保留原文}}\nVisual prompt guidance: 竖版 3:4 构图 / vertical 3:4 composition\nNo reference images were provided.\nIf no product image reference is provided, infer the product carefully from the structured analysis and keep the same product identity across all generated sections.\nThe final image must be a vertical 3:4 marketplace poster composition.\nAll user-facing marketing copy that appears inside the image must be written in English. The section title, key selling points, short supporting copy, disclaimers, and CTA should all be in English when they appear in the image. Do not mix in Simplified Chinese unless the target language is Simplified Chinese. Keep the typography native, polished, and commercially readable for the target language.\nGenerate one high-conversion mobile e-commerce visual for this section.\nThe image should emphasize product clarity, composition hierarchy, material texture, and marketplace aesthetics.\nThe headline, selling points, supporting copy, and CTA should be visually designed inside the image rather than left for later DOM text insertion.\nMake the result feel like finished commercial artwork, not a blank template.\nIMPORTANT: Any text embedded in the image must comply with Chinese Advertising Law. Do not include absolute superlatives (最, 第一, 顶级, 最佳, 唯一, 根治, 治愈, 100%, etc.), false medical claims, or unverified certifications inside the image text.\nCRITICAL: If the section involves nutrition facts, ingredients, or specifications, do NOT invent or estimate any numbers, percentages, or values. Only use exact data provided in the section copy. If specific numbers are not provided, show the layout/design without filling in fabricated data.\nThis is a regeneration task. Keep the same product identity and selling-point direction, but improve composition accuracy, completion quality, and conversion appeal."
+  },
+  {
+    "module": "generation",
+    "name": "buildImageEditPrompt",
+    "args": [
+      {
+        "type": "HERO",
+        "title": "样品头图",
+        "goal": "介绍商品",
+        "copy": "商品文案{{保留原文}}",
+        "visualPrompt": "正方形 1:1 构图 / square 1:1 composition"
+      },
+      [
+        {
+          "fileName": "sample-product.png",
+          "sortOrder": 0,
+          "isMain": true,
+          "type": "MAIN"
+        }
+      ],
+      "repaint",
+      "3:4",
+      "zh-CN"
+    ],
+    "expected": "You are a senior e-commerce key-visual designer creating marketplace-ready product artwork.\nSection type: HERO\nSection title: 样品头图\nSection goal: 介绍商品\nSection copy: 商品文案{{保留原文}}\nVisual prompt guidance: 竖版 3:4 构图 / vertical 3:4 composition\nReference images: sample-product.png\nThe uploaded main product image is the source of truth for product identity. Keep the same product shape, material, color family, proportions, and key recognisable details across every generated hero image and detail image. Do not invent a different product. Use the provided image as the visual anchor, then change composition, scene, angle, crop, lighting, and selling-point emphasis according to the section goal.\nThe final image must be a vertical 3:4 marketplace poster composition.\nAll user-facing marketing copy that appears inside the image must be written in Simplified Chinese. The section title, key selling points, short supporting copy, disclaimers, and CTA should all be in Simplified Chinese when they appear in the image. Do not mix in Simplified Chinese unless the target language is Simplified Chinese. Keep the typography native, polished, and commercially readable for the target language.\nGenerate one high-conversion mobile e-commerce visual for this section.\nThe image should emphasize product clarity, composition hierarchy, material texture, and marketplace aesthetics.\nThe headline, selling points, supporting copy, and CTA should be visually designed inside the image rather than left for later DOM text insertion.\nMake the result feel like finished commercial artwork, not a blank template.\nIMPORTANT: Any text embedded in the image must comply with Chinese Advertising Law. Do not include absolute superlatives (最, 第一, 顶级, 最佳, 唯一, 根治, 治愈, 100%, etc.), false medical claims, or unverified certifications inside the image text.\nCRITICAL: If the section involves nutrition facts, ingredients, or specifications, do NOT invent or estimate any numbers, percentages, or values. Only use exact data provided in the section copy. If specific numbers are not provided, show the layout/design without filling in fabricated data.\nThis is a repaint task. Use the current image as the base, keep the same product identity, and redesign the composition, atmosphere, styling, and conversion emphasis according to the section goal.\nThe current section image must be treated as the editable base image.\nKeep the product identical to the uploaded main product image and do not replace it with a different item.\nOutput one marketplace-ready mobile e-commerce image only."
+  },
+  {
+    "module": "generation",
+    "name": "buildImageEditPrompt",
+    "args": [
+      {
+        "type": "HERO",
+        "title": "样品头图",
+        "goal": "介绍商品",
+        "copy": "商品文案{{保留原文}}",
+        "visualPrompt": "正方形 1:1 构图 / square 1:1 composition"
+      },
+      [],
+      "enhance",
+      "3:4",
+      "en-US"
+    ],
+    "expected": "You are a senior e-commerce key-visual designer creating marketplace-ready product artwork.\nSection type: HERO\nSection title: 样品头图\nSection goal: 介绍商品\nSection copy: 商品文案{{保留原文}}\nVisual prompt guidance: 竖版 3:4 构图 / vertical 3:4 composition\nNo reference images were provided.\nIf no product image reference is provided, infer the product carefully from the structured analysis and keep the same product identity across all generated sections.\nThe final image must be a vertical 3:4 marketplace poster composition.\nAll user-facing marketing copy that appears inside the image must be written in English. The section title, key selling points, short supporting copy, disclaimers, and CTA should all be in English when they appear in the image. Do not mix in Simplified Chinese unless the target language is Simplified Chinese. Keep the typography native, polished, and commercially readable for the target language.\nGenerate one high-conversion mobile e-commerce visual for this section.\nThe image should emphasize product clarity, composition hierarchy, material texture, and marketplace aesthetics.\nThe headline, selling points, supporting copy, and CTA should be visually designed inside the image rather than left for later DOM text insertion.\nMake the result feel like finished commercial artwork, not a blank template.\nIMPORTANT: Any text embedded in the image must comply with Chinese Advertising Law. Do not include absolute superlatives (最, 第一, 顶级, 最佳, 唯一, 根治, 治愈, 100%, etc.), false medical claims, or unverified certifications inside the image text.\nCRITICAL: If the section involves nutrition facts, ingredients, or specifications, do NOT invent or estimate any numbers, percentages, or values. Only use exact data provided in the section copy. If specific numbers are not provided, show the layout/design without filling in fabricated data.\nThis is an enhancement task. Use the current image as the base, preserve the overall framing, and improve realism, texture, lighting, clarity, edge quality, and commercial polish.\nThe current section image must be treated as the editable base image.\nKeep the product identical to the uploaded main product image and do not replace it with a different item.\nOutput one marketplace-ready mobile e-commerce image only."
+  },
+  {
+    "module": "generation",
+    "name": "buildSectionSvgLayoutPrompt",
+    "args": [
+      {
+        "type": "HERO",
+        "title": "样品头图",
+        "goal": "介绍商品",
+        "copy": "商品文案{{保留原文}}",
+        "visualPrompt": "正方形 1:1 构图 / square 1:1 composition"
+      },
+      [
+        {
+          "fileName": "sample-product.png",
+          "sortOrder": 0,
+          "isMain": true,
+          "type": "MAIN"
+        }
+      ],
+      "3:4",
+      "zh-CN"
+    ],
+    "expected": "You are designing a mobile e-commerce section poster that will be rendered as SVG.\nReturn one strict JSON object only.\nAll user-facing copy must be written in Simplified Chinese.\nSection type: HERO\nSection title: 样品头图\nSection goal: 介绍商品\nSection copy: 商品文案{{保留原文}}\nVisual prompt guidance: 正方形 1:1 构图 / square 1:1 composition\nTarget aspect ratio: 3:4\nReference images: sample-product.png\nUse the main uploaded product image as the product identity reference when composing the layout.\nTarget JSON shape:\n{\n  \"headline\": \"string\",\n  \"subheadline\": \"string\",\n  \"badge\": \"string\",\n  \"highlights\": [\"string\", \"string\", \"string\"],\n  \"backgroundColor\": \"#F5E9D8\",\n  \"accentColor\": \"#A85A2A\",\n  \"panelColor\": \"#FFF8F0\"\n}\nKeep the headline concise and commercial.\nhighlights should contain 2 to 4 short selling points."
+  },
+  {
+    "module": "planning",
+    "name": "buildPreviewDecisionPrompt",
+    "args": [
+      {
+        "productName": "样品商品",
+        "category": "general",
+        "subcategory": "日用品",
+        "styleTags": [
+          "自然"
+        ],
+        "targetAudience": [
+          "成年人"
+        ],
+        "usageScenarios": [
+          "日常"
+        ],
+        "coreSellingPoints": [
+          "真实材质"
+        ],
+        "differentiationPoints": [
+          "细节"
+        ],
+        "suggestedSectionPlan": []
+      },
+      "zh-CN"
+    ],
+    "expected": "You are a senior e-commerce creative strategist deciding the right image count plan for a product detail page.\nReturn strict JSON only.\nheroImageCount must be an integer between 3 and 5.\ndetailSectionCount must be an integer between 4 and 10.\nThe target content language for the final page is zh-CN.\nHero images should be enough to cover distinct first-screen communication angles such as hero visual, selling point emphasis, scenario mood, trust, or differentiation.\nDetail sections should be enough to fully explain selling points, craftsmanship, specs, trust, and use cases without becoming repetitive.\nIf the product is simple, reduce quantity. If the product needs richer explanation, increase quantity.\n\nProduct context:\n{\n  \"productName\": \"样品商品\",\n  \"category\": \"general\",\n  \"subcategory\": \"日用品\",\n  \"styleTags\": [\n    \"自然\"\n  ],\n  \"usageScenarios\": [\n    \"日常\"\n  ],\n  \"coreSellingPoints\": [\n    \"真实材质\"\n  ],\n  \"differentiationPoints\": [\n    \"细节\"\n  ],\n  \"suggestedSectionPlan\": []\n}"
+  }
+]

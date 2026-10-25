@@ -4,6 +4,8 @@ import path from "path";
 import { prisma } from "@/lib/db/prisma";
 import { assetPublicUrl, deleteAssetRecord } from "@/lib/storage/asset-manager";
 import { env } from "@/lib/utils/env";
+import { projectContentLanguage, type ContentLanguage } from "@/lib/utils/content-language";
+import { normalizeDetailAspectRatio } from "@/lib/utils/section-aspect-ratio";
 
 function readPreviewConfig(snapshot: unknown) {
   const data = (snapshot as Record<string, unknown> | null) ?? {};
@@ -121,6 +123,7 @@ export async function createProject(
   input: {
     name: string;
     platform: string;
+    contentLanguage?: ContentLanguage;
     style: string;
     description?: string | null;
     productInfo?: string | null;
@@ -130,12 +133,13 @@ export async function createProject(
   },
   accessKeyId?: string | null,
 ) {
-  const { productInfo, category, sellingPoints, targetAudience, ...projectData } = input;
+  const { productInfo, category, sellingPoints, targetAudience, contentLanguage, ...projectData } = input;
   return prisma.project.create({
     data: {
       ...projectData,
       accessKeyId: accessKeyId || null,
       modelSnapshot: {
+        previewConfig: { contentLanguage: projectContentLanguage(input.platform, contentLanguage), heroAspectRatio: "1:1", imageAspectRatio: normalizeDetailAspectRatio(undefined, input.platform) },
         productInfo,
         category,
         sellingPoints,
