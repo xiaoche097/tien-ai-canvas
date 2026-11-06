@@ -8,8 +8,8 @@ import (
 
 func TestTryOnTemplatesCoverEveryToolAndModelAdapter(t *testing.T) {
 	definitions := tryOnPromptDefinitions()
-	if len(definitions) != 11 {
-		t.Fatalf("got %d definitions, want 8 tools, 2 adapters and description", len(definitions))
+	if len(definitions) != 12 {
+		t.Fatalf("got %d definitions, want 9 tools, 2 adapters and description", len(definitions))
 	}
 	seen := map[string]bool{}
 	for _, definition := range definitions {
@@ -28,6 +28,9 @@ func TestTryOnTemplatesCoverEveryToolAndModelAdapter(t *testing.T) {
 		intent := TryOnIntent{Tool: role.tool, ProductCount: 2, ReferenceMode: "reference", GenerationMode: "professional", HasAnchor: true}
 		if role.tool == "flat" {
 			intent.GarmentSlots = []string{"upper", "lower"}
+		}
+		if role.tool == "bag" {
+			intent.Bag = &TryOnBag{Type: "auto", AgeGroup: "adult", Views: []TryOnBagView{{Source: "flat", Angle: "front"}, {Source: "mannequin", Angle: "back"}}}
 		}
 		if role.tool == "shoes" {
 			intent.ProductCount = 1

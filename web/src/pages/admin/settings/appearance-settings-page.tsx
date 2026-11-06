@@ -576,8 +576,8 @@ export default function AppearanceSettingsPage() {
                                                     </div>
                                                 </div>
                                                 <div className="admin-appearance-logo-preview-grid" aria-label="深浅模式 Logo 预览">
-                                                    <LogoThemePreview label="浅色界面" icon={<Sun />} src={previews.logoLight} dark={false} frameEnabled={logoFrameEnabled} />
-                                                    <LogoThemePreview label="深色界面" icon={<Moon />} src={previews.logoDark} dark frameEnabled={logoFrameEnabled} />
+                                                    <LogoThemePreview label="浅色界面" icon={<Sun />} src={previews.logoLight} dark={false} frameEnabled={logoFrameEnabled} builtin={previews.logoBuiltin} />
+                                                    <LogoThemePreview label="深色界面" icon={<Moon />} src={previews.logoDark} dark frameEnabled={logoFrameEnabled} builtin={previews.logoBuiltin} />
                                                 </div>
                                             </div>
                                         </div>
@@ -790,7 +790,7 @@ export default function AppearanceSettingsPage() {
                                     </SettingsSectionCard>
                                 ),
                             },
-                            { key: "canvas", label: "画布配置", children: <CanvasAppearanceEditor value={canvas} onChange={setCanvas} disabled={saving || refreshing || restoring || canvasUploading} onUploading={setCanvasUploading} /> },
+                            { key: "canvas", label: "画布配置", destroyOnHidden: true, children: <CanvasAppearanceEditor value={canvas} onChange={setCanvas} disabled={saving || refreshing || restoring || canvasUploading} onUploading={setCanvasUploading} /> },
                             { key: "updates", label: "更新公告", children: <UpdateAnnouncementEditor value={updates} onChange={setUpdates} disabled={saving || refreshing || restoring || canvasUploading} onUploading={setCanvasUploading} /> },
                         ]}
                     />

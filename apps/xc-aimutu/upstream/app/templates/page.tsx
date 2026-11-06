@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import type { TemplateRecord, TemplateModule } from "@/types/template";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { ImageUpload } from "@/components/shared/image-upload";
+import { TemplateCover } from "@/components/templates/template-cover";
 import { PageHeader } from "@/components/shared/page-header";
 import { platformLabels, platformOptions, type PlatformOption } from "@/types/domain";
 import { detailAspectRatios, normalizeDetailAspectRatio, type DetailAspectRatio } from "@/lib/utils/section-aspect-ratio";
@@ -61,6 +62,29 @@ export default function TemplatesPage() {
   const [applyFiles, setApplyFiles] = useState<File[]>([]);
   const [applyConfig, setApplyConfig] = useState({ heroImageCount: 4, heroAspectRatio: "1:1", detailSectionCount: 6, imageAspectRatio: "9:16" as DetailAspectRatio, contentLanguage: "zh-CN" as ContentLanguage });
   const [applying, setApplying] = useState(false);
+  const [coverSaving, setCoverSaving] = useState<string | null>(null);
+
+  async function handleCoverUpload(id: string, file?: File) {
+    if (!file || coverSaving) return;
+    if (!file.type.startsWith("image/") || file.size > 20 * 1024 * 1024) {
+      toast.error("请选择 20MB 以内的封面图片");
+      return;
+    }
+    setCoverSaving(id);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const response = await fetch(`/api/templates/${id}/cover`, { method: "POST", body: form });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.error?.message ?? "封面保存失败");
+      setTemplates(current => current.map(template => template.id === id ? result.data.template : template));
+      toast.success("封面已更新");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "封面保存失败");
+    } finally {
+      setCoverSaving(null);
+    }
+  }
 
   const fetchTemplates = useCallback(async () => {
     try {
@@ -106,6 +130,7 @@ export default function TemplatesPage() {
       const data = await res.json();
       if (data.success) {
         setStructure(data.data.structure);
+        setReferenceImageUrl(data.data.referenceImageUrl || "");
         setStep(2);
         toast.success("AI 分析完成");
       } else {
@@ -135,7 +160,7 @@ export default function TemplatesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
-          referenceImageUrl: referenceImageUrl || "/window.svg",
+          referenceImageUrl,
           structureJson: structure,
           styleProfile: {
             overallStyle: structure.overallStyle,
@@ -514,17 +539,7 @@ export default function TemplatesPage() {
           {templates.map((template) => (
             <Card key={template.id} className="group overflow-hidden">
               <div className="aspect-video bg-muted relative">
-                {template.referenceImageUrl ? (
-                  <img
-                    src={template.referenceImageUrl}
-                    alt={template.name}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center">
-                    <ImageIcon className="h-10 w-10 text-muted-foreground" />
-                  </div>
-                )}
+                <TemplateCover src={template.referenceImageUrl} name={template.name} />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                   <Button variant="secondary" onClick={() => handleApply(template)}>
                     <ArrowRight className="mr-2 h-4 w-4" />
@@ -533,6 +548,11 @@ export default function TemplatesPage() {
                 </div>
               </div>
               <CardContent className="p-4">
+                <input id={`template-cover-${template.id}`} type="file" accept="image/*" className="hidden" onChange={event => { const file = event.target.files?.[0]; event.target.value = ""; void handleCoverUpload(template.id, file); }} />
+                <Button type="button" size="sm" variant="outline" className="mb-3" disabled={Boolean(coverSaving)} onClick={() => document.getElementById(`template-cover-${template.id}`)?.click()}>
+                  {coverSaving === template.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ImageIcon className="mr-2 h-4 w-4" />}
+                  设置／更换封面
+                </Button>
                 <div className="flex items-start justify-between">
                   <div>
                     <h3 className="font-medium">{template.name}</h3>
@@ -635,7 +655,7 @@ export default function TemplatesPage() {
                 <div className="space-y-1"><Label htmlFor="apply-detail-ratio">详情图比例</Label><select id="apply-detail-ratio" className="h-10 w-full rounded-xl border border-input bg-card px-3" value={applyConfig.imageAspectRatio} onChange={event => setApplyConfig(current => ({ ...current, imageAspectRatio: event.target.value as DetailAspectRatio }))}>{detailAspectRatios.map(value => <option key={value} value={value}>{value}</option>)}</select></div>
                 <div className="space-y-1"><Label htmlFor="apply-language">文案语言</Label><select id="apply-language" className="h-10 w-full rounded-xl border border-input bg-card px-3" value={applyConfig.contentLanguage} onChange={event => setApplyConfig(current => ({ ...current, contentLanguage: event.target.value as ContentLanguage }))}>{contentLanguageOptions.map(value => <option key={value} value={value}>{contentLanguageLabels[value]}</option>)}</select></div>
               </div>
-              <p className="text-xs text-muted-foreground">先分析新商品，确认结果后按所选模板风格重新规划。分析与规划使用已配置模型，按调用规则计费；不会直接生成图片。Amazon 第一张头图固定 1:1 白底，其余头图使用所选比例。</p>
+              <p className="text-xs text-muted-foreground">先分析新商品，确认结果后按所选模板风格重新规划。分析与规划使用已配置模型，按调用规则计费；不会直接生成图片。Amazon 头图支持所选 1:1 或 3:4，第一张保留白底与无额外营销文字要求。</p>
             </div>
             <div className="mt-6 flex justify-end gap-3">
               <Button variant="outline" onClick={() => setApplyTarget(null)} disabled={applying} className="rounded-xl">

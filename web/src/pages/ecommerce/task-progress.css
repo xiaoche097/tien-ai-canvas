@@ -1,0 +1,11 @@
+.ecs-task-progress { flex-wrap: wrap; }
+.ecs-task-progress-copy { display: grid; flex: 1 1 240px; gap: var(--space-1); min-width: 0; }
+.ecs-task-progress-copy strong { color: var(--user-ink); font-weight: 500; }
+.ecs-task-progress-copy span { font-size: var(--fs-caption); }
+.ecs-task-progress > button, .ecs-task-progress > a { display: inline-flex; align-items: center; gap: var(--space-1); border: 0; border-radius: var(--r-sm); padding: var(--space-2); background: transparent; color: var(--user-ink); cursor: pointer; font-size: var(--fs-caption); }
+.ecs-task-progress > button:hover, .ecs-task-progress > a:hover { background: var(--user-surface-hover); }
+.ecs-task-progress > button:disabled { opacity: .5; cursor: wait; }
+.ecs-task-progress :is(button, a):focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.ecs-task-spinner, .commerce-flow .commerce-planning-spin { flex: none; animation: ecs-task-turn 1.2s linear infinite; }
+@keyframes ecs-task-turn { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .ecs-task-spinner, .commerce-flow .commerce-planning-spin { animation: none; } }

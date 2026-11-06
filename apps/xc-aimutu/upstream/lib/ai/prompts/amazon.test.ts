@@ -42,3 +42,20 @@ test("normal and fallback plans reserve only the first HERO for MAIN and leave d
   assert.equal(plan[0].copy, "限时低价");
   assert.equal(prepareAmazonPlan("taobao_tmall", plan, "zh-CN"), plan);
 });
+
+test("Amazon MAIN respects portrait selection through planning and generation", () => {
+  const prompt = buildAmazonImagePrompt(section, true, "en-US", "3:4");
+  assert.match(prompt, /vertical 3:4 composition/);
+  assert.doesNotMatch(prompt, /square 1:1/);
+  assert.match(amazonPlanningRules("en-US", "3:4"), /user-selected 3:4 canvas/);
+  assert.match(prepareAmazonPlan("amazon", [section], "en-US", "3:4")[0].visualPrompt, /vertical 3:4/);
+});
+
+test("Amazon planning, MAIN and secondary prompts carry the requested model casting", () => {
+  for (const prompt of [amazonPlanningRules("en-US"), buildAmazonImagePrompt(section, true, "en-US"), buildAmazonImagePrompt(section, false, "en-US")]) {
+    assert.match(prompt, /Do not depict Asian faces/);
+    assert.match(prompt, /European and North American markets/);
+    assert.match(prompt, /do not copy that person's face/);
+    assert.match(prompt, /Do not add people to a product-only composition/);
+  }
+});

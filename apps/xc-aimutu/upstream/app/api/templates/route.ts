@@ -8,7 +8,7 @@ import { handleRouteError, ok } from "@/lib/utils/route";
 
 const createSchema = z.object({
   name: z.string().min(2, "模板名称至少 2 个字"),
-  referenceImageUrl: z.string().min(1, "请上传参考图"),
+  referenceImageUrl: z.string().default(""),
   structureJson: z.record(z.string(), z.unknown()),
   styleProfile: z.record(z.string(), z.unknown()),
   category: z.string().optional(),

@@ -1235,7 +1235,7 @@ export async function planSections(
       const styleContext = templatePlanningContext(project.modelSnapshot, false);
       sections = sections.map((section) => ({ ...section, visualPrompt: section.visualPrompt + styleContext }));
     }
-    sections = prepareAmazonPlan(project.platform, sections, previewConfig.contentLanguage);
+    sections = prepareAmazonPlan(project.platform, sections, previewConfig.contentLanguage, previewConfig.heroAspectRatio);
     await prisma.$transaction(async (tx) => {
       if (templateContext) await tx.pageSection.deleteMany({ where: { projectId } });
       await tx.pageSection.createMany({
@@ -1246,7 +1246,7 @@ export async function planSections(
           title: section.title,
           goal: section.goal,
           copy: section.copy,
-          visualPrompt: section.type === "HERO" ? normalizeHeroComposition(section.visualPrompt, project.platform === "amazon" && section === sections.find((item) => item.type === "HERO") ? "1:1" : previewConfig.heroAspectRatio) : section.visualPrompt,
+          visualPrompt: section.type === "HERO" ? normalizeHeroComposition(section.visualPrompt, previewConfig.heroAspectRatio) : section.visualPrompt,
           order: section.order,
           editableData: section.editableData as Prisma.InputJsonValue,
         })),
@@ -1284,7 +1284,7 @@ export async function planSections(
         const fallbackSections = prepareAmazonPlan(project.platform, buildFallbackPlanFromTemplates(
           previewConfig.heroImageCount,
           previewConfig.detailSectionCount,
-        ), previewConfig.contentLanguage);
+        ), previewConfig.contentLanguage, previewConfig.heroAspectRatio);
         await prisma.pageSection.createMany({
           data: fallbackSections.map((section) => ({
             projectId,
@@ -1293,7 +1293,7 @@ export async function planSections(
             title: section.title,
             goal: section.goal,
             copy: section.copy,
-            visualPrompt: section.type === "HERO" ? normalizeHeroComposition(section.visualPrompt, project.platform === "amazon" && section === fallbackSections.find((item) => item.type === "HERO") ? "1:1" : previewConfig.heroAspectRatio) : section.visualPrompt,
+            visualPrompt: section.type === "HERO" ? normalizeHeroComposition(section.visualPrompt, previewConfig.heroAspectRatio) : section.visualPrompt,
             order: section.order,
             editableData: section.editableData as Prisma.InputJsonValue,
           })),

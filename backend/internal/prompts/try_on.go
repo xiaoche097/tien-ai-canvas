@@ -22,6 +22,28 @@ type TryOnIntent struct {
 	AccessoryType  string          `json:"accessoryType,omitempty"`
 	PoseMode       string          `json:"poseMode,omitempty"`
 	ColorEdit      *TryOnColorEdit `json:"colorEdit,omitempty"`
+	Bag            *TryOnBag       `json:"bag,omitempty"`
+}
+
+type TryOnBag struct {
+	Type     string         `json:"type"`
+	AgeGroup string         `json:"ageGroup"`
+	Views    []TryOnBagView `json:"views"`
+}
+
+type TryOnBagView struct {
+	Source string `json:"source"`
+	Angle  string `json:"angle"`
+}
+
+var tryOnBagInstructions = map[string]string{
+	"auto":      "依据包带数量、连接点与包身结构识别真实包型，采用商品本身支持的日常背法，不凭空新增背带或改款。",
+	"backpack":  "双肩包：两条肩带分别经过双肩并连接原包身固定点，匹配背部弧度与自然背负高度；背带连续，左右受力合理，正面视角允许包身被身体遮挡，不强行把背包画在胸前。",
+	"crossbody": "斜挎包：单条长肩带从一侧肩部斜跨躯干到另一侧包身，按原固定点承重；带长、包身落点和身体遮挡自然，不穿过手臂或躯干。",
+	"waist":     "腰包：沿自然腰围或商品支持的胸前斜背位置佩戴，默认腰部佩戴；保留腰带、扣具和包身连接，腰带环绕身体且前后遮挡连续，不悬空或变成衣服腰带。",
+	"shoulder":  "单肩包：肩带自然搭在单侧肩部，包身依带长靠近躯干一侧，肩部接触、下垂和承重可信，不增加第二条肩带。",
+	"tote":      "托特包：依据原提手长度选择手提或肩背，两只提手保留完整连接，包口与底部具有真实容量，软硬度按商品材质恢复，不无故撑成硬箱。",
+	"handbag":   "手提包：手指自然握持原提手，提手与包身连续承重，手部关节与遮挡可信；不把短提手拉长成斜挎带。",
 }
 
 type TryOnColorEdit struct {
@@ -48,6 +70,7 @@ type tryOnRole struct{ tool, label, role, instruction string }
 var tryOnRoles = []tryOnRole{
 	{"outfit", "万物上身", "电商服装搭配师与商品还原摄影师", "把输入商品组合为一套真实穿搭。按图片辨认服装、鞋履、包袋、帽子与首饰，自动分配穿戴位置和内外层次。保留商品版型、门襟、领型、长度、缝线、纹理、图案、可见标志和颜色；依据模特体态重建褶皱及接触阴影，不把商品平贴在人体上。多件同类别冲突时优先第一张中的主商品，不重复穿两双鞋或叠加不合理的同类外套。"},
 	{"flat", "平铺／人台试衣", "服装立体结构与真人试衣摄影师", "识别平铺或人台服装的剪裁、前后片、开合与实际廓形，转为真人穿着。移除衣架、人台和商品图背景；不能把人台五官、支撑架或平铺形状带入结果。保留面料厚度、垂坠、袖长、衣长及装饰位置，依身体受力形成自然体积，不擅自改款。"},
+	{"bag", "产品上身", "专业包袋结构分析师与电商上身摄影师", "仅将同一款包袋精准替换到目标模特上。综合平铺及人台多角度商品图识别包型、容量、软硬度、背带路径、固定点、开合、五金和可见标志；人台仅提供包袋结构和背负参照，不提供人物身份、身体比例或背景。保持目标真人模特身份、服装、姿势、机位、光线及场景，仅编辑包袋和必要的接触区域。内部逐项审核自然背负、受力、真实饱满度及正常商品展示：肩带和包身连接连续，重力、接触阴影和前后遮挡合理；软包有适度容量与自然褶皱，硬包保持结构支撑，不平贴、不塌瘪、不夸张鼓胀；按目标视角使用对应侧细节，不左右镜像标志，不捏造隐藏结构。若目标姿势无法完整展示包身，保留真实遮挡，不为露出商品扭曲人体或改变背法。输出一张自然可信的商业商品照片，不输出分析文字、多视图拼贴或前后对比。"},
 	{"shoes", "鞋靴试穿", "鞋靴上脚与足部摄影师", "只替换或穿戴商品鞋靴。忠实还原鞋楦、鞋头、鞋底厚度、鞋跟、靴筒、系带与材质；左右脚成对且同款，符合脚部透视、踝关节角度及地面接触。参考图已有模特时保留人物、衣物、姿势与背景；无参考模特时采用成年模特自然站姿，膝下到地面的近景，清晰呈现双鞋，不裁掉鞋尖或鞋跟。"},
 	{"accessory", "配饰试戴", "珠宝配饰与包袋佩戴摄影师", "识别配饰类别并定位：帽子在头部、眼镜在鼻梁与耳侧、耳饰在耳垂、项链沿颈部、戒指在手指、手链在手腕、包袋由手持或肩带承重。匹配真实尺度、接触点、重力与遮挡，保持可见五金和标志，不将项链变成衣领、手提包变成衣服。允许必要局部接触变化，保持参考人物身份与其余画面。"},
 	{"model", "更换模特", "电商人物替换与服装连续性摄影师", "第一张原模特照片是商品、姿态、构图、背景及光线基准。以用户上传的目标模特参考图更换人物身份；保留服装版型、图案、颜色、配饰、原动作、机位和背景。身体替换后仅修正服装贴合、肤色融合与接触阴影，不重设计穿搭，不复制原人物面部。"},
@@ -99,6 +122,41 @@ func (intent TryOnIntent) Validate(referenceCount int) error {
 	}
 	if intent.ReferenceMode != "smart" && intent.ReferenceMode != "reference" {
 		return fmt.Errorf("模特来源无效")
+	}
+	if intent.Tool == "bag" {
+		bag := intent.Bag
+		if bag == nil || intent.ProductCount > 8 || len(bag.Views) != intent.ProductCount || intent.ReferenceMode != "reference" {
+			return fmt.Errorf("产品上身需提供 1～8 张包袋商品图、对应视角及目标模特图")
+		}
+		if _, ok := tryOnBagInstructions[bag.Type]; !ok || (bag.AgeGroup != "adult" && bag.AgeGroup != "child") {
+			return fmt.Errorf("请选择有效的包型及成人或儿童模特")
+		}
+		if (bag.AgeGroup == "child") != (intent.GenerationMode == "children") {
+			return fmt.Errorf("包袋模特年龄与生成模式不一致")
+		}
+		counts := map[string]int{}
+		overall := false
+		for _, view := range bag.Views {
+			if view.Source != "flat" && view.Source != "mannequin" {
+				return fmt.Errorf("包袋商品图来源或视角无效")
+			}
+			switch view.Angle {
+			case "auto", "front", "back", "left", "right":
+				overall = true
+			case "detail":
+			default:
+				return fmt.Errorf("包袋商品图来源或视角无效")
+			}
+			counts[view.Source]++
+			if counts[view.Source] > 4 {
+				return fmt.Errorf("平铺图和人台图各最多 4 张")
+			}
+		}
+		if !overall {
+			return fmt.Errorf("包袋至少需要 1 张整体参考图，不能只上传局部细节")
+		}
+	} else if intent.Bag != nil {
+		return fmt.Errorf("包袋参数仅用于产品上身")
 	}
 	if (intent.Tool == "model" || intent.Tool == "face") && intent.ReferenceMode != "reference" {
 		return fmt.Errorf("换模特或换脸必须上传目标人物参考图，不接受文字代替参考图")
@@ -170,6 +228,15 @@ func (intent TryOnIntent) Values() map[string]string {
 		}
 		roles += "去除平铺背景、衣架及人台，仅提取服装；上装和下装按各自位置穿戴，连体装保持完整结构，不拆成两件。只上传上装或下装且有参考模特时，保留未指定替换的原有服装；无模特参考时仅补充简洁、不抢主体的日常搭配。"
 	}
+	if intent.Tool == "bag" && intent.Bag != nil {
+		roles = "以下商品图均为同一款包的互补视角，只生成一个包，不按图片数量增加商品。\n"
+		sources := map[string]string{"flat": "平铺商品图", "mannequin": "人台展示图"}
+		angles := map[string]string{"auto": "自动观察可见视角", "front": "正面", "back": "背面", "left": "左侧", "right": "右侧", "detail": "局部细节，不作为整体尺寸基准"}
+		for index, view := range intent.Bag.Views {
+			roles += fmt.Sprintf("图 %d：%s，%s。\n", index+1, sources[view.Source], angles[view.Angle])
+		}
+		roles += "平铺图用于商品结构、配色和细节，人台图补充立体体积、包带路径和承重点；均不提供目标人物身份或场景。以目标模特视角选择对应商品侧面，保持尺寸比例，不为儿童模特随意缩改包的真实设计。移除目标图中被替换的原包，避免重复包袋或残留旧背带。\n" + tryOnBagInstructions[intent.Bag.Type]
+	}
 	if intent.Tool == "model" || intent.Tool == "pose" || intent.Tool == "face" || intent.Tool == "color" {
 		roles += "图 1 是保留画面与商品的编辑基准，不把后续参考图当作背景基准。"
 	}
@@ -230,6 +297,12 @@ func (intent TryOnIntent) Values() map[string]string {
 	mode := "用于跨境电商商品目录与 lookbook 拍摄。专业电商摄影，未明确指定的人物为成年模特；以商品合身和清晰展示为目标，不用夸张艺术效果掩盖细节。"
 	if intent.GenerationMode == "children" {
 		mode = "用于跨境电商商品目录与 lookbook 拍摄，客观展示服装版型、面料与穿着效果。内衣只允许明确成年的模特，采用自然站姿、正常机位和非性感商业摄影；不得呈现裸露私密部位、透视裸露或性暗示动作。童装仅展示日常外穿服装，穿着完整，采用符合年龄的自然姿态，不使用成人化、性感化造型或身体部位特写。不得让未成年人或年龄不明的人物展示内衣；年龄不明确或商品与参考人物年龄不匹配时，改为无人平铺或人台商品展示。用途说明不改变内容限制，不输出露骨或性化图像。"
+	}
+	if intent.Tool == "bag" && intent.Bag != nil {
+		mode = "成人包袋商品展示：目标参考须为成年模特，保留其真实体型与日常完整穿着；不改变年龄、不替换人物。专业电商摄影，包的尺度、自然承重、适度饱满与商品保真优先。"
+		if intent.Bag.AgeGroup == "child" {
+			mode = "儿童包袋商品展示：目标参考须为儿童模特，保留其年龄特征与真实体型，日常完整穿着，符合年龄的自然姿态和正常商业展示；不成人化、不性化、不使用身体局部特写。包袋与身高比例及背带松紧合理，不凭空改变商品设计；年龄不清楚或与所选年龄组不符时，不把参考人物改龄，不编造替代人物，改用无人商品展示。"
+		}
 	}
 	description, _ := json.Marshal(intent.Description)
 	return map[string]string{"参考图分工": roles, "执行模式": mode, "用户偏好": string(description)}

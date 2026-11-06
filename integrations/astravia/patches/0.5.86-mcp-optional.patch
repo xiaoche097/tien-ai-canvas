@@ -1,0 +1,20 @@
+diff --git a/packages/runtime-mcp/src/tools/mcp-runtime-tool.ts b/packages/runtime-mcp/src/tools/mcp-runtime-tool.ts
+--- a/packages/runtime-mcp/src/tools/mcp-runtime-tool.ts
++++ b/packages/runtime-mcp/src/tools/mcp-runtime-tool.ts
+@@ -27,12 +27,10 @@ export function convertMcpJsonSchemaToTypeBox(jsonSchema: unknown): TSchema {
+ 		const required = Array.isArray(schema.required)
+ 			? schema.required.filter((value): value is string => typeof value === "string")
+ 			: [];
+-		const objectSchema = Type.Object(properties);
+-		// Compatibility: the original adapter marked properties optional only after
+-		// Type.Object materialized `required`, so its serialized required list remains unchanged.
++		// Type.Object computes required from Optional markers at construction time.
+ 		for (const key of Object.keys(properties)) {
+-			const property = objectSchema.properties[key];
+-			if (!required.includes(key) && property) objectSchema.properties[key] = Type.Optional(property);
++			const property = properties[key];
++			if (!required.includes(key) && property) properties[key] = Type.Optional(property);
+ 		}
+-		return objectSchema;
++		return Type.Object(properties);
+ 	}

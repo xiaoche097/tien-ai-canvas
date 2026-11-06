@@ -6,9 +6,9 @@ describe("镜彻穿戴工作流", () => {
     test("七类配饰提交真实品类，一次只试戴一件商品", () => {
         expect(accessoryTypes.map((item) => item.id)).toEqual(["bag", "belt", "necklace", "glasses", "bracelet", "hat", "ring"]);
         for (const category of accessoryTypes) {
-            expect(tryOnIntent(tryOnTools[3], 1, true, "", false, false, undefined, undefined, category.id).accessoryType).toBe(category.id);
+            expect(tryOnIntent(tryOnTools.find((tool) => tool.id === "accessory")!, 1, true, "", false, false, undefined, undefined, category.id).accessoryType).toBe(category.id);
         }
-        expect(tryOnInputError(tryOnTools[3], 2, "reference", 1, "")).toContain("最多 1 张");
+        expect(tryOnInputError(tryOnTools.find((tool) => tool.id === "accessory")!, 2, "reference", 1, "")).toContain("最多 1 张");
     });
     test("上下装按固定职责提交，切换连体装不混图也不丢图", () => {
         const ref = (id: string): ReferenceImage => ({ id, name: id, type: "image/png", dataUrl: "" });
@@ -32,6 +32,7 @@ describe("镜彻穿戴工作流", () => {
     });
     test("姿态、脸和颜色需要文字或对应参考图，不能用空目标生成", () => {
         for (const tool of tryOnTools) {
+            if (tool.id === "bag") { expect(tryOnInputError(tool, 1, "smart", 0, "目标说明")).toContain("请上传 1 张目标模特图"); continue; }
             expect(Boolean(tryOnInputError(tool, 1, "smart", 0, "  "))).toBe(["model", "pose", "face", "color"].includes(tool.id));
             expect(tryOnInputError(tool, 1, "smart", 0, "目标说明")).toBe(["model", "face"].includes(tool.id) ? `请上传 1 张${tryOnGuides[tool.id].referenceLabel}，目标人物需由你提供` : "");
         }
@@ -52,7 +53,7 @@ describe("镜彻穿戴工作流", () => {
         images = replaceShoeView(images, ref("外侧"), "outer");
         images = replaceShoeView(images, ref("外侧新版"), "outer");
         expect(images.map((image) => image.id)).toEqual(["双脚", "外侧新版", "内侧"]);
-        expect(tryOnIntent(tryOnTools[2], 3, true, "", false, false, images.map((image) => image.shoeView!)).shoeViews).toEqual(["pair", "outer", "inner"]);
+        expect(tryOnIntent(tryOnTools.find((tool) => tool.id === "shoes")!, 3, true, "", false, false, images.map((image) => image.shoeView!)).shoeViews).toEqual(["pair", "outer", "inner"]);
     });
     test("商品、模特和一致性参考的顺序与提示词一致", () => {
         const ref = (id: string): ReferenceImage => ({ id, name: id, type: "image/png", dataUrl: "" });
@@ -61,7 +62,7 @@ describe("镜彻穿戴工作流", () => {
     });
     test("智能模特不引用不存在的图片，各工具执行不同指令", () => {
         const intents = tryOnTools.map((tool) => tryOnIntent(tool, 1, false, "", false));
-        expect(new Set(intents.map((intent) => intent.tool)).size).toBe(8);
+        expect(new Set(intents.map((intent) => intent.tool)).size).toBe(9);
         expect(intents[0].referenceMode).toBe("smart");
         expect(intents[0].description).toBe("");
         expect(intents[0].hasAnchor).toBe(false);

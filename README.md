@@ -6,11 +6,9 @@
 
 > 项目仍在快速开发，数据结构和外部接口可能调整。默认适合个人、本地或可信环境部署；未经安全配置，不要直接作为公网多人服务使用。
 
-本分支为 v1.6.9.2 定制源码，保留穿戴工作台与模型选择调整。构建、Schema 60 迁移及验证范围见 [定制版本部署说明](docs/content/docs/overview/custom-v1692-deployment.mdx)。
-
 在线演示：[https://www.xcstudio.pw/](https://www.xcstudio.pw/)
 
-演示账号信息不随源码公开，请联系部署者获取。
+账号/密码：test/test123456
 
 
 ## 赞助商

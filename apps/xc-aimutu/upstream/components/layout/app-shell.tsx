@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import * as Dialog from "@radix-ui/react-dialog";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Clapperboard, FolderKanban, GalleryVerticalEnd, History, Images, KeyRound, LayoutTemplate, LogOut, Menu, Settings2, User, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -40,8 +40,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { keyInfo, clearKey } = useAuthStore();
-  const { brandName, companyName, version } = useBrandStore();
+  const { brandName } = useBrandStore();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const isEditor = /^\/projects\/[^/]+\/editor\/?$/.test(pathname);
+  const mainRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!isEditor && mainRef.current) mainRef.current.scrollTop = 0;
+  }, [pathname, isEditor]);
 
   useEffect(() => {
     const desktop = window.matchMedia("(min-width: 768px)");
@@ -77,7 +83,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className={cn("motu-shell min-h-[100dvh] text-foreground", /^\/projects\/[^/]+\/editor\/?$/.test(pathname) && "motu-workbench")}>
+    <div className={cn("motu-shell min-h-[100dvh] text-foreground", isEditor && "motu-workbench")}>
       <div className="motu-shell-frame flex min-h-[100dvh] w-full min-w-0">
         <Dialog.Root open={mobileOpen} onOpenChange={setMobileOpen}>
           <Dialog.Portal>
@@ -130,7 +136,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <code className="mt-1 block truncate text-[10px] text-slate-500 font-mono">{keyInfo.key}</code>
               </div>
             )}
-            <p className="text-xs text-slate-400">{companyName} · v{version}</p>
           </div>
             </Dialog.Content>
           </Dialog.Portal>
@@ -207,24 +212,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <code className="mt-1 block truncate text-[10px] text-slate-500 font-mono">{keyInfo.key}</code>
               </div>
             )}
-            <div className="border-t border-border px-2 pt-4 text-muted-foreground">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-medium text-foreground">
-                    {companyName}
-                  </p>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {version}
-                </div>
-              </div>
-
-              <p className="mt-2 text-xs">开发者 · 小彻</p>
-            </div>
           </div>
         </aside>
 
-        <main className="motu-main min-w-0 flex-1">
+        <main ref={mainRef} className="motu-main min-w-0 flex-1">
           <div className="motu-topbar flex items-center justify-between gap-3 border-b border-border">
             <Button variant="ghost" size="sm" className="h-11 w-11 shrink-0 p-0 md:hidden" aria-label="打开导航" aria-expanded={mobileOpen} onClick={() => setMobileOpen(true)}>
               <Menu className="h-5 w-5" />
@@ -252,7 +243,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </Link>
             </div>
           </div>
-          {children}
+          {isEditor ? children : <div className="motu-page-content">{children}</div>}
         </main>
       </div>
     </div>

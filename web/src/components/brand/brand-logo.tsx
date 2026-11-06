@@ -16,9 +16,12 @@ type BrandLogoProps = {
 export function BrandLogo({ className, fallback, alt = "", theme = "auto" }: BrandLogoProps) {
     const appearance = useAppearanceStore((state) => state.appearance);
     const currentTheme = useActiveTheme();
-    const source = appearanceLogoURL(appearance, theme === "auto" ? currentTheme : theme);
+    const configured = appearance.logoConfigured || appearance.darkLogoConfigured;
+    const builtin = !configured && appearance.brandName === "境彻" && appearance.brandSlug === "open-ai-canvas";
+    const resolvedTheme = theme === "auto" ? currentTheme : theme;
+    const source = builtin ? `${import.meta.env.BASE_URL || "/"}jingche-logo.png?v=2` : appearanceLogoURL(appearance, resolvedTheme);
     const [failedSource, setFailedSource] = useState<string | null>(null);
-    if (!appearance.logoConfigured) return <>{fallback}</>;
+    if (!configured && !builtin) return <>{fallback}</>;
     // A configured custom logo must never fall through to the built-in brand
     // when its file becomes unavailable. Keep its footprint neutral instead.
     if (failedSource === source) return <span className={cn("block", className)} aria-hidden="true" />;
@@ -27,6 +30,7 @@ export function BrandLogo({ className, fallback, alt = "", theme = "auto" }: Bra
             src={source}
             alt={alt}
             className={cn("block object-contain", className)}
+            style={builtin && resolvedTheme === "dark" ? { filter: "invert(1)" } : undefined}
             draggable={false}
             onError={(event) => {
                 event.currentTarget.style.visibility = "hidden";
@@ -37,8 +41,10 @@ export function BrandLogo({ className, fallback, alt = "", theme = "auto" }: Bra
 }
 
 export function BrandLogoFrame({ className, logoClassName, fallback, alt = "", theme = "auto", polish = false }: BrandLogoProps & { logoClassName?: string; polish?: boolean }) {
-    const frameEnabled = useAppearanceStore((state) => state.appearance.logoFrameEnabled);
-    const unframedStyle: CSSProperties | undefined = frameEnabled
+    const appearance = useAppearanceStore((state) => state.appearance);
+    const frameEnabled = appearance.logoFrameEnabled;
+    const builtin = !appearance.logoConfigured && !appearance.darkLogoConfigured && appearance.brandName === "境彻" && appearance.brandSlug === "open-ai-canvas";
+    const unframedStyle: CSSProperties | undefined = frameEnabled && !builtin
         ? undefined
         : {
               background: "transparent",

@@ -123,6 +123,7 @@ export async function updateTemplate(
   id: string,
   input: {
     name?: string;
+    referenceImageUrl?: string;
     structureJson?: TemplateStructure;
     styleProfile?: TemplateStyleProfile;
     category?: string;
@@ -133,6 +134,7 @@ export async function updateTemplate(
     where: { id },
     data: {
       ...(input.name !== undefined && { name: input.name }),
+      ...(input.referenceImageUrl !== undefined && { referenceImageUrl: input.referenceImageUrl }),
       ...(input.structureJson !== undefined && { structureJson: input.structureJson as any }),
       ...(input.styleProfile !== undefined && { styleProfile: input.styleProfile as any }),
       ...(input.category !== undefined && { category: input.category }),

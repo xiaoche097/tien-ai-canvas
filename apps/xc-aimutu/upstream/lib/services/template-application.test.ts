@@ -64,6 +64,9 @@ test("template creates an unanalyzed draft and replans current product with exac
     assert.doesNotMatch(prompts[0], /旧表带商品名称/);
     assert.match(result.sections.at(-1)!.visualPrompt, /粉色留白/);
     assert.equal(result.sections[0].copy, "", "Amazon MAIN copy remains empty");
+    assert.match(result.sections[0].visualPrompt, /vertical 3:4/);
+    assert.doesNotMatch(result.sections[0].visualPrompt, /square 1:1/);
+    assert.match(prompts[0], /Do not depict Asian faces/);
     const reloaded = await prisma.project.findUniqueOrThrow({ where: { id } });
     assert.deepEqual((reloaded.modelSnapshot as any).previewConfig, input.previewConfig);
     empty = true;

@@ -1,4 +1,4 @@
-import { Clapperboard, Megaphone, Shapes, Shirt, ShoppingBag, UserRound, type LucideIcon } from "lucide-react";
+import { Car, Clapperboard, Megaphone, Shapes, Shirt, ShoppingBag, Sparkles, UserRound, type LucideIcon } from "lucide-react";
 
 export type CreativeApplication = {
     id: string;
@@ -7,21 +7,12 @@ export type CreativeApplication = {
     description: string;
     icon: LucideIcon;
     video?: string;
+    featured?: boolean;
     placeholder: string;
     instructions: string;
 };
 
 export const creativeApplications: CreativeApplication[] = [
-    {
-        id: "character-studio",
-        title: "角色创作工作室",
-        category: "影视创意",
-        icon: UserRound,
-        video: "/creative-center/character-studio.mp4",
-        description: "从人物设定出发，整理角色档案、造型与参考画面，让角色在不同镜头中保持一致。",
-        placeholder: "描述角色的身份、性格、造型与画风，也可以进入画布后添加参考图。",
-        instructions: "作为角色创作工作室，围绕用户的角色概念整理人物档案、外貌与服装设定、参考画面及一致性约束。先澄清必要信息，再提出可在画布执行的创作计划；使用用户配置的模型与素材，生成与修改沿用现有审批流程。",
-    },
     {
         id: "commerce-studio",
         title: "电商设计室",
@@ -31,6 +22,44 @@ export const creativeApplications: CreativeApplication[] = [
         description: "围绕商品与卖点，策划主图、场景图和短视频广告，建立一组连贯的商品视觉。",
         placeholder: "商品是什么？面向谁？描述核心卖点、品牌风格和需要的素材，参考商品图可在画布上传。",
         instructions: "作为电商设计室，围绕商品信息、目标受众、核心卖点与品牌风格规划商品主图、场景图和短视频广告。先确认素材与交付要求，不编造商品功效；保持商品外观一致，使用用户配置的模型，在原有审批流程下执行。",
+    },
+    {
+        id: "ecommerce-agent",
+        title: "电商 Agent",
+        category: "电商广告",
+        icon: Sparkles,
+        featured: true,
+        description: "上传商品参考图，分析卖点、规划视觉方案，确认后生成商品主图、详情图与视频。",
+        placeholder: "",
+        instructions: "",
+    },
+    {
+        id: "universal-try-on",
+        title: "万物上身",
+        category: "电商广告",
+        icon: Shirt,
+        description: "上传人物与服装或配饰图片，自然完成穿戴合成，还原商品版型、颜色与材质。",
+        placeholder: "",
+        instructions: "",
+    },
+    {
+        id: "auto-parts-center",
+        title: "汽配AI中心",
+        category: "电商广告",
+        icon: Car,
+        description: "选择欧美车型，上传产品与真实内饰参考，生成自然贴合的汽配效果图。",
+        placeholder: "",
+        instructions: "",
+    },
+    {
+        id: "character-studio",
+        title: "角色创作工作室",
+        category: "影视创意",
+        icon: UserRound,
+        video: "/creative-center/character-studio.mp4",
+        description: "从人物设定出发，整理角色档案、造型与参考画面，让角色在不同镜头中保持一致。",
+        placeholder: "描述角色的身份、性格、造型与画风，也可以进入画布后添加参考图。",
+        instructions: "作为角色创作工作室，围绕用户的角色概念整理人物档案、外貌与服装设定、参考画面及一致性约束。先澄清必要信息，再提出可在画布执行的创作计划；使用用户配置的模型与素材，生成与修改沿用现有审批流程。",
     },
     {
         id: "social-studio",
@@ -58,15 +87,6 @@ export const creativeApplications: CreativeApplication[] = [
         category: "影视创意",
         icon: Clapperboard,
         description: "从一句话、小说或剧本开始，生成章节并管理角色、分镜、画布与制作进度。",
-        placeholder: "",
-        instructions: "",
-    },
-    {
-        id: "universal-try-on",
-        title: "万物上身",
-        category: "电商广告",
-        icon: Shirt,
-        description: "上传人物与服装或配饰图片，自然完成穿戴合成，还原商品版型、颜色与材质。",
         placeholder: "",
         instructions: "",
     },

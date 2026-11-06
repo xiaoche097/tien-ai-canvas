@@ -271,3 +271,4 @@
 @media (prefers-reduced-motion: reduce) {
     .try-on-page *, .try-on-page *::before, .try-on-page *::after { animation: none !important; transition: none !important; }
 }
+.try-on-bag-source-select { width: 100%; max-width: 140px; }

@@ -6,38 +6,68 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
 	"yingce/backend/internal/model"
 )
 
+type mediaProjectScope struct {
+	projectID          string
+	ecommerceProjectID string
+}
+
+// Project IDs belong to separate domains. Validate the persisted ecommerce
+// identity without linking its assets into an unrelated ordinary project.
 // A deleted canvas/project must not be resurrected by an old download worker.
-func (s *Service) mediaTaskProject(task *model.Task) (string, error) {
+func (s *Service) mediaTaskProject(task *model.Task) (mediaProjectScope, error) {
+	var input struct {
+		Metadata struct {
+			EcommerceProjectID string `json:"ecommerceProjectId"`
+		} `json:"metadata"`
+	}
+	if strings.TrimSpace(task.InputJSON) != "" {
+		if err := json.Unmarshal([]byte(task.InputJSON), &input); err != nil {
+			return mediaProjectScope{}, err
+		}
+	}
+	if ecommerceID := strings.TrimSpace(input.Metadata.EcommerceProjectID); ecommerceID != "" {
+		if task.ProjectID != "" && task.ProjectID != ecommerceID {
+			return mediaProjectScope{}, BadAuthRequest("任务与电商项目归属不一致")
+		}
+		if _, err := s.repo.EcommerceProject(task.UserID, ecommerceID); err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return mediaProjectScope{}, NotFound("任务所属电商项目已不存在")
+			}
+			return mediaProjectScope{}, err
+		}
+		return mediaProjectScope{ecommerceProjectID: ecommerceID}, nil
+	}
 	id := task.ProjectID
 	if id == "" {
-		return "", nil
+		return mediaProjectScope{}, nil
 	}
 	canvas, err := s.repo.CanvasProjectForUser(task.UserID, id)
 	if err == nil {
 		id = canvas.ProjectID
 		if id == "" {
-			return "", nil
+			return mediaProjectScope{}, nil
 		}
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return "", err
+		return mediaProjectScope{}, err
 	}
 	project, err := s.repo.ProjectForUser(task.UserID, id)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return "", NotFound("任务所属画布或项目已不存在")
+		return mediaProjectScope{}, NotFound("任务所属画布或项目已不存在")
 	}
 	if err != nil {
-		return "", err
+		return mediaProjectScope{}, err
 	}
 	if project.Status == model.ProjectStatusArchived {
-		return "", BadAuthRequest("项目已归档，无法恢复作品")
+		return mediaProjectScope{}, BadAuthRequest("项目已归档，无法恢复作品")
 	}
-	return project.ID, nil
+	return mediaProjectScope{projectID: project.ID}, nil
 }
 
 // AudioOutputDurationMs returns the measured duration of the first persisted
@@ -69,7 +99,7 @@ func generationMediaAssetID(taskID string, index int) string {
 // Uses the same effect key and ID as browser materialization, so reconnecting
 // the canvas cannot create a second asset for a server-delivered output.
 func (s *Service) registerRecoveredMediaAssets(task model.Task) error {
-	projectID, err := s.mediaTaskProject(&task)
+	scope, err := s.mediaTaskProject(&task)
 	if err != nil {
 		return err
 	}
@@ -121,8 +151,11 @@ func (s *Service) registerRecoveredMediaAssets(task model.Task) error {
 		}
 		title := map[string]string{"image": "生成图片", "video": "生成视频", "audio": "生成音频"}[checkpoint.Mode]
 		metadata := map[string]any{"source": "generation-task", "generationEffectKey": effectKey, "taskId": task.ID, "outputIndex": index}
-		if projectID != "" {
-			metadata["projectIds"] = []string{projectID}
+		if scope.projectID != "" {
+			metadata["projectIds"] = []string{scope.projectID}
+		}
+		if scope.ecommerceProjectID != "" {
+			metadata["ecommerceProjectId"] = scope.ecommerceProjectID
 		}
 		payload, err := json.Marshal(map[string]any{"id": assetID, "kind": checkpoint.Mode, "category": model.AssetCategoryMaterial, "status": model.AssetVersionStatusConfirmed, "source": "生成任务", "title": title, "coverUrl": url, "tags": []string{"生成"}, "createdAt": now.UTC().Format(time.RFC3339Nano), "updatedAt": now.UTC().Format(time.RFC3339Nano), "data": data, "metadata": metadata})
 		if err != nil {
@@ -139,16 +172,21 @@ func (s *Service) registerRecoveredMediaAssets(task model.Task) error {
 		if err := s.repo.UpsertAsset(asset); err != nil {
 			return err
 		}
-		if projectID != "" {
-			position, err := s.repo.NextProjectAssetPosition(projectID, "")
-			if err != nil {
-				return err
-			}
-			_, err = s.repo.LinkProjectAsset(asset, nil, &model.ProjectAssetLink{ID: newID(), ProjectID: projectID, AssetID: assetID, Position: position, CreatedAt: now})
-			if err != nil {
+		if scope.projectID != "" {
+			if err := s.linkAssetToProject(asset, scope.projectID, now); err != nil {
 				return err
 			}
 		}
 	}
 	return nil
+}
+
+// linkAssetToProject 把素材挂到项目素材库根目录末尾；链接已存在时 LinkProjectAsset 不做修改（幂等）。
+func (s *Service) linkAssetToProject(asset *model.Asset, projectID string, now time.Time) error {
+	position, err := s.repo.NextProjectAssetPosition(projectID, "")
+	if err != nil {
+		return err
+	}
+	_, err = s.repo.LinkProjectAsset(asset, nil, &model.ProjectAssetLink{ID: newID(), ProjectID: projectID, AssetID: asset.ID, Position: position, CreatedAt: now})
+	return err
 }

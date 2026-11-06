@@ -19,13 +19,24 @@ test("template apply saves new product and chosen output before entering real an
   let saved: any;
   let destination = "";
   let analyzedImages: string[] = [];
+  let analysisSucceeds = false;
+  let savedCover = "";
   globalThis.fetch = async (url, init) => {
     requests.push(String(url));
     if (String(url) === "/api/templates" && !init?.method) return Response.json({ success: true, data: { templates: [{ id: "template", name: "表带模板", moduleCount: 9, styleProfile: {}, referenceImageUrl: "", description: "" }] } });
     if (String(url) === "/api/templates/analyze") {
       assert.ok(init?.body instanceof FormData);
       analyzedImages = (init.body as FormData).getAll("images").map(file => (file as File).name);
-      return Response.json({ success: false, error: { message: "测试分析失败，保留素材" } });
+      return analysisSucceeds ? Response.json({ success: true, data: { referenceImageUrl: "/motu/api/files/templates/covers/first.webp", structure: { overallStyle: "Clean", colorPalette: [], typography: {}, modules: [{ type: "hero", name: "头图", order: 1 }] } } }) : Response.json({ success: false, error: { message: "测试分析失败，保留素材" } });
+    }
+    if (String(url) === "/api/templates" && init?.method === "POST") {
+      savedCover = JSON.parse(String(init.body)).referenceImageUrl;
+      return Response.json({ success: true, data: { template: { id: "saved" } } });
+    }
+    if (String(url) === "/api/templates/template/cover") {
+      assert.ok(init?.body instanceof FormData);
+      assert.equal(((init!.body as FormData).get("file") as File).name, "reference-front.png");
+      return Response.json({ success: true, data: { template: { id: "template", name: "表带模板", moduleCount: 9, styleProfile: {}, referenceImageUrl: "/motu/api/files/templates/covers/replaced.webp", description: "" } } });
     }
     assert.equal(String(url), "/api/templates/template/apply");
     assert.equal(init?.method, "POST");
@@ -71,6 +82,14 @@ test("template apply saves new product and chosen output before entering real an
     await act(async () => button("开始 AI 看图拆版").click());
     assert.deepEqual(analyzedImages, [first.name, second.name], "real template page submits dropped and chosen files in order");
     assert.equal(container.querySelectorAll(".motu-upload-preview").length, 2, "analysis failure preserves reference files for retry");
+    analysisSucceeds = true;
+    await act(async () => button("开始 AI 看图拆版").click());
+    await act(async () => button("确认保存").click());
+    await act(async () => Simulate.change(container.querySelector("#template-save-name") as unknown as Element, { target: { value: "参考图片模板" } } as any));
+    await act(async () => button("保存模板").click());
+    assert.equal(savedCover, "/motu/api/files/templates/covers/first.webp", "template save retains the first uploaded cover returned by analysis");
+    await act(async () => Simulate.change(container.querySelector("#template-cover-template") as unknown as Element, { target: { files: [first], value: "" } } as any));
+    assert.equal(container.querySelector('img[alt="表带模板"]')?.getAttribute("src"), "/motu/api/files/templates/covers/replaced.webp");
   } finally {
     await act(async () => root.unmount());
     globalThis.fetch = originalFetch;

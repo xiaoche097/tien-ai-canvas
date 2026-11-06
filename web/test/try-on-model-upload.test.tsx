@@ -4,9 +4,9 @@ import { act, useState } from "react";
 import { tryOnInputError, tryOnReferences, tryOnTools } from "../src/pages/ai-apps/try-on/workflow";
 import type { ReferenceImage } from "../src/types/image";
 
-test.each([4, 6])("人物替换必须上传一个原图与一个目标参考，文字不能代替目标图（工具 %i）", (index) => {
-    const tool = tryOnTools[index];
-    const targetLabel = index === 4 ? "目标模特参考图" : "目标人脸参考图";
+test.each(["model", "face"])("人物替换必须上传一个原图与一个目标参考，文字不能代替目标图（工具 %s）", (id) => {
+    const tool = tryOnTools.find((tool) => tool.id === id)!;
+    const targetLabel = id === "model" ? "目标模特参考图" : "目标人脸参考图";
     expect(tryOnInputError(tool, 1, "smart", 0, "短发成年模特")).toContain(targetLabel);
     expect(tryOnInputError(tool, 1, "reference", 0, "")).toContain(targetLabel);
     expect(tryOnInputError(tool, 1, "reference", 2, "")).toContain("1 张");

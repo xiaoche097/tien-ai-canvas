@@ -62,7 +62,7 @@ export function buildSectionPlanningPrompt(
     "头图比例": heroAspectRatio,
     "广告法提示": adLawSection,
     "商品分析上下文": JSON.stringify(planningContext),
-  }, templates) + "\n\n" + renderEcommercePrompt("ecommerce_workflow_hero_planning", { 头图比例: heroAspectRatio }, templates) + (platform === "amazon" ? "\n\n" + amazonPlanningRules(contentLanguage) : "");
+  }, templates) + "\n\n" + renderEcommercePrompt("ecommerce_workflow_hero_planning", { 头图比例: heroAspectRatio }, templates) + (platform === "amazon" ? "\n\n" + amazonPlanningRules(contentLanguage, heroAspectRatio) : "");
 }
 
 export function buildClothingPlanningPrompt(
@@ -110,7 +110,7 @@ export function buildClothingPlanningPrompt(
     "头图构图要求": heroAspectRatio === "1:1" ? "正方形 1:1 构图 / square 1:1 composition" : "竖版 3:4 构图 / vertical 3:4 composition",
     "广告法提示": adLawSection,
     "商品分析上下文": JSON.stringify(planningContext),
-  }, templates) + "\n\n" + renderEcommercePrompt("ecommerce_workflow_hero_planning", { 头图比例: heroAspectRatio }, templates) + (platform === "amazon" ? "\n\n" + amazonPlanningRules(contentLanguage) : "");
+  }, templates) + "\n\n" + renderEcommercePrompt("ecommerce_workflow_hero_planning", { 头图比例: heroAspectRatio }, templates) + (platform === "amazon" ? "\n\n" + amazonPlanningRules(contentLanguage, heroAspectRatio) : "");
 }
 
 export function buildPreviewDecisionPrompt(analysis: Record<string, unknown>, contentLanguage: ContentLanguage,

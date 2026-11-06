@@ -1078,27 +1078,27 @@ func cloudAgentPrevisApplyTransform(item map[string]any, operation cloudAgentPre
 }
 
 // cloudAgentPrevisGroundScene mirrors web/src/lib/canvas/previs/previs-grounding.ts:
-// actors are locked to y=0 (static transform, keyframes and motion path);
-// other objects may be raised but never sink below the ground.
+// every object, actors included, may be raised (an actor standing on a table or roof
+// keeps its Y as the feet height) but never sinks below the ground. Actor motion
+// path points are feet positions and get the same floor.
 func cloudAgentPrevisGroundScene(scene map[string]any) {
 	for _, object := range creationMaps(scene["objects"]) {
-		locked := stringValue(object["kind"]) == "actor" || stringValue(object["primitive"]) == "character"
 		if transform, ok := object["transform"].(map[string]any); ok {
-			cloudAgentPrevisGroundPosition(transform, locked)
+			cloudAgentPrevisGroundPosition(transform)
 		}
 		for _, keyframe := range creationMaps(object["keyframes"]) {
 			if transform, ok := keyframe["transform"].(map[string]any); ok {
-				cloudAgentPrevisGroundPosition(transform, locked)
+				cloudAgentPrevisGroundPosition(transform)
 			}
 		}
-		if !locked {
+		if stringValue(object["kind"]) != "actor" && stringValue(object["primitive"]) != "character" {
 			continue
 		}
 		if path, ok := object["motionPath"].(map[string]any); ok {
 			if points, ok := path["points"].([]any); ok {
 				for _, point := range points {
 					if vec, ok := point.([]any); ok && len(vec) == 3 {
-						vec[1] = 0.0
+						cloudAgentPrevisGroundY(vec)
 					}
 				}
 			}
@@ -1106,13 +1106,15 @@ func cloudAgentPrevisGroundScene(scene map[string]any) {
 	}
 }
 
-func cloudAgentPrevisGroundPosition(transform map[string]any, locked bool) {
-	position, ok := transform["position"].([]any)
-	if !ok || len(position) != 3 {
-		return
+func cloudAgentPrevisGroundPosition(transform map[string]any) {
+	if position, ok := transform["position"].([]any); ok && len(position) == 3 {
+		cloudAgentPrevisGroundY(position)
 	}
+}
+
+func cloudAgentPrevisGroundY(position []any) {
 	y := numberValue(position[1], 0)
-	if locked || math.IsNaN(y) || math.IsInf(y, 0) || y < -0.005 {
+	if math.IsNaN(y) || math.IsInf(y, 0) || y < -0.005 {
 		position[1] = 0.0
 	}
 }
@@ -1455,6 +1457,10 @@ func cloudAgentPrevisApplyObjectPatch(objects *[]map[string]any, operation cloud
 			return cloudAgentApprovalPreviewItem{}, err
 		}
 		position, rotation, scale := []float64{0, 0.5, 0}, []float64{0, 0, 0}, []float64{1, 1, 1}
+		if operation.Kind == "actor" || primitive == "character" {
+			// 演员原点在脚底：省略 position 时站在地面上，而不是悬在几何体默认的 0.5m。
+			position = []float64{0, 0, 0}
+		}
 		if operation.Position != nil {
 			position = *operation.Position
 		}
@@ -2078,14 +2084,14 @@ func applyCloudAgentPrevisMutation(repo *repository.Repository, userID, canvasID
 	if err = saveCloudAgentDocument(repo, plan.Canvas, plan.Document, policy); err != nil {
 		return nil, err
 	}
+	appliedPreview := cloudAgentCanvasAppliedPreview(plan.Preview)
 	afterCanvasHash := cloudAgentCanvasHash(plan.Document)
 	afterSceneHash := plan.ResultSnapshotHash
 	if scene, ok := findPrevisScene(creationMaps(plan.Document["previsScenes"]), plan.SceneID); ok {
 		afterSceneHash = creationHash(scene)
 	}
 	if len(recorder) > 0 && recorder[0] != nil {
-		preview := plan.Preview
-		if err := recorder[0](repo, cloudAgentMutationInput{UserID: userID, CanvasID: canvasID, StepID: call.ID, Operation: plan.Operation, BeforeSnapshotHash: plan.BeforeSnapshotHash, AfterSnapshotHash: afterCanvasHash, BeforeJSON: plan.BeforeJSON, Preview: &preview}); err != nil {
+		if err := recorder[0](repo, cloudAgentMutationInput{UserID: userID, CanvasID: canvasID, StepID: call.ID, Operation: plan.Operation, BeforeSnapshotHash: plan.BeforeSnapshotHash, AfterSnapshotHash: afterCanvasHash, BeforeJSON: plan.BeforeJSON, Preview: &appliedPreview}); err != nil {
 			return nil, err
 		}
 	}
@@ -2093,7 +2099,7 @@ func applyCloudAgentPrevisMutation(repo *repository.Repository, userID, canvasID
 	if resultSnapshotHash == "" {
 		resultSnapshotHash = afterCanvasHash
 	}
-	return map[string]any{"canvasId": canvasID, "sceneId": plan.SceneID, "nodeId": plan.NodeID, "shotId": plan.ShotID, "snapshotHash": resultSnapshotHash, "canvasSnapshotHash": afterCanvasHash, "committed": true, "summary": plan.Preview.Description}, nil
+	return map[string]any{"canvasId": canvasID, "sceneId": plan.SceneID, "nodeId": plan.NodeID, "shotId": plan.ShotID, "snapshotHash": resultSnapshotHash, "canvasSnapshotHash": afterCanvasHash, "committed": true, "summary": appliedPreview.Description, "preview": appliedPreview}, nil
 }
 
 // cloudAgentPrevisMotionIDs 与前端 PREVIS_MOTIONS（previs-motion.ts）一一对应。
