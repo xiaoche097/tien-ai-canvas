@@ -3,6 +3,7 @@ export type CreationShowcaseMedia = {
     title: string;
     poster: string;
     videoSrc?: string;
+    playbackRate?: number;
 };
 
 // Keep the media slots separate from the layout so supplied videos only replace
@@ -12,6 +13,7 @@ export const creationShowcaseHero: CreationShowcaseMedia = {
     title: "XCSTUDIO · 境彻机甲英雄",
     poster: "assets/showcase/hero-poster.bd53af28598c.jpg",
     videoSrc: "assets/showcase/hero-video.a6b9e1addb3d.mp4",
+    playbackRate: 0.4,
 };
 
 export const creationShowcaseColumns: CreationShowcaseMedia[][] = [

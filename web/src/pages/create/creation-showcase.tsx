@@ -19,11 +19,13 @@ function ShowcaseMedia({ media, active, hero = false }: { media: CreationShowcas
     useEffect(() => {
         const player = video.current;
         if (!player || !started) return;
+        player.defaultPlaybackRate = media.playbackRate ?? 1;
+        player.playbackRate = media.playbackRate ?? 1;
         let cancelled = false;
         if (active && visible) void player.play().catch(() => { if (!cancelled) setFailed(true); });
         else player.pause();
         return () => { cancelled = true; player.pause(); };
-    }, [active, visible, media.videoSrc, failed, started]);
+    }, [active, visible, media.videoSrc, media.playbackRate, failed, started]);
     return <div ref={ref} className="creation-showcase-media">
         {media.videoSrc && !failed ? <video ref={video} src={started ? source : undefined} poster={poster} muted loop playsInline preload="none" onError={() => setFailed(true)} aria-label={media.title} />
             : <img src={poster} alt={hero ? media.title : ""} loading="lazy" decoding="async" />}
