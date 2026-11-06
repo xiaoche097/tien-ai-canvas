@@ -20,16 +20,16 @@ COPY docker-compose*.yml /src/
 COPY --from=payment-package-build /src/plugin-packages /src/plugin-packages
 COPY yingce-agent /src/yingce-agent
 COPY scripts /src/scripts
-COPY --from=open-ai-canvas-backend:v1.7.3.7-commerce-save /app/backend/agent-runtime/pi/node_modules /src/backend/agent-runtime/pi/node_modules
+COPY --from=open-ai-canvas-backend:v1.8.0-custom /app/backend/agent-runtime/pi/node_modules /src/backend/agent-runtime/pi/node_modules
 ENV GOMAXPROCS=2 GOFLAGS=-p=2
 RUN --mount=type=cache,target=/root/.cache/go-build go test ./internal/database ./internal/astravia ./internal/hostupdate
 RUN --mount=type=cache,target=/root/.cache/go-build go test ./internal/app ./internal/auth ./internal/protocol ./internal/agent/yingceagent -run 'CloudAgentRuntimeCompletes|CloudAgentRuntimeApprovalWrite|CloudAgentLive(Recall|Retries|DoesNot)|ImageOnlyDetail|MetasoCatalog|LinuxDORegistrationAgreement|OfficialTextProtocolsMapImages|OfficialNativeTextProtocolsPreserveHistory|RemoteRunCallsBridge' -count=1
 RUN --mount=type=cache,target=/root/.cache/go-build go test ./internal/app -run '^TestCloudAgentMediaFailedTaskUpdatesNode$' -count=25
 ARG VERIFY_FULL_SUITE=true
 RUN --mount=type=cache,target=/root/.cache/go-build if [ "$VERIFY_FULL_SUITE" = "true" ]; then go test ./... -count=1; else printf '%s\n' 'Full suite runs in the separate release verification build'; fi
-RUN --mount=type=cache,target=/root/.cache/go-build CGO_ENABLED=1 go build -trimpath -ldflags='-s -w -X yingce/backend/internal/buildinfo.Version=v1.8.0 -X yingce/backend/internal/buildinfo.Commit=2fe3ca13c27e46a786af6597938a0e5328df6723' -o /out/yingce-backend ./cmd/server
-RUN --mount=type=cache,target=/root/.cache/go-build CGO_ENABLED=1 go build -trimpath -ldflags='-s -w -X yingce/backend/internal/buildinfo.Version=v1.8.0 -X yingce/backend/internal/buildinfo.Commit=2fe3ca13c27e46a786af6597938a0e5328df6723' -o /out/migrate-schema ./cmd/migrate-schema
-FROM open-ai-canvas-backend:v1.7.3.7-commerce-save
+RUN --mount=type=cache,target=/root/.cache/go-build CGO_ENABLED=1 go build -trimpath -ldflags='-s -w -X yingce/backend/internal/buildinfo.Version=v1.8.1 -X yingce/backend/internal/buildinfo.Commit=8611fc0eb0dadf30f62db7b3e196a63301c68b28' -o /out/yingce-backend ./cmd/server
+RUN --mount=type=cache,target=/root/.cache/go-build CGO_ENABLED=1 go build -trimpath -ldflags='-s -w -X yingce/backend/internal/buildinfo.Version=v1.8.1 -X yingce/backend/internal/buildinfo.Commit=8611fc0eb0dadf30f62db7b3e196a63301c68b28' -o /out/migrate-schema ./cmd/migrate-schema
+FROM open-ai-canvas-backend:v1.8.0-custom
 COPY --from=check /out/yingce-backend /usr/local/bin/yingce-backend
 COPY --from=check /out/migrate-schema /usr/local/bin/migrate-schema
 COPY backend/agent-runtime/pi /app/backend/agent-runtime/pi

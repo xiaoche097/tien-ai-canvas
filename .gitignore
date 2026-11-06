@@ -83,9 +83,10 @@ camera_language_guide.md
 
 # Local backend executable; never commit build output.
 backend/cmd/server/server
-/backend/server
 # One-off local probe scripts and their compiled output.
 backend/tmp_*
 # Keep the runtime in source control; its optional debug map is not deployed.
 /web/public/live2d/live2dcubismcore.min.js.map
 .zocde/
+
+/backend/server
