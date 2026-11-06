@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -165,26 +166,30 @@ export function QuickStartWorkspace() {
 
   return (
     <section className="motu-quick-start min-w-0">
-      <header className="motu-page-header">
+      <header className="motu-page-header motu-create-heading">
+        <div>
         <h1 className="text-2xl font-semibold tracking-tight">创建商品详情页</h1>
-        <p className="mt-2 text-sm text-muted-foreground">添加商品图片与资料，开始分析和规划。</p>
+        <p className="mt-2 text-sm text-muted-foreground">从一件商品开始，把图片与卖点整理成完整的详情页方案。</p>
+        </div>
+        <Link href="/projects/new" className="motu-text-link">需要设置风格和分类素材？<span>高级创建 <ArrowRight className="h-3.5 w-3.5" aria-hidden /></span></Link>
       </header>
 
       <div className="motu-quick-layout">
         <aside className="motu-quick-material" aria-label="产品素材">
-          <h2 className="mb-4 text-sm font-semibold">商品图片</h2>
+          <div className="motu-section-heading"><h2>商品图片</h2><span>选填 · 单张</span></div>
           <ImageUpload
             id="quick-start-file"
             label="添加商品图片"
             files={file ? [file] : []}
             onChange={files => setFile(files[0] ?? null)}
             disabled={submitting}
-            description="使用同一款商品的清晰实物图；不同颜色、扣具请分开创建。也可以只填写商品资料。"
+            description="上传清晰的商品实物图。不同颜色、款式请分开创建，以便保留准确的商品细节。"
           />
+          <p className="motu-material-note">还没有图片？也可以先填写右侧商品资料。</p>
         </aside>
 
         <div className="motu-quick-details min-w-0">
-          <h2 className="mb-4 text-sm font-semibold">商品资料</h2>
+          <div className="motu-section-heading"><h2>商品资料</h2><span>图片或产品信息至少提供一项</span></div>
           <fieldset disabled={submitting}>
             <legend className="sr-only">商品信息</legend>
             <div className="grid gap-5 sm:grid-cols-2">

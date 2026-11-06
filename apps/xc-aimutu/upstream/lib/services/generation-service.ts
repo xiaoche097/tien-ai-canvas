@@ -21,7 +21,7 @@ import { loadEcommercePromptTemplates } from "@/lib/canvas/prompt-templates";
 import type { EcommercePromptTemplates } from "@/lib/ai/prompts/ecommerce-templates";
 import { buildReferenceStylePrompt } from "@/lib/ai/prompts/template";
 import { templatePlanningContext } from "@/lib/ai/prompts/template-planning";
-import { buildAmazonImagePrompt } from "@/lib/ai/prompts/amazon";
+import { amazonCastingRules, buildAmazonImagePrompt } from "@/lib/ai/prompts/amazon";
 import { projectContentLanguage } from "@/lib/utils/content-language";
 import { productFidelityGuard } from "@/lib/ai/module-reference-guide";
 import { isModuleReference, referenceAllowed } from "@/lib/ai/module-reference";
@@ -644,7 +644,7 @@ async function generateSectionImageInternal(
   const { provider, adapter } = await getProviderAdapter("image");
   const generationSettings = getGenerationSettings(project);
   const amazonMain = await isAmazonMainSection(project, sectionId);
-  const sectionAspectRatio = amazonMain ? "1:1" : getSectionAspectRatio(section, generationSettings.imageAspectRatio, generationSettings.heroAspectRatio);
+  const sectionAspectRatio = getSectionAspectRatio(section, generationSettings.imageAspectRatio, generationSettings.heroAspectRatio);
   const stylePrompt = templatePlanningContext(project.modelSnapshot, false) || await ecommerceStylePrompt(project.style);
   const templates = await loadEcommercePromptTemplates();
   const outputSize = sectionOutputSize(sectionAspectRatio, section.type);
@@ -768,6 +768,7 @@ async function generateSectionImageInternal(
     }
 
     prompt += "\n\n" + moduleContentRequirements(section, amazonMain);
+    if (project.platform === "amazon") prompt += "\n\n" + amazonCastingRules;
     let imageAsset;
     let version;
     let usedModel: string;
@@ -968,7 +969,7 @@ export async function editSectionImage(
   const { provider, adapter } = await getProviderAdapter("image");
   const generationSettings = getGenerationSettings(project);
   const amazonMain = await isAmazonMainSection(project, sectionId);
-  const sectionAspectRatio = amazonMain ? "1:1" : getSectionAspectRatio(section, generationSettings.imageAspectRatio, generationSettings.heroAspectRatio);
+  const sectionAspectRatio = getSectionAspectRatio(section, generationSettings.imageAspectRatio, generationSettings.heroAspectRatio);
   const stylePrompt = templatePlanningContext(project.modelSnapshot, false) || await ecommerceStylePrompt(project.style);
   const templates = await loadEcommercePromptTemplates();
   const outputSize = sectionOutputSize(sectionAspectRatio, section.type);
@@ -1053,6 +1054,7 @@ export async function editSectionImage(
     prompt += "\n\n" + productFidelityGuard(productReferenceAssets.filter(asset => asset.id !== section.currentImageAssetId).length);
     if (productReferenceAssets.some(isModuleReference)) prompt += "\nApproved AI reference photographs are supplementary viewpoint or close-up guides, not new product facts. Original product references remain authoritative for geometry, connectors, material and SKU.";
     prompt += "\n\n" + moduleContentRequirements(section, amazonMain);
+    if (project.platform === "amazon") prompt += "\n\n" + amazonCastingRules;
 
     let imageAsset;
     let version;

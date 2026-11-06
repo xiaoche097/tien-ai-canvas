@@ -8,6 +8,7 @@ import { writeFileSync, existsSync, mkdirSync } from "fs";
 import { join } from "path";
 import sharp from "sharp";
 import { env } from "@/lib/utils/env";
+import { saveTemplateCover } from "@/lib/storage/template-cover";
 
 const analyzeSchema = z.object({
   description: z.string().optional().default(""),
@@ -31,6 +32,7 @@ export async function POST(request: NextRequest) {
       const imageFiles = formData.getAll("images") as File[];
 
       const imageUrls: string[] = [];
+      let referenceImageUrl = "";
       const uploadDir = join(env.STORAGE_ROOT, "templates");
       if (!existsSync(uploadDir)) {
         mkdirSync(uploadDir, { recursive: true });
@@ -71,6 +73,7 @@ export async function POST(request: NextRequest) {
         const fileName = `${Date.now()}_${i}.${ext}`;
         const filePath = join(uploadDir, fileName);
         writeFileSync(filePath, buffer);
+        if (!referenceImageUrl) referenceImageUrl = await saveTemplateCover(buffer);
 
         const base64 = buffer.toString("base64");
         const mimeType = "image/jpeg";
@@ -78,7 +81,7 @@ export async function POST(request: NextRequest) {
       }
 
       const { structure, rawText } = await analyzeTemplate(description, imageUrls.length > 0 ? imageUrls : undefined);
-      return ok({ structure, rawText });
+      return ok({ structure, rawText, referenceImageUrl });
     }
 
     // Handle JSON body (text-only)

@@ -19,10 +19,12 @@ test("advanced creation keeps dropped and chosen images in their original asset 
   const uploads: any[] = [];
   let destination = "";
   let createdName = "";
+  let createdDescription = "";
   globalThis.fetch = async (url, init) => {
     const body = JSON.parse(String(init?.body));
     if (String(url) === "/api/projects") {
       createdName = body.name;
+      createdDescription = body.description;
       return Response.json({ success: true, data: { id: "categorized-project" } });
     }
     assert.equal(String(url), "/api/projects/categorized-project/assets/upload");
@@ -34,7 +36,11 @@ test("advanced creation keeps dropped and chosen images in their original asset 
   const root = createRoot(container as unknown as HTMLElement);
   const image = (name: string) => new browser.File([name], name, { type: "image/png" });
   const drop = (type: string, files: File[]) => act(async () => {
+    assert.equal(container.querySelector(`#asset-panel-${type}`)!.hidden, false);
     Simulate.drop(container.querySelector(`#project-upload-${type}`)!.closest(".motu-upload-target") as unknown as Element, { dataTransfer: { files, types: ["Files"] } } as any);
+  });
+  const selectCategory = (type: string) => act(async () => {
+    container.querySelector(`#asset-category-${type}`)!.click();
   });
   try {
     await act(async () => root.render(<AppRouterContext.Provider value={{ push(path: string) { destination = path; } } as any}><ProjectCreator /></AppRouterContext.Provider>));
@@ -44,17 +50,34 @@ test("advanced creation keeps dropped and chosen images in their original asset 
       Simulate.change(name as unknown as Element);
     });
     await drop("MAIN", [image("front.png"), image("ignored.png")]);
+    await selectCategory("ANGLE");
+    assert.equal(container.querySelector("#asset-panel-MAIN")!.hidden, true);
     await drop("ANGLE", [image("left.png")]);
     await act(async () => {
       Simulate.change(container.querySelector("#project-upload-ANGLE") as unknown as Element, { target: { files: [image("right.png")], value: "" } } as any);
     });
+    await selectCategory("INGREDIENT");
     await drop("INGREDIENT", [image("ingredients.png")]);
+    await selectCategory("ANGLE");
+    assert.equal(container.querySelectorAll("#asset-panel-ANGLE .motu-upload-preview").length, 2);
+    assert.equal(container.querySelector("#asset-category-ANGLE")!.getAttribute("aria-pressed"), "true");
+    await selectCategory("MAIN");
+    assert.equal(container.querySelector("#asset-panel-MAIN img")!.getAttribute("alt"), "front.png");
+    await act(async () => {
+      const notes = container.querySelector("details")!;
+      notes.open = true;
+      const description = container.querySelector('textarea[name="description"]')!;
+      description.value = "保留商品包装颜色";
+      Simulate.change(description as unknown as Element);
+      notes.open = false;
+    });
     assert.equal(uploads.length, 0);
     await act(async () => {
       [...container.querySelectorAll("button")].find((button: any) => button.textContent.includes("创建项目并上传素材"))!.click();
       await browser.happyDOM.waitUntilComplete();
     });
     assert.equal(createdName, "分类素材商品");
+    assert.equal(createdDescription, "保留商品包装颜色");
     assert.deepEqual(uploads.map(({ type, fileName }) => [type, fileName]), [["MAIN", "front.png"], ["ANGLE", "left.png"], ["ANGLE", "right.png"], ["INGREDIENT", "ingredients.png"]]);
     assert.equal(destination, "/projects/categorized-project/analysis");
   } finally {

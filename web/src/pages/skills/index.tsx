@@ -1,4 +1,5 @@
 import { CollectionToolbar } from "@/components/layout/collection-toolbar";
+import { useNavigate } from "react-router";
 import { AppModal } from "@/components/ui/product/app-modal";
 import { App, Button, Dropdown, Input } from "antd";
 import { Tooltip } from "@/components/ui/base/tooltip";
@@ -64,6 +65,7 @@ const sortOptions: { label: string; value: SkillSort }[] = [
 import { SkillCurationBrowser, useSkillCuration, curationQuery, groupCuratedSkills, curationIcon, effectiveCurationRoot } from "@/components/skills/skill-curation-browser";
 
 export default function SkillsPage({ embedded = false }: { embedded?: boolean } = {}) {
+    const navigate = useNavigate();
     const { curation, error: curationError, retry: retryCuration } = useSkillCuration();
     const [platformCategory, setPlatformCategory] = useState("");
     const { message, modal } = App.useApp();
@@ -475,12 +477,6 @@ export default function SkillsPage({ embedded = false }: { embedded?: boolean } 
                         </div>
                     )}
                     {marketBrowse && !filtersActive && <SkillMarketDiscovery onOpen={(skill) => void openSkill(skill)} onBrowse={() => document.getElementById("market-catalog-title")?.scrollIntoView({ block: "start" })} />}
-                    {marketBrowse && (
-                        <h2 id="market-catalog-title" className="market-catalog-title">
-                            {filtersActive ? "筛选结果" : "全部技能"}
-                            <span>{total} 个</span>
-                        </h2>
-                    )}
                     <SkillCurationBrowser
                         data={curation}
                         value={platformCategory}
@@ -492,9 +488,17 @@ export default function SkillsPage({ embedded = false }: { embedded?: boolean } 
                         error={curationError}
                         retry={retryCuration}
                     />
+                    <div className="skills-catalog-toolbar">
+                    {marketBrowse && (
+                        <h2 id="market-catalog-title" className="market-catalog-title">
+                            {filtersActive ? "筛选结果" : "全部技能"}
+                            <span>{total} 个技能</span>
+                        </h2>
+                    )}
                     <CollectionToolbar active={filtersActive} onReset={resetFilters}>
                         <Input
-                            className="min-w-0 sm:!w-56"
+                            className="skills-market-search"
+                            aria-label="搜索技能或作者"
                             prefix={<Search className="size-4 text-foreground/38" />}
                             value={search}
                             allowClear
@@ -506,7 +510,7 @@ export default function SkillsPage({ embedded = false }: { embedded?: boolean } 
                         />
                         <Select
                             aria-label="技能排序"
-                            className="w-24"
+                            className="skills-market-sort"
                             value={sort}
                             options={sortOptions}
                             onChange={(value) => {
@@ -515,6 +519,7 @@ export default function SkillsPage({ embedded = false }: { embedded?: boolean } 
                             }}
                         />
                     </CollectionToolbar>
+                    </div>
                 </div>
 
                 <div className="skills-library-layout">
@@ -746,6 +751,7 @@ export default function SkillsPage({ embedded = false }: { embedded?: boolean } 
                 onLike={(skill) => void toggleLiked(skill)}
                 onEdit={(skill) => void openEditor(skill)}
                 onSync={(skill) => void synchronizeSkill(skill)}
+                onOpenWorkbench={(skill) => navigate(`/skills/${encodeURIComponent(skill.skillId)}/edit`)}
             />
             <SkillInstallModal
                 open={installOpen}

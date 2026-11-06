@@ -71,6 +71,7 @@ type CompiledPrompt struct {
 func promptDefinitions() []PromptOperationDefinition {
 	definitions := append(defaultPromptDefinitions(), imagePresetPromptDefinitions()...)
 	definitions = append(definitions, tryOnPromptDefinitions()...)
+	definitions = append(definitions, autoPartsPromptDefinitions()...)
 	definitions = append(definitions, ecommerceStylePromptDefinitions()...)
 	definitions = append(definitions, ecommerceWorkflowPromptDefinitions()...)
 	for index := range definitions {

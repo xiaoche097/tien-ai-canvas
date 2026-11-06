@@ -31,8 +31,8 @@ func TestTryOnEnabledVersionsAreUsedWithoutLosingProtectedImageRoles(t *testing.
 	}
 	var count int64
 	db.Model(&model.PromptTemplate{}).Where("operation LIKE ?", "try_on_%").Count(&count)
-	if count != 11 {
-		t.Fatalf("seeded %d templates, want 11", count)
+	if count != 12 {
+		t.Fatalf("seeded %d templates, want 12", count)
 	}
 	service := &Service{repo: repo}
 	input := canvasGenerationInput{Mode: "image", Config: providerConfig{Model: "gpt-image-2"}, ReferenceImages: []providerMedia{{StorageKey: "resource:product"}}, Metadata: map[string]any{"tryOn": map[string]any{"tool": "outfit", "productCount": 1, "referenceMode": "smart", "generationMode": "professional", "description": ""}}}

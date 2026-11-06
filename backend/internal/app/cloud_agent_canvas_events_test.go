@@ -31,6 +31,8 @@ func TestCloudAgentCanvasPatchesPersistDraftSubmissionAndAllTerminalStates(t *te
 	for _, status := range []model.TaskStatus{model.TaskStatusSucceeded, model.TaskStatusFailed, model.TaskStatusCancelled} {
 		t.Run(string(status), func(t *testing.T) {
 			s, db, args := agentMediaFixture(t)
+			// Terminal transitions are driven by this test, not a background waiter.
+			s.closeApprovedCloudAgentMediaWaiters()
 			run, _ := agentMediaRun(t, s, args, "request_approval")
 			if err := s.advanceCloudAgentByID("user", run.ID); err != nil {
 				t.Fatal(err)
@@ -78,7 +80,19 @@ func TestCloudAgentCanvasPatchesPersistDraftSubmissionAndAllTerminalStates(t *te
 			if !referenceTitles["叮当猫在飞"] || !referenceTitles["古风奥特曼"] {
 				t.Fatalf("persisted trace lost referenced node titles: %+v", draft["actions"])
 			}
-			submission := agentCanvasPatchForOperation(t, state, "generate_media_submit")["canvasPatch"].(map[string]any)
+			submissionEvent := agentCanvasPatchForOperation(t, state, "generate_media_submit")
+			draftPreview := draft["preview"].(map[string]any)
+			if !strings.Contains(stringValue(draftPreview["description"]), "尚未提交生成") {
+				t.Fatalf("draft approval lost its waiting semantics: %+v", draftPreview)
+			}
+			submissionPreview := submissionEvent["preview"].(map[string]any)
+			if submissionPreview["status"] != "submitted" || submissionPreview["title"] != "生成任务已提交" ||
+				!strings.Contains(stringValue(submissionEvent["text"]), "生成任务已提交") ||
+				!strings.Contains(stringValue(submissionEvent["text"]), "生成结果尚未完成") ||
+				strings.Contains(stringValue(submissionEvent["text"]), "尚未提交生成") {
+				t.Fatalf("media submission event lost the submitted stage: %+v", submissionEvent)
+			}
+			submission := submissionEvent["canvasPatch"].(map[string]any)
 			submitted := creationMaps(submission["nodes"])[0]["after"].(map[string]any)["metadata"].(map[string]any)
 			if submitted["status"] != "loading" || submitted["taskId"] != taskID || len(creationMaps(submission["connections"])) != 0 {
 				t.Fatalf("submission failed to lock the existing draft: %+v", submission)
@@ -270,6 +284,9 @@ func TestCloudAgentCanvasOperationTraceSharesToolCallID(t *testing.T) {
 
 func TestCloudAgentMissingCanvasStillCheckpointsMediaFailure(t *testing.T) {
 	s, db, args := agentMediaFixture(t)
+	// This test advances cleanup directly; keep the approval waiter from
+	// concurrently changing the revision after its deliberate task failure.
+	s.closeApprovedCloudAgentMediaWaiters()
 	run, _ := agentMediaRun(t, s, args, "request_approval")
 	if err := s.advanceCloudAgentByID("user", run.ID); err != nil {
 		t.Fatal(err)

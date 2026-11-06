@@ -1,5 +1,5 @@
 import { App, Button, Input, Select, Spin, Switch } from "antd";
-import { ArrowLeft, ArrowRight, Check, Download, FolderOpen, Footprints, Glasses, History, ImagePlus, Layers, LayoutGrid, List, Palette, PersonStanding, Plus, RotateCcw, ScanFace, Shirt, Sparkles, UserRound, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Download, FolderOpen, Footprints, Glasses, History, ImagePlus, Layers, LayoutGrid, List, Palette, PersonStanding, Plus, RotateCcw, ScanFace, Shirt, ShoppingBag, Sparkles, UserRound, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { AssetLibraryPickerModal, type AssetLibraryPickerItem } from "@/components/assets/asset-library-picker-modal";
@@ -20,6 +20,8 @@ import type { ReferenceImage } from "@/types/image";
 import { accessoryTypes, descriptionPresetsFor, flatModeProducts, replaceGarmentSlot, replaceShoeView, tryOnGuides, tryOnInputError, tryOnIntent, tryOnReferences, tryOnTools, type AccessoryType, type FlatMode, type GarmentSlot, type ShoeView, type TryOnProduct } from "./workflow";
 import { ShoeUpload } from "./shoe-upload";
 import { FlatUpload } from "./flat-upload";
+import { BagSettings, BagUpload } from "./bag-upload";
+import { bagModeProducts, replaceBagSlot, type BagMode, type BagOptions, type BagSlot, type BagSource } from "./workflow";
 import { GenerationModeSelect } from "./generation-mode-select";
 import { AccessoryUpload } from "./accessory-upload";
 import { ModelImageUpload } from "./model-image-upload";
@@ -32,10 +34,10 @@ import { TryOnResultViewer, type TryOnResultContext, type TryOnResultImage } fro
 import "./try-on.css";
 
 type Output = TryOnResultImage;
-type UploadTarget = "product" | "model" | `shoe-${ShoeView}` | `flat-${GarmentSlot}`;
+type UploadTarget = "product" | "model" | `shoe-${ShoeView}` | `flat-${GarmentSlot}` | `bag-${BagSlot}-${BagSource}`;
 const urlFor = (image: { dataUrl?: string; storageKey?: string }) => image.dataUrl || (resourceIdFromStorageKey(image.storageKey) ? resourceFileUrl(resourceIdFromStorageKey(image.storageKey)!) : "");
 const taskLabels: Record<string, string> = { queued: "排队中", running: "生成中", succeeded: "已完成", failed: "失败", cancelled: "已取消" };
-const toolIcons = [Shirt, Layers, Footprints, Glasses, UserRound, PersonStanding, ScanFace, Palette];
+const toolIcons = [Shirt, Layers, ShoppingBag, Footprints, Glasses, UserRound, PersonStanding, ScanFace, Palette];
 const isTryOnTask = (task: GenerationTask) => {
     try { return JSON.parse(task.inputJson || "{}").metadata?.aiApplicationId === "universal-try-on"; } catch { return false; }
 };
@@ -69,6 +71,10 @@ export default function TryOnPage() {
     const guide = tool.id === "accessory" ? { ...tryOnGuides.accessory, productLabel: `${accessory.label}商品图`, productHint: accessory.hint, placeholder: accessory.placeholder, smartHint: accessory.modelHint } : tryOnGuides[tool.id];
     const [accessoryProducts, setAccessoryProducts] = useToolDraftState<Partial<Record<AccessoryType, TryOnProduct>>>(toolId, {});
     const [generalProducts, setProducts] = useToolDraftState<TryOnProduct[]>(toolId, []);
+    const [bagSettings, setBagSettings] = useToolDraftState<Omit<BagOptions, "views">>(toolId, { type: "auto", ageGroup: "adult" });
+    const [bagMode, setBagMode] = useToolDraftState<BagMode>(toolId, "single");
+    const [bagReading, setBagReading] = useState<BagSlot | null>(null);
+    const bagImport = useRef<{ slot: BagSlot; source: BagSource }>({ slot: "front", source: "flat" });
     const [modelProducts, setModelProducts] = useToolDraftState<TryOnProduct[]>(toolId, []);
     const [faceProducts, setFaceProducts] = useToolDraftState<TryOnProduct[]>(toolId, []);
     const identityProducts = tool.id === "face" ? faceProducts : modelProducts;
@@ -81,7 +87,7 @@ export default function TryOnPage() {
     const [flatMode, setFlatMode] = useToolDraftState<FlatMode>(toolId, "separates");
     const [flatReading, setFlatReading] = useState<GarmentSlot | null>(null);
     const flatImportSlot = useRef<GarmentSlot>("upper");
-    const products = isIdentityTool ? identityProducts : tool.id === "accessory" ? accessoryProducts[accessoryType] ? [accessoryProducts[accessoryType]!] : [] : tool.id === "flat" ? flatModeProducts(flatProducts, flatMode) : tool.id === "shoes" ? shoeMode === "single" ? shoeProducts.filter((image) => image.shoeView === "pair") : shoeProducts : generalProducts;
+    const products = tool.id === "bag" ? bagModeProducts(generalProducts, bagMode) : isIdentityTool ? identityProducts : tool.id === "accessory" ? accessoryProducts[accessoryType] ? [accessoryProducts[accessoryType]!] : [] : tool.id === "flat" ? flatModeProducts(flatProducts, flatMode) : tool.id === "shoes" ? shoeMode === "single" ? shoeProducts.filter((image) => image.shoeView === "pair") : shoeProducts : generalProducts;
     const [generalReferences, setGeneralReferences] = useToolDraftState<ReferenceImage[]>(toolId, []);
     const [colorReferences, setColorReferences] = useToolDraftState<ReferenceImage[]>(toolId, []);
     const [modelReferences, setModelReferences] = useToolDraftState<ReferenceImage[]>(toolId, []);
@@ -93,7 +99,7 @@ export default function TryOnPage() {
     const [generalReferenceMode, setReferenceMode] = useToolDraftState(toolId, "smart");
     const [poseMode, setPoseMode] = useToolDraftState<PoseMode>(toolId, "smart");
     const [colorEdit, setColorEdit] = useToolDraftState<ColorEditOptions>(toolId, defaultColorEdit);
-    const referenceMode = isIdentityTool ? "reference" : tool.id === "color" ? colorEdit.mode === "reference" ? "reference" : "smart" : tool.id === "pose" ? poseMode === "reference" ? "reference" : "smart" : generalReferenceMode;
+    const referenceMode = isIdentityTool || tool.id === "bag" ? "reference" : tool.id === "color" ? colorEdit.mode === "reference" ? "reference" : "smart" : tool.id === "pose" ? poseMode === "reference" ? "reference" : "smart" : generalReferenceMode;
     const [generalDescription, setGeneralDescription] = useToolDraftState(tool.id === "accessory" ? `accessory-${accessoryType}` : toolId, "");
     const [poseDescription, setPoseDescription] = useToolDraftState(toolId, "");
     const [colorDescription, setColorDescription] = useToolDraftState(toolId, "");
@@ -103,7 +109,8 @@ export default function TryOnPage() {
     const setDescription = tool.id === "face" ? setFaceDescription : tool.id === "model" ? setModelDescription : tool.id === "color" ? setColorDescription : tool.id === "pose" ? setPoseDescription : setGeneralDescription;
     const descriptionRequired = guide.targetRequired && referenceMode === "smart" && tool.id !== "color";
     const [consistent, setConsistent] = useToolDraftState(toolId, false);
-    const [generationMode, setGenerationMode] = useToolDraftState(toolId, "professional");
+    const [generalGenerationMode, setGenerationMode] = useToolDraftState(toolId, "professional");
+    const generationMode = tool.id === "bag" ? bagSettings.ageGroup === "child" ? "children" : "professional" : generalGenerationMode;
     const [count, setCount] = useToolDraftState(toolId, 1);
     const [outputs, setOutputs] = useState<Output[]>([]);
     const [resultView, setResultView] = useState("grid");
@@ -188,19 +195,20 @@ export default function TryOnPage() {
         return () => window.clearInterval(timer);
     }, [historyOpen]);
 
-    const addFiles = async (files: File[], target: "product" | "model", view: ShoeView | GarmentSlot = "pair") => {
+    const addFiles = async (files: File[], target: "product" | "model", view: ShoeView | GarmentSlot | BagSlot = "pair", bagSource: BagSource = "flat") => {
         if (busy || readingRef.current || !files.length) return;
         readingRef.current = true;
         setReading(target);
         if (target === "product" && tool.id === "shoes") setShoeReading(view as ShoeView);
         if (target === "product" && tool.id === "flat") setFlatReading(view as GarmentSlot);
+        if (target === "product" && tool.id === "bag") setBagReading(view === "back" || view === "side" ? view : "front");
         const revision = resultRevision.current;
         setError("");
         setUploadErrors((current) => ({ ...current, [target]: "" }));
-        const limit = target === "product" ? guide.maxProducts : tool.id === "color" || isIdentityTool ? 1 : 4;
+        const limit = target === "product" ? guide.maxProducts : tool.id === "color" || tool.id === "bag" || isIdentityTool ? 1 : 4;
         try {
             const current = target === "product" ? products : references;
-            const singleSlot = isIdentityTool || target === "model" && tool.id === "color" || target === "product" && (guide.maxProducts === 1 || tool.id === "shoes" || tool.id === "flat");
+            const singleSlot = isIdentityTool || target === "model" && (tool.id === "color" || tool.id === "bag") || target === "product" && (guide.maxProducts === 1 || tool.id === "shoes" || tool.id === "flat" || tool.id === "bag");
             if (singleSlot ? files.length !== 1 : files.length + current.length > limit) throw new Error(singleSlot ? "每个上传位置仅支持 1 张图片" : `最多选择 ${limit} 张${target === "product" ? "商品" : "模特"}图`);
             const results = await Promise.allSettled(files.map(readImage));
             if (revision !== resultRevision.current) return;
@@ -211,10 +219,12 @@ export default function TryOnPage() {
                 else if (tool.id === "shoes") { if (next.length) setShoeProducts((items) => replaceShoeView(items, next[0], view as ShoeView)); }
                 else if (tool.id === "flat") { if (next.length) setFlatProducts((items) => replaceGarmentSlot(items, next[0], view as GarmentSlot)); }
                 else if (tool.id === "accessory") { if (next.length) setAccessoryProducts((items) => ({ ...items, [accessoryType]: next[0] })); }
+                else if (tool.id === "bag") { if (next.length) setProducts((items) => replaceBagSlot(items, next[0], view === "back" || view === "side" ? view : "front", bagSource)); }
                 else setProducts((items) => guide.maxProducts === 1 ? next.length ? next : items : [...items, ...next].slice(0, limit));
             }
             else if (isIdentityTool) { if (next.length) setIdentityReferences(next); }
             else if (tool.id === "color") { if (next.length) { setColorReferences(next); setColorEdit((current) => ({ ...current, hex: "" })); } }
+            else if (tool.id === "bag") { if (next.length) setReferences(next); }
             else { setReferences((items) => [...items, ...next].slice(0, limit)); setReferenceMode("reference"); }
             if (failures.length) throw new Error(failures.join("\n"));
         } catch (reason) {
@@ -222,7 +232,7 @@ export default function TryOnPage() {
             const detail = reason instanceof Error ? reason.message : "图片导入失败";
             setUploadErrors((current) => ({ ...current, [target]: detail }));
             void message.error(detail);
-        } finally { readingRef.current = false; setReading(null); setShoeReading(null); setFlatReading(null); }
+        } finally { readingRef.current = false; setReading(null); setShoeReading(null); setFlatReading(null); setBagReading(null); }
     };
     useEffect(() => {
         const paste = (event: ClipboardEvent) => {
@@ -240,6 +250,7 @@ export default function TryOnPage() {
             event.preventDefault();
             if (target.startsWith("shoe-")) void addFiles(files, "product", target.slice(5) as ShoeView);
             else if (target.startsWith("flat-")) void addFiles(files, "product", target.slice(5) as GarmentSlot);
+            else if (target.startsWith("bag-")) { const [, slot, source] = target.split("-"); void addFiles(files, "product", slot as BagSlot, source as BagSource); }
             else void addFiles(files, target as "product" | "model");
         };
         document.addEventListener("paste", paste);
@@ -262,6 +273,17 @@ export default function TryOnPage() {
         if (picker === "model" && tool.id === "color") {
             if (next.length !== 1) { void message.error("请选择 1 张配色参考图"); return; }
             setColorReferences(next); setColorEdit((current) => ({ ...current, hex: "" })); setPicker(null); return;
+        }
+        if (tool.id === "bag") {
+            if (picker === "product") {
+                if (next.length !== 1) { void message.error("每个包袋视角请选择 1 张图片"); return; }
+                const { slot, source } = bagImport.current;
+                setProducts((items) => replaceBagSlot(items, next[0], slot, source));
+            } else {
+                if (next.length !== 1) { void message.error("请选择 1 张目标模特图"); return; }
+                setReferences(next);
+            }
+            setUploadErrors((current) => ({ ...current, [picker]: "" })); setError(""); setPicker(null); return;
         }
         const limit = picker === "product" ? guide.maxProducts : 4;
         if (picker === "product" && tool.id === "accessory") {
@@ -295,6 +317,8 @@ export default function TryOnPage() {
         setError("");
         const inputError = tryOnInputError(tool, products.length, referenceMode, references.length, description, poseMode, colorEdit);
         if (inputError) { setError(inputError); return; }
+        if (tool.id === "bag" && (!references.length || references.length > 1 || products.some((image) => !image.bagView) || products.every((image) => image.bagView?.angle === "detail"))) { setError("请上传 1 张目标模特图，并为同款包提供至少 1 张整体参考图"); return; }
+        if (tool.id === "bag" && products.length !== (bagMode === "multi" ? 3 : 1)) { setError(bagMode === "multi" ? "请补齐同款包的正面整体、背面包带和右侧厚度图，各 1 张" : "请上传 1 张完整包袋商品图"); return; }
         if (tool.id === "shoes" && (shoeMode === "multi" ? products.length !== 3 : products.length !== 1)) { setError("请补齐双脚鞋图、单鞋外侧图、单鞋内侧图，各 1 张"); return; }
         if (!selectedModel) { setError("请先配置可用的图片模型"); return; }
         const needsAnchor = consistent && count > 1;
@@ -319,13 +343,13 @@ export default function TryOnPage() {
                     if (abort.signal.aborted) break;
                     taskId.current = "";
                     setStatus(`${completed + 1} / ${total} · 正在提交生成任务`);
-                    const context: TryOnResultContext = { batchId, title: tool.id === "accessory" ? `${tool.title} · ${accessory.label}` : tool.title, time: new Date().toISOString(), mode: generationMode === "children" ? "内衣／童装" : "专业模式", ratio: runtime.size || "自动", resolution: runtime.imageResolution === "auto" ? "自动" : runtime.imageResolution || "模型默认", model: selectedModel, modelLabel, settings: { size: runtime.size, imageResolution: runtime.imageResolution, quality: runtime.quality, imageParameters: runtime.imageParameters }, products: savedProducts, references: reference ? [reference] : [] };
+                    const context: TryOnResultContext = { batchId, title: tool.id === "accessory" ? `${tool.title} · ${accessory.label}` : tool.title, time: new Date().toISOString(), mode: tool.id === "bag" ? bagSettings.ageGroup === "child" ? "儿童包袋" : "成人包袋" : generationMode === "children" ? "内衣／童装" : "专业模式", ratio: runtime.size || "自动", resolution: runtime.imageResolution === "auto" ? "自动" : runtime.imageResolution || "模型默认", model: selectedModel, modelLabel, settings: { size: runtime.size, imageResolution: runtime.imageResolution, quality: runtime.quality, imageParameters: runtime.imageParameters }, products: savedProducts, references: reference ? [reference] : [] };
                     const safeReferences = (images: ReferenceImage[]) => images.filter((image) => resourceIdFromStorageKey(image.storageKey)).map(({ id, name, type, storageKey }) => ({ id, name, type, storageKey, dataUrl: "" }));
                     const result = await runBackendGenerationTask({
                         mode: "image", config: runtime, signal: abort.signal,
                         prompt: "使用后端当前启用的镜彻换装模板。",
                         referenceImages: tryOnReferences(savedProducts, reference, anchor),
-                        metadata: { source: "ai-apps", aiApplicationId: "universal-try-on", aiApplicationName: "万物上身", tryOnTool: tool.id, tryOn: tryOnIntent(tool, products.length, Boolean(reference), description, generationMode === "children", Boolean(anchor), tool.id === "shoes" ? products.map((image) => image.shoeView!) : undefined, tool.id === "flat" ? products.map((image) => image.garmentSlot!) : undefined, tool.id === "accessory" ? accessoryType : undefined, poseMode, colorEdit), promptTemplateOperation: `try_on_${tool.id}`, batchId, batchIndex: completed, batchCount: total, productCount: products.length, description, generationMode, consistent, count, tryOnSnapshot: { ...context, products: safeReferences(context.products), references: safeReferences(context.references) } },
+                        metadata: { source: "ai-apps", aiApplicationId: "universal-try-on", aiApplicationName: "万物上身", tryOnTool: tool.id, tryOn: tryOnIntent(tool, products.length, Boolean(reference), description, generationMode === "children", Boolean(anchor), tool.id === "shoes" ? products.map((image) => image.shoeView!) : undefined, tool.id === "flat" ? products.map((image) => image.garmentSlot!) : undefined, tool.id === "accessory" ? accessoryType : undefined, poseMode, colorEdit, tool.id === "bag" ? { ...bagSettings, views: products.map((image) => image.bagView!) } : undefined), promptTemplateOperation: `try_on_${tool.id}`, batchId, batchIndex: completed, batchCount: total, productCount: products.length, ...(tool.id === "bag" ? { bagUploadMode: bagMode } : {}), description, generationMode, consistent, count, tryOnSnapshot: { ...context, products: safeReferences(context.products), references: safeReferences(context.references) } },
                         onTaskUpdate: (task) => { taskId.current = task.id; const label = taskLabels[task.status] || task.status; setStatus(`${completed + 1} / ${total} · ${label}${task.stage && task.stage !== label ? ` · ${task.stage}` : ""}`); },
                     });
                     const images = result.images || [];
@@ -382,6 +406,7 @@ export default function TryOnPage() {
             if (tryOnTools.some((item) => item.id === meta.tryOnTool)) setToolId(meta.tryOnTool);
             if (typeof meta.description === "string") { if (meta.tryOnTool === "face") setFaceDescription(meta.description, meta.tryOnTool); else if (meta.tryOnTool === "model") setModelDescription(meta.description, meta.tryOnTool); else if (meta.tryOnTool === "color") setColorDescription(meta.description, meta.tryOnTool); else if (meta.tryOnTool === "pose") setPoseDescription(meta.description, meta.tryOnTool); else setGeneralDescription(meta.description, meta.tryOnTool === "accessory" ? `accessory-${meta.tryOn?.accessoryType}` : meta.tryOnTool); }
             if (meta.tryOnTool === "pose") setPoseMode(poseModes.find((item) => item.id === meta.tryOn?.poseMode)?.id || "smart", meta.tryOnTool);
+            if (meta.tryOnTool === "bag" && meta.tryOn?.bag) setBagSettings({ type: meta.tryOn.bag.type, ageGroup: meta.tryOn.bag.ageGroup }, meta.tryOnTool);
             if (meta.tryOnTool === "color") {
                 if (meta.tryOn?.colorEdit) setColorEdit(meta.tryOn.colorEdit, meta.tryOnTool);
                 else { setColorEdit(defaultColorEdit, meta.tryOnTool); setError("历史换色任务未记录选色参数，请重新确认颜色和换色对象。"); }
@@ -422,6 +447,15 @@ export default function TryOnPage() {
                         setFlatProducts([], meta.tryOnTool);
                         setError("历史任务未记录服装位置，请重新选择上装、下装或连体装后生成。");
                     }
+                } else if (meta.tryOnTool === "bag") {
+                    const views = meta.tryOn?.bag?.views;
+                    if (Array.isArray(views) && views.length === meta.productCount) {
+                        const slots: BagSlot[] = meta.bagUploadMode === "multi" ? ["front", "back", "side"] : ["front"];
+                        setBagMode(slots.length === 3 ? "multi" : "single", meta.tryOnTool);
+                        setProducts(imported.slice(0, meta.productCount).map((image: ReferenceImage, index: number) => ({ ...image, bagView: views[index], bagSlot: slots[index] })), meta.tryOnTool);
+                        if (meta.productCount !== slots.length) setError("历史商品图分组与当前上传模式不同，请重新确认各视角后生成。");
+                    }
+                    else { setProducts([], meta.tryOnTool); setError("历史包袋任务缺少商品视角，请重新上传。"); }
                 } else if (historyIdentityTool) setHistoryProducts(imported.slice(0, meta.productCount), meta.tryOnTool);
                 else setProducts(imported.slice(0, meta.productCount), meta.tryOnTool);
                 const modelImage = meta.tryOn?.referenceMode === "smart" ? undefined : imported[meta.productCount];
@@ -435,7 +469,7 @@ export default function TryOnPage() {
             setOutputs(result.images.map((image: Output) => ({ ...image, context: meta.tryOnSnapshot }))); setResultMeta({ label: detail.model || "历史生成", time: detail.createdAt }); setMobilePanel("results"); setStatus("已打开历史结果"); setHistoryOpen(false);
         } catch (reason) { if (revision === resultRevision.current) void message.error(reason instanceof Error ? reason.message : "读取结果失败"); }
     };
-    const reset = () => { if (busy || cancelling || expanding || readingRef.current) return; resultRevision.current++; setProducts([]); setModelProducts([]); setModelReferences([]); setModelDescription(""); setFaceProducts([]); setFaceReferences([]); setFaceDescription(""); setShoeProducts([]); setShoeMode("single"); setFlatProducts([]); setFlatMode("separates"); setAccessoryProducts({}); setGeneralReferences([]); setColorReferences([]); setColorEdit(defaultColorEdit); setColorDescription(""); setGeneralDescription(""); setPoseDescription(""); setPoseMode("smart"); setOutputs([]); setStatus(""); setError(""); setUploadErrors({ product: "", model: "" }); setResultMeta(undefined); setMobilePanel("controls"); };
+    const reset = () => { if (busy || cancelling || expanding || readingRef.current) return; resultRevision.current++; setProducts([]); setModelProducts([]); setModelReferences([]); setModelDescription(""); setFaceProducts([]); setFaceReferences([]); setFaceDescription(""); setShoeProducts([]); setShoeMode("single"); setFlatProducts([]); setFlatMode("separates"); setBagSettings({ type: "auto", ageGroup: "adult" }); setBagMode("single"); setAccessoryProducts({}); setGeneralReferences([]); setColorReferences([]); setColorEdit(defaultColorEdit); setColorDescription(""); setGeneralDescription(""); setPoseDescription(""); setPoseMode("smart"); setOutputs([]); setStatus(""); setError(""); setUploadErrors({ product: "", model: "" }); setResultMeta(undefined); setMobilePanel("controls"); };
     const download = (index: number) => {
         const image = outputs[index];
         void downloadBrowserMedia({ fileName: `镜彻-${image.context?.title || tool.title}-${index + 1}.${image.mimeType === "image/jpeg" ? "jpg" : image.mimeType === "image/webp" ? "webp" : "png"}`, storageKey: image.storageKey, url: urlFor(image) }).catch((reason) => message.error(reason.message));
@@ -461,7 +495,8 @@ export default function TryOnPage() {
                 <section className="try-on-controls" aria-label="生成配置">
                     <header className="try-on-header"><div className="try-on-header-title"><h1>{tool.title}<span>镜彻</span></h1><p>{tool.hint}</p></div><Button size="small" disabled={busy || cancelling || expanding || Boolean(reading)} icon={<Plus size={14} />} onClick={reset}>新建任务</Button></header>
                     <div className="try-on-control-scroll">
-                    {isIdentityTool ? <ModelImageUpload kind={tool.id === "face" ? "face" : "model"} target="product" image={identityProducts[0]} disabled={busy || Boolean(reading)} reading={reading === "product"} imageUrl={urlFor} onFiles={(files) => void addFiles(files, "product")} onImport={() => setPicker("product")} onRemove={() => setIdentityProducts([])} onHover={(target) => { hoveredUpload.current = target; }} /> : tool.id === "accessory" ? <AccessoryUpload category={accessoryType} image={accessoryProducts[accessoryType]} disabled={busy || Boolean(reading)} reading={reading === "product"} imageUrl={urlFor} onCategoryChange={(value) => { setAccessoryType(value); hoveredUpload.current = null; setError(""); setUploadErrors((current) => ({ ...current, product: "" })); }} onFiles={(files) => void addFiles(files, "product")} onImport={() => setPicker("product")} onRemove={() => setAccessoryProducts((items) => ({ ...items, [accessoryType]: undefined }))} onHover={(target) => { hoveredUpload.current = target; }} /> : tool.id === "flat" ? <><div className="try-on-section-heading"><h2>服装平铺图／人台图</h2><small>{products.length} / {flatMode === "onepiece" ? 1 : 2}</small></div><FlatUpload images={flatProducts} mode={flatMode} disabled={busy || Boolean(reading)} readingSlot={flatReading} imageUrl={urlFor} onModeChange={(value) => { setFlatMode(value); hoveredUpload.current = null; setError(""); setUploadErrors((current) => ({ ...current, product: "" })); }} onFiles={(files, slot) => void addFiles(files, "product", slot)} onImport={(slot) => { flatImportSlot.current = slot; setPicker("product"); }} onRemove={(slot) => setFlatProducts((items) => items.filter((image) => image.garmentSlot !== slot))} onHover={(target) => { hoveredUpload.current = target; }} /></> : tool.id === "shoes" ? <><div className="try-on-section-heading"><h2>鞋靴商品图</h2><small>{products.length} / {shoeMode === "multi" ? 3 : 1}</small></div><ShoeUpload images={shoeProducts} mode={shoeMode} disabled={busy || Boolean(reading)} readingView={shoeReading} imageUrl={urlFor} onModeChange={(value) => { setShoeMode(value); hoveredUpload.current = null; setError(""); setUploadErrors((current) => ({ ...current, product: "" })); }} onFiles={(files, view) => void addFiles(files, "product", view)} onImport={(view) => { shoeImportView.current = view; setPicker("product"); }} onRemove={(view) => setShoeProducts((items) => items.filter((image) => image.shoeView !== view))} onHover={(target) => { hoveredUpload.current = target; }} /></> : <>
+                    {tool.id === "bag" ? <><fieldset className="try-on-fieldset" disabled={busy || Boolean(reading) || expanding}><BagSettings value={bagSettings} onChange={setBagSettings} /></fieldset><div className="try-on-section-heading"><h2>包袋商品图</h2><small>{products.length} / {bagMode === "multi" ? 3 : 1}</small></div><BagUpload images={generalProducts} mode={bagMode} disabled={busy || Boolean(reading) || expanding} readingSlot={bagReading} imageUrl={urlFor} onModeChange={(value) => { setBagMode(value); hoveredUpload.current = null; setError(""); setUploadErrors((current) => ({ ...current, product: "" })); }} onFiles={(files, slot, source) => void addFiles(files, "product", slot, source)} onImport={(slot, source) => { bagImport.current = { slot, source }; setPicker("product"); }} onRemove={(slot) => setProducts((items) => items.filter((image) => image.bagSlot !== slot))} onSource={(slot, source) => setProducts((items) => items.map((image) => image.bagSlot === slot && image.bagView ? { ...image, bagView: { ...image.bagView, source } } : image))} onHover={(target) => { hoveredUpload.current = target; }} /></> : null}
+                    {tool.id === "bag" ? null : isIdentityTool ? <ModelImageUpload kind={tool.id === "face" ? "face" : "model"} target="product" image={identityProducts[0]} disabled={busy || Boolean(reading)} reading={reading === "product"} imageUrl={urlFor} onFiles={(files) => void addFiles(files, "product")} onImport={() => setPicker("product")} onRemove={() => setIdentityProducts([])} onHover={(target) => { hoveredUpload.current = target; }} /> : tool.id === "accessory" ? <AccessoryUpload category={accessoryType} image={accessoryProducts[accessoryType]} disabled={busy || Boolean(reading)} reading={reading === "product"} imageUrl={urlFor} onCategoryChange={(value) => { setAccessoryType(value); hoveredUpload.current = null; setError(""); setUploadErrors((current) => ({ ...current, product: "" })); }} onFiles={(files) => void addFiles(files, "product")} onImport={() => setPicker("product")} onRemove={() => setAccessoryProducts((items) => ({ ...items, [accessoryType]: undefined }))} onHover={(target) => { hoveredUpload.current = target; }} /> : tool.id === "flat" ? <><div className="try-on-section-heading"><h2>服装平铺图／人台图</h2><small>{products.length} / {flatMode === "onepiece" ? 1 : 2}</small></div><FlatUpload images={flatProducts} mode={flatMode} disabled={busy || Boolean(reading)} readingSlot={flatReading} imageUrl={urlFor} onModeChange={(value) => { setFlatMode(value); hoveredUpload.current = null; setError(""); setUploadErrors((current) => ({ ...current, product: "" })); }} onFiles={(files, slot) => void addFiles(files, "product", slot)} onImport={(slot) => { flatImportSlot.current = slot; setPicker("product"); }} onRemove={(slot) => setFlatProducts((items) => items.filter((image) => image.garmentSlot !== slot))} onHover={(target) => { hoveredUpload.current = target; }} /></> : tool.id === "shoes" ? <><div className="try-on-section-heading"><h2>鞋靴商品图</h2><small>{products.length} / {shoeMode === "multi" ? 3 : 1}</small></div><ShoeUpload images={shoeProducts} mode={shoeMode} disabled={busy || Boolean(reading)} readingView={shoeReading} imageUrl={urlFor} onModeChange={(value) => { setShoeMode(value); hoveredUpload.current = null; setError(""); setUploadErrors((current) => ({ ...current, product: "" })); }} onFiles={(files, view) => void addFiles(files, "product", view)} onImport={(view) => { shoeImportView.current = view; setPicker("product"); }} onRemove={(view) => setShoeProducts((items) => items.filter((image) => image.shoeView !== view))} onHover={(target) => { hoveredUpload.current = target; }} /></> : <>
                     <div className="try-on-section-heading"><h2>{guide.productLabel}</h2><small>{products.length} / {guide.maxProducts}</small></div>
                     <div className="try-on-drop" data-upload-target="product" data-has-image={Boolean(products.length)} aria-busy={reading === "product"} aria-describedby="try-on-product-feedback" onPointerEnter={() => { hoveredUpload.current = "product"; }} onPointerLeave={() => { hoveredUpload.current = null; }} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); void addFiles(Array.from(event.dataTransfer.files), "product"); }} tabIndex={0} aria-label="商品图上传区域，可拖入或粘贴图片">
                         <input ref={productInput} hidden type="file" accept="image/png,image/jpeg,image/webp" multiple={guide.maxProducts > 1} disabled={busy || Boolean(reading)} onChange={(event) => { void addFiles(Array.from(event.target.files || []), "product"); event.target.value = ""; }} />
@@ -474,18 +509,18 @@ export default function TryOnPage() {
                     <p className="try-on-note">PNG / JPG / WEBP · ≤ 20MB · 300～4096px<br />支持拖入；聚焦上传区后可按 Ctrl+V 粘贴。</p>
                     <div id="try-on-product-feedback">{reading === "product" ? <p className="try-on-note" role="status">正在读取并校验图片，请稍候。</p> : uploadErrors.product ? <p className="try-on-upload-error" role="alert">{uploadErrors.product}</p> : null}</div>
                     {!isIdentityTool ? <div className="try-on-section-heading"><h2>{tool.id === "color" ? "颜色" : tool.id === "pose" ? "参考姿势" : guide.referenceLabel}</h2><Button type="text" size="small" onClick={() => setDialog("help")}>使用指南</Button></div> : null}
-                    <fieldset disabled={busy || cancelling || Boolean(reading) || expanding} inert={busy || Boolean(reading) || expanding} aria-busy={busy || Boolean(reading) || expanding} className="try-on-fieldset">{isIdentityTool ? null : tool.id === "color" ? <ColorSettings value={colorEdit} onChange={(value) => { setColorEdit(value); setError(""); hoveredUpload.current = null; }} /> : tool.id === "pose" ? <PoseModeSelect value={poseMode} onChange={(value) => { setPoseMode(value); hoveredUpload.current = null; setError(""); }} /> : <div className="try-on-segment" role="group" aria-label="目标来源"><button type="button" aria-pressed={referenceMode === "smart"} onClick={() => setReferenceMode("smart")}>{guide.smartLabel}</button><button type="button" aria-pressed={referenceMode === "reference"} onClick={() => setReferenceMode("reference")}>{guide.referenceLabel}</button></div>}
+                    <fieldset disabled={busy || cancelling || Boolean(reading) || expanding} inert={busy || Boolean(reading) || expanding} aria-busy={busy || Boolean(reading) || expanding} className="try-on-fieldset">{isIdentityTool || tool.id === "bag" ? null : tool.id === "color" ? <ColorSettings value={colorEdit} onChange={(value) => { setColorEdit(value); setError(""); hoveredUpload.current = null; }} /> : tool.id === "pose" ? <PoseModeSelect value={poseMode} onChange={(value) => { setPoseMode(value); hoveredUpload.current = null; setError(""); }} /> : <div className="try-on-segment" role="group" aria-label="目标来源"><button type="button" aria-pressed={referenceMode === "smart"} onClick={() => setReferenceMode("smart")}>{guide.smartLabel}</button><button type="button" aria-pressed={referenceMode === "reference"} onClick={() => setReferenceMode("reference")}>{guide.referenceLabel}</button></div>}
                     {isIdentityTool ? <><ModelImageUpload kind={tool.id === "face" ? "face" : "model"} target="model" image={identityReferences[0]} disabled={busy || Boolean(reading)} reading={reading === "model"} imageUrl={urlFor} onFiles={(files) => void addFiles(files, "model")} onImport={() => setPicker("model")} onRemove={() => setIdentityReferences([])} onHover={(target) => { hoveredUpload.current = target; }} /><div id="try-on-model-feedback">{uploadErrors.model ? <p className="try-on-upload-error" role="alert">{uploadErrors.model}</p> : null}</div></> : referenceMode === "smart" ? tool.id === "pose" || tool.id === "color" ? null : <div className="try-on-smart"><UserRound aria-hidden /><div><strong>{guide.smartLabel}</strong><p>{guide.smartHint}</p></div><Check size={16} aria-hidden /></div> : <div className="try-on-reference-box" data-upload-target="model" aria-busy={reading === "model"} aria-describedby="try-on-model-feedback" tabIndex={0} onPointerEnter={() => { hoveredUpload.current = "model"; }} onPointerLeave={() => { hoveredUpload.current = null; }} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); void addFiles(Array.from(event.dataTransfer.files), "model"); }}>
-                        <input ref={modelInput} hidden type="file" accept="image/png,image/jpeg,image/webp" multiple={tool.id !== "color"} onChange={(event) => { void addFiles(Array.from(event.target.files || []), "model"); event.target.value = ""; }} />
+                        <input ref={modelInput} hidden type="file" accept="image/png,image/jpeg,image/webp" multiple={tool.id !== "color" && tool.id !== "bag"} onChange={(event) => { void addFiles(Array.from(event.target.files || []), "model"); event.target.value = ""; }} />
                         {tool.id === "color" && references[0] ? <><ColorReferenceSampler src={urlFor(references[0])} hex={colorEdit.hex} onSample={(hex) => setColorEdit((current) => ({ ...current, hex }))} /><Button size="small" onClick={() => { setColorReferences([]); setColorEdit((current) => ({ ...current, hex: "" })); }}>移除配色参考图</Button></> : <div className="try-on-thumbnails" data-single={tool.id === "pose" && references.length === 1}>{references.map((image, index) => <div key={image.id}><img src={urlFor(image)} alt={`${guide.referenceLabel} ${index + 1}`} /><button type="button" aria-label={`移除参考图 ${index + 1}`} onClick={() => setReferences(references.filter((_, i) => i !== index))}><X size={13} /></button></div>)}</div>}
-                        <div className="try-on-inline-actions"><Button loading={reading === "model"} disabled={Boolean(reading)} onClick={() => modelInput.current?.click()}>{reading === "model" ? "正在读取图片" : `上传${guide.referenceLabel}`}</Button><Button disabled={Boolean(reading)} onClick={() => setPicker("model")}>从素材库选择</Button></div><p className="try-on-note">{tool.id === "color" ? "一张配色参考图。支持替换、拖入或粘贴；格式与尺寸要求同原图。" : <>{guide.smartHint}<br />最多 4 张，每张参考图分别生成一组结果。支持拖入或将鼠标移到此区域后按 Ctrl+V 粘贴。格式与尺寸要求同商品图。</>}</p>
+                        <div className="try-on-inline-actions"><Button loading={reading === "model"} disabled={Boolean(reading)} onClick={() => modelInput.current?.click()}>{reading === "model" ? "正在读取图片" : `上传${guide.referenceLabel}`}</Button><Button disabled={Boolean(reading)} onClick={() => setPicker("model")}>从素材库选择</Button></div><p className="try-on-note">{tool.id === "bag" ? "必填：上传 1 张目标真人模特图。多角度商品参考共同用于替换这张图中的包袋；保留人物、服装、姿势和背景。再次上传可更换目标图，格式与尺寸要求同商品图。" : tool.id === "color" ? "一张配色参考图。支持替换、拖入或粘贴；格式与尺寸要求同原图。" : <>{guide.smartHint}<br />最多 4 张，每张参考图分别生成一组结果。支持拖入或将鼠标移到此区域后按 Ctrl+V 粘贴。格式与尺寸要求同商品图。</>}</p>
                         <div id="try-on-model-feedback">{reading === "model" ? <p className="try-on-note" role="status">正在读取并校验图片，请稍候。</p> : uploadErrors.model ? <p className="try-on-upload-error" role="alert">{uploadErrors.model}</p> : null}</div>
                     </div>}
                     {tool.id !== "pose" || poseMode === "text" ? <><label className="try-on-field"><span>{tool.id === "pose" ? "目标动作" : "额外描述"} <small>{descriptionRequired ? "必填目标" : "可选"}</small></span><Input.TextArea value={description} onChange={(event) => setDescription(event.target.value)} required={descriptionRequired} maxLength={2000} rows={5} placeholder={tool.id === "color" ? "例如：只改变上衣底色，白色标志、拉链和其余衣物保持不变。" : guide.placeholder} /></label>
                     <div className="try-on-description-actions"><Button size="small" icon={<Sparkles size={14} />} disabled={expanding} loading={expanding} onClick={() => void expand()}>AI 扩写</Button><Button size="small" onClick={() => setDialog("words")}>描述词库</Button><small>{description.length} / 2000</small><Button type="text" size="small" aria-label="清空描述" onClick={() => setDescription("")}><RotateCcw size={14} /></Button></div>
                     </> : null}
                     <div className="try-on-switch"><label htmlFor="try-on-consistent">保持同组模特与场景一致</label><Switch id="try-on-consistent" checked={consistent} onChange={(value) => setConsistent(value)} /></div><p className="try-on-note">开启后，多张生成会引用同组首张成片辅助保持一致。</p>
-                    <GenerationModeSelect value={generationMode} onChange={setGenerationMode} />
+                    {tool.id !== "bag" ? <GenerationModeSelect value={generationMode} onChange={setGenerationMode} /> : null}
                     <div className="try-on-field try-on-execution-model" tabIndex={-1}><span>执行模型</span><ModelPicker config={runtime} capability="image" value={selectedModel} fullWidth showConfiguredModelName showOptionPrices showSelectedPrice={false} placeholder="选择图片模型" requirements={{ capability: "image", input: { textCount: 1, imageCount: referenceCount, referenceImageCount: referenceCount, videoCount: 0, audioCount: 0, characterCount: 0 } }} onChange={(value) => { setModel(value); setSettings({ ...defaultImageParamsForModel(runtime, value), count: "1" }); setError(""); }} />{modelLabel ? <p className="try-on-note" aria-live="polite">当前选择：{modelLabel}<br />本次单张任务需 {referenceCount} 张参考图，模型上限 {profile?.references.maxImages ?? 0} 张。</p> : <p className="try-on-note">{models.length ? "请选择支持当前输入的图片模型；历史或原选模型不可用时不会自动切换。" : "暂无可用图片模型，请先在模型设置中配置。"}</p>}</div>
                     {profile ? <div className="try-on-parameters"><ImageParameterFields profile={profile} config={runtime} showCount={false} showTransparent={false} onChange={(key, value) => setSettings((current) => ({ ...current, [key]: value }))} /></div> : null}
                     <label className="try-on-field"><span>每组生成数量</span><Select value={count} onChange={(value) => setCount(value)} options={[1, 2, 4].map((value) => ({ value, label: `${value} 张` }))} /></label></fieldset>
@@ -508,7 +543,7 @@ export default function TryOnPage() {
                 </section>
             </div>
         </div>
-        <AssetLibraryPickerModal open={Boolean(picker)} title={`选择${picker === "product" ? guide.productLabel : guide.referenceLabel}`} remoteLibrary remoteKind="image" mediaKinds={["image"]} acceptRemoteItems items={[]} categoryLabels={{}} multiple={!isIdentityTool && !(picker === "product" && tool.id === "accessory") && !(picker === "model" && tool.id === "color")} onClose={() => setPicker(null)} onConfirm={importAssets} />
+        <AssetLibraryPickerModal open={Boolean(picker)} title={`选择${picker === "product" ? guide.productLabel : guide.referenceLabel}`} remoteLibrary remoteKind="image" mediaKinds={["image"]} acceptRemoteItems items={[]} categoryLabels={{}} multiple={!isIdentityTool && !(picker === "product" && (tool.id === "accessory" || tool.id === "bag")) && !(picker === "model" && (tool.id === "color" || tool.id === "bag"))} onClose={() => setPicker(null)} onConfirm={importAssets} />
         <AppModal title={dialog === "help" ? "镜彻万物上身 · 使用指南" : "描述词库"} open={Boolean(dialog)} onCancel={() => setDialog(null)} footer={null}>{dialog === "help" ? <ol className="try-on-help"><li>上传商品或原模特图片；多件商品会作为同一套搭配。</li><li>按当前工具选择颜色、姿态或人物参考。换模特与换脸必须上传目标人物。</li><li>描述需保持或调整的细节，选择模型支持的参数与数量。</li><li>点击生成。可查看、放大和下载结果，历史任务在生成记录中保留。</li><li>AI 扩写使用文本模型，会按平台规则产生文本调用消耗。</li></ol> : <div className="try-on-word-list">{descriptionPresetsFor(tool.id, referenceMode === "reference").map((item) => <Button key={item.title} onClick={() => { setDescription((value) => [value, item.text].filter(Boolean).join("\n").slice(0, 2000)); setDialog(null); }}>{item.title}</Button>)}</div>}</AppModal>
         <AppDrawer title="生成记录 · 最近 30 天" open={historyOpen} onClose={() => setHistoryOpen(false)} width={380}><div className="try-on-history"><Button loading={historyLoading} onClick={() => void loadHistory()}>刷新记录</Button>{historyError ? <p role="alert">{historyError}</p> : !historyLoading && !history.length ? <p>最近 200 条任务中暂无万物上身记录</p> : null}{history.map((task) => <button type="button" disabled={busy || cancelling || Boolean(reading) || expanding} key={task.id} onClick={() => void restoreTask(task)}><strong>{taskLabels[task.status] || task.status}</strong><span>{new Date(task.createdAt).toLocaleString()}</span><p>{task.prompt.slice(-100)}</p>{task.error ? <small>{task.error}</small> : null}</button>)}<Link to="/tasks">前往完整任务中心 <ArrowRight size={14} /></Link></div></AppDrawer>
         {preview !== null && outputs[preview] ? <TryOnResultViewer images={outputs} index={preview} onIndexChange={setPreview} onClose={() => setPreview(null)} imageUrl={urlFor} onDownload={download} /> : null}

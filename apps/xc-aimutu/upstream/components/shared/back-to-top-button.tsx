@@ -2,32 +2,35 @@
 
 import { useEffect, useState } from "react";
 import { ArrowUp } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 export function BackToTopButton() {
   const [visible, setVisible] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     const updateVisibility = () => {
-      const scrollTop = window.scrollY || document.documentElement.scrollTop;
-      const doc = document.documentElement;
-      const canScroll = doc.scrollHeight - window.innerHeight > 160;
+      const main = document.querySelector<HTMLElement>(".motu-shell:not(.motu-workbench) .motu-main");
+      const scrollTop = main ? main.scrollTop : window.scrollY || document.documentElement.scrollTop;
+      const canScroll = main ? main.scrollHeight - main.clientHeight > 160 : document.documentElement.scrollHeight - window.innerHeight > 160;
       setVisible(canScroll && scrollTop > 280);
     };
 
     updateVisibility();
-    window.addEventListener("scroll", updateVisibility, { passive: true });
+    window.addEventListener("scroll", updateVisibility, { passive: true, capture: true });
     window.addEventListener("resize", updateVisibility);
 
     return () => {
-      window.removeEventListener("scroll", updateVisibility);
+      window.removeEventListener("scroll", updateVisibility, true);
       window.removeEventListener("resize", updateVisibility);
     };
-  }, []);
+  }, [pathname]);
 
   const handleBackToTop = () => {
-    window.scrollTo({
+    const main = document.querySelector<HTMLElement>(".motu-shell:not(.motu-workbench) .motu-main");
+    (main ?? window).scrollTo({
       top: 0,
-      behavior: "smooth",
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
     });
   };
 

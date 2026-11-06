@@ -141,15 +141,15 @@ export const EditorPanel = React.memo(function EditorPanel({
                 <select
                   id="hero-aspect-ratio"
                   className="flex h-11 w-full rounded-xl border border-input bg-white px-3 text-sm"
-                  value={amazonMain ? "1:1" : selectedSection.editableData?.heroAspectRatio ?? ""}
-                  disabled={amazonMain || Boolean(runningAction) || selectedSection.status === "GENERATING"}
+                  value={selectedSection.editableData?.heroAspectRatio ?? ""}
+                  disabled={Boolean(runningAction) || selectedSection.status === "GENERATING"}
                   onChange={(event) => onUpdateSection("editableData", { ...selectedSection.editableData, heroAspectRatio: event.target.value || undefined })}
                 >
                   <option value="">跟随输出配置（{project?.modelSnapshot?.previewConfig?.heroAspectRatio === "3:4" ? "3:4" : "1:1"}）</option>
                   <option value="1:1">1:1 · 正方形</option>
                   <option value="3:4">3:4 · 竖版</option>
                 </select>
-                <p className="text-xs text-muted-foreground">{amazonMain ? "Amazon 第一张头图作为主图：固定 1:1、白底、无额外营销文字；需真实商品参考图。其他头图按附图处理。" : "保存后生效，生成与重绘使用所选比例；已有图片不拉伸、不裁切。"}</p>
+                <p className="text-xs text-muted-foreground">{amazonMain ? "Amazon 第一张头图支持 1:1 或 3:4，沿用所选比例生成与重绘；保留白底、无额外营销文字及真实商品参考要求。" : "保存后生效，生成与重绘使用所选比例；已有图片不拉伸、不裁切。"}</p>
               </div>
             ) : null}
 

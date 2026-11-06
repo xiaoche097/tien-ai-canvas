@@ -16,7 +16,7 @@ describe("AI 换色色库与结构化参数", () => {
         expect(filterPalette("蓝色", "法国香草")).toHaveLength(0);
     });
     test("选色无需重复填写描述，参考模式限定单图并校验取色值", () => {
-        const tool = tryOnTools[7];
+        const tool = tryOnTools.find((tool) => tool.id === "color")!;
         expect(tryOnInputError(tool, 1, "smart", 0, "", undefined, defaultColorEdit)).toBe("");
         expect(tryOnInputError(tool, 1, "smart", 0, "", undefined, { ...defaultColorEdit, hex: "#xyz" })).toContain("HEX");
         expect(tryOnInputError(tool, 1, "smart", 0, "", undefined, { ...defaultColorEdit, target: "" })).toContain("换色对象");

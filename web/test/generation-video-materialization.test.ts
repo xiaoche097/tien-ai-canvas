@@ -20,8 +20,10 @@ const implementations: Record<string, string> = {
     parseBackendGenerationResult: "task => JSON.parse(task.resultJson)",
     resolveMediaUrl: "async (key) => { fixture.accesses.push(key); return 'https://storage.example/saved.mp4'; }",
     canvasVideoAssetPreviewUrl: "() => ''",
+    subscribeRemoteUserDataReady: "() => () => undefined",
+    getCachedResourceBlob: "async () => { fixture.warmups++; throw new Error('Cache deliberately unavailable'); }",
 };
-writeFileSync(dependencyPath, `export const fixture = { accesses: [] };\n` + [...names].map((name) => `export const ${name} = ${implementations[name] || `() => { throw new Error('Unexpected dependency: ${name}'); }`};`).join("\n"));
+writeFileSync(dependencyPath, `export const fixture = { accesses: [], warmups: 0 };\n` + [...names].map((name) => `export const ${name} = ${implementations[name] || `() => { throw new Error('Unexpected dependency: ${name}'); }`};`).join("\n"));
 writeFileSync(join(dir, "materialize.ts"), isolated + "\nexport { generationOutputAsset };\n");
 const { generationOutputAsset } = await import(join(dir, "materialize.ts"));
 const { fixture } = await import(dependencyPath);
@@ -40,6 +42,7 @@ test("云端视频登记素材不下载视频字节，保存原任务和稳定�
         expect(asset).toMatchObject({ kind: "video", metadata: { taskId: "existing-task" }, data: { storageKey: "resource:saved", url: "https://storage.example/saved.mp4", bytes: 321, durationMs: 15000 } });
         expect(fixture.accesses).toEqual(["resource:saved"]);
         expect(downloads).toBe(0);
+        expect(fixture.warmups).toBe(1);
         const controller = new AbortController(); controller.abort();
         await expect(generationOutputAsset({ ...input, signal: controller.signal }, "test-user")).rejects.toMatchObject({ name: "AbortError" });
     } finally { globalThis.fetch = fetcher; }

@@ -285,7 +285,9 @@ export function CanvasAppearanceEditor({ value, onChange, disabled, onUploading 
                             width={Math.round(value.avatarHeight * (value.avatarType === "jingche" ? 1 : 0.75))}
                             height={value.avatarHeight}
                             reducedMotion={reducedMotion}
-                            fallback={value.avatarType === "jingche" ? <img src={jingcheTextureURL(theme)} alt="镜彻 Agent 形象" width={value.avatarHeight} height={value.avatarHeight} /> : <FluidOrb size={60} color="#7164f6" />}
+                            fallback={value.avatarType === "jingche" ? <img src={jingcheTextureURL(theme)} alt="" width={value.avatarHeight} height={value.avatarHeight} draggable={false} /> : <FluidOrb size={60} color="#7164f6" />}
+                            // 预览框独占 Live2D 渲染，悬浮入口让出渲染权时保留所选形象的静态图。
+                            renderPriority={1}
                             onReady={() => {
                                 setReadyURL(previewURL);
                                 setError("");

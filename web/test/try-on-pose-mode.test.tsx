@@ -4,7 +4,7 @@ import { PoseModeSelect } from "../src/pages/ai-apps/try-on/pose-mode-select";
 import { tryOnInputError, tryOnIntent, tryOnTools } from "../src/pages/ai-apps/try-on/workflow";
 
 describe("模特换姿三种模式", () => {
-    const tool = tryOnTools[5];
+    const tool = tryOnTools.find((tool) => tool.id === "pose")!;
     test("智能换姿无须目标，文字和参考模式各自校验", () => {
         expect(tryOnInputError(tool, 1, "smart", 0, "", "smart")).toBe("");
         expect(tryOnInputError(tool, 1, "smart", 0, "", "text")).toContain("目标动作");
