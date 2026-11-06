@@ -1,0 +1,48 @@
+.creation-home-scroll > .creation-showcase:has(+ .commerce-capabilities) { margin-bottom: var(--space-5); }
+.creation-home-scroll > .commerce-capabilities {
+    display: grid;
+    grid-template-columns: minmax(260px, .95fr) minmax(0, 1.8fr);
+    gap: var(--space-6);
+    width: 100%;
+    max-width: none;
+    margin: 0 auto var(--space-12);
+    padding: var(--space-5);
+    overflow: clip;
+    border: 1px solid var(--user-border);
+    border-radius: calc(var(--user-radius-card) + var(--space-2));
+    background: color-mix(in srgb, var(--user-surface-muted) 45%, var(--user-surface));
+    color: var(--user-ink);
+}
+.commerce-capabilities-intro { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; min-width: 0; padding: var(--space-8) clamp(16px, 2.5vw, 48px); }
+.commerce-capabilities-label { margin-bottom: var(--space-5); color: var(--user-ink-muted); font-size: var(--fs-body); }
+.commerce-capabilities-intro h2 { margin: 0; color: var(--user-ink); font-size: clamp(34px, 3vw, 56px); font-weight: 650; line-height: 1.18; letter-spacing: -.045em; white-space: nowrap; }
+.commerce-capabilities-intro > p { max-width: 26em; margin: var(--space-5) 0 var(--space-8); color: var(--user-ink-muted); font-size: var(--fs-body); line-height: 1.85; }
+.commerce-capabilities-cta { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-5); min-height: 40px; padding: 0 var(--space-5); border: 1px solid var(--user-ink); border-radius: var(--user-radius-button); background: var(--user-ink); color: var(--user-surface); font-size: var(--fs-caption); font-weight: 600; white-space: nowrap; transition: opacity var(--user-motion); }
+.commerce-capabilities-cta:hover { color: var(--user-surface); opacity: .82; }
+.commerce-capabilities-cta:focus-visible { outline: 2px solid var(--user-accent); outline-offset: 4px; }
+.commerce-capabilities-content { min-width: 0; }
+.commerce-capabilities-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
+.commerce-capability { min-width: 0; overflow: clip; border: 1px solid var(--user-border); border-radius: var(--user-radius-card); background: var(--user-surface); }
+.commerce-capability-image { aspect-ratio: 16 / 9; overflow: hidden; background: var(--user-surface-muted); }
+.commerce-capability-image img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform var(--user-motion); }
+.commerce-capability-copy { padding: var(--space-3); }
+.commerce-capability-copy h3 { margin: 0; color: var(--user-ink); font-size: var(--fs-body); font-weight: 600; line-height: 1.5; }
+.commerce-capability-copy p { margin: var(--space-1) 0 0; color: var(--user-ink-muted); font-size: var(--fs-caption); line-height: 1.6; }
+.commerce-capabilities-note { margin: var(--space-3) var(--space-1) 0; color: var(--user-ink-muted); font-size: var(--fs-caption); }
+@media (hover: hover) { .commerce-capability:hover .commerce-capability-image img { transform: scale(1.025); } }
+@media (max-width: 1100px) {
+    .creation-home-scroll > .commerce-capabilities { grid-template-columns: minmax(0, 1fr); }
+    .commerce-capabilities-intro { align-items: flex-start; padding: var(--space-4); }
+    .commerce-capabilities-intro h2 { font-size: 40px; }
+    .commerce-capabilities-intro > p { max-width: 50ch; margin-bottom: var(--space-5); }
+}
+@media (max-width: 760px) {
+    .creation-home-scroll > .commerce-capabilities { padding: var(--space-4); gap: var(--space-5); margin-bottom: var(--space-10); }
+    .commerce-capabilities-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .commerce-capabilities-intro { padding: var(--space-2); }
+    .commerce-capabilities-label { margin-bottom: var(--space-3); }
+    .commerce-capabilities-intro h2 { font-size: 34px; }
+    .commerce-capabilities-intro > p { margin-top: var(--space-3); }
+}
+@media (max-width: 480px) { .commerce-capabilities-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: reduce) { .commerce-capabilities-cta, .commerce-capability-image img { transition: none; } .commerce-capability:hover .commerce-capability-image img { transform: none; } }

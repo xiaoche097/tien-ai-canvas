@@ -44,6 +44,7 @@ import { fillablePrompt } from "@/lib/inspirations/resolve";
 import { CreationRecentCanvases } from "./creation-recent-canvases";
 import { CreationAgentEntry } from "./creation-agent-entry";
 import { CreationShowcase } from "./creation-showcase";
+import { CommerceCapabilities } from "./commerce-capabilities";
 import { createCreationSubmitGate } from "./creation-submit-gate";
 import { creationVideoConfig } from "./creation-generation-config";
 
@@ -1312,6 +1313,7 @@ export default function CreatePage() {
                     <CreationRecentCanvases onRequireLogin={() => openAuth()} />
                 </section>
                 <CreationShowcase />
+                <CommerceCapabilities />
                 <Suspense fallback={<div className="creation-hall-loading" role="status">{t("create.page.hallLoading")}</div>}>
                     <InspirationHall onUse={(item) => startPrompt(item.mode, fillablePrompt(item))} />
                 </Suspense>
