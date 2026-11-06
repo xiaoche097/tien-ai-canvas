@@ -10,18 +10,23 @@ function ShowcaseMedia({ media, active, hero = false }: { media: CreationShowcas
     const video = useRef<HTMLVideoElement>(null);
     const visible = useInView(ref, { amount: 0.05 });
     const [failed, setFailed] = useState(false);
+    const [started, setStarted] = useState(false);
     const poster = `${import.meta.env.BASE_URL}${media.poster}`;
+    const source = media.videoSrc ? `${import.meta.env.BASE_URL}${media.videoSrc}` : undefined;
+    useEffect(() => {
+        if (media.videoSrc && active && visible) setStarted(true);
+    }, [media.videoSrc, active, visible]);
     useEffect(() => {
         const player = video.current;
-        if (!player) return;
+        if (!player || !started) return;
         let cancelled = false;
         if (active && visible) void player.play().catch(() => { if (!cancelled) setFailed(true); });
         else player.pause();
         return () => { cancelled = true; player.pause(); };
-    }, [active, visible, media.videoSrc, failed]);
+    }, [active, visible, media.videoSrc, failed, started]);
     return <div ref={ref} className="creation-showcase-media">
-        {media.videoSrc && !failed ? <video ref={video} src={media.videoSrc} poster={poster} muted loop playsInline preload="none" onError={() => setFailed(true)} aria-label={hero ? media.title : undefined} />
-            : <img src={poster} alt={hero ? "霓虹街景创作封面" : ""} loading="lazy" decoding="async" />}
+        {media.videoSrc && !failed ? <video ref={video} src={started ? source : undefined} poster={poster} muted loop playsInline preload="none" onError={() => setFailed(true)} aria-label={media.title} />
+            : <img src={poster} alt={hero ? media.title : ""} loading="lazy" decoding="async" />}
     </div>;
 }
 
@@ -45,6 +50,7 @@ export function CreationShowcase() {
     }, []);
     const active = visible && pageVisible && !paused && !reducedMotion;
     const categories = creationShowcaseColumns.flat().map((media) => media.title);
+    const tickerCategories = Array.from({ length: 4 }, () => categories).flat();
     return <section ref={ref} className="creation-showcase" data-motion={active ? "playing" : "paused"} aria-labelledby="creation-showcase-heading">
         <div className="creation-showcase-stage">
             <div className="creation-showcase-copy">
@@ -54,7 +60,7 @@ export function CreationShowcase() {
                 <Link to="/projects" className="creation-showcase-cta">探索创作<ArrowUpRight size={16} aria-hidden="true" /></Link>
             </div>
             <div className="creation-showcase-hero"><ShowcaseMedia media={creationShowcaseHero} active={active} hero /></div>
-            <div className="creation-showcase-wall" aria-label="创作方向封面">
+            <div className="creation-showcase-wall" aria-label="创作视频展示">
                 {creationShowcaseColumns.map((column, index) => <div key={index} className="creation-showcase-lane">
                     <div className="creation-showcase-track">
                         {[0, 1].map((copy) => <div key={copy} className="creation-showcase-group" aria-hidden={copy === 1 || undefined}>
@@ -68,7 +74,7 @@ export function CreationShowcase() {
             </div>
         </div>
         <div className="creation-showcase-ribbon" aria-hidden="true"><div className="creation-showcase-ribbon-track">
-            {[0, 1].map((copy) => <div key={copy} className="creation-showcase-ribbon-group">{categories.map((title) => <span key={title}>{title}<span className="creation-showcase-divider">✦</span></span>)}</div>)}
+            {[0, 1].map((copy) => <div key={copy} className="creation-showcase-ribbon-group">{tickerCategories.map((title, index) => <span key={`${index}-${title}`}>{title}<span className="creation-showcase-divider">✦</span></span>)}</div>)}
         </div></div>
         <button type="button" className="creation-showcase-motion" onClick={() => setPaused((value) => !value)} disabled={Boolean(reducedMotion)} aria-label={reducedMotion ? "已遵循系统减少动态效果设置" : paused ? "播放展示动画" : "暂停展示动画"} aria-pressed={paused || Boolean(reducedMotion)} title={reducedMotion ? "已遵循系统减少动态效果设置" : paused ? "播放动画" : "暂停动画"}>
             {paused || reducedMotion ? <Play size={15} aria-hidden="true" /> : <Pause size={15} aria-hidden="true" />}

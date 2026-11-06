@@ -9,24 +9,22 @@ export type CreationShowcaseMedia = {
 // their source and poster, without changing the scrolling composition.
 export const creationShowcaseHero: CreationShowcaseMedia = {
     id: "hero",
-    title: "下一幕，从这里开始",
-    poster: "short-drama-styles/cyberpunk-neon.jpg",
+    title: "XCSTUDIO · 境彻机甲英雄",
+    poster: "assets/showcase/hero-poster.bd53af28598c.jpg",
+    videoSrc: "assets/showcase/hero-video.a6b9e1addb3d.mp4",
 };
 
 export const creationShowcaseColumns: CreationShowcaseMedia[][] = [
     [
-        { id: "city", title: "城市漫游", poster: "short-drama-styles/retro-hong-kong.jpg" },
-        { id: "product", title: "商品广告", poster: "creative-center/commerce-studio.jpg" },
-        { id: "nature", title: "自然叙事", poster: "short-drama-styles/nature-healing.jpg" },
+        { id: "outfit", title: "穿搭反转", poster: "assets/showcase/outfit-poster.cc1cb6e71b47.jpg", videoSrc: "assets/showcase/outfit-video.d16f033a6074.mp4" },
+        { id: "missair", title: "商业广告", poster: "assets/showcase/missair-poster.e75bfad67bad.jpg", videoSrc: "assets/showcase/missair-video.01a3199f7249.mp4" },
     ],
     [
-        { id: "cinema", title: "电影感短片", poster: "short-drama-styles/real-life.jpg" },
-        { id: "fantasy", title: "奇想世界", poster: "short-drama-styles/fantasy-3d.jpg" },
-        { id: "ink", title: "东方意境", poster: "short-drama-styles/ink-narrative.jpg" },
+        { id: "pink-knit", title: "UGC 种草", poster: "assets/showcase/pink-knit-poster.85543b95d29a.jpg", videoSrc: "assets/showcase/pink-knit-video.e3b25195799e.mp4" },
+        { id: "visual-02", title: "商品细节", poster: "assets/showcase/visual-02-poster.42b95133f3fc.jpg", videoSrc: "assets/showcase/visual-02-video.cb8ab26f7546.mp4" },
     ],
     [
-        { id: "future", title: "未来片场", poster: "short-drama-styles/future-tech.jpg" },
-        { id: "clay", title: "定格故事", poster: "short-drama-styles/clay-stop-motion.jpg" },
-        { id: "comic", title: "漫画分镜", poster: "short-drama-styles/comic-pop.jpg" },
+        { id: "visual-01", title: "日常穿搭", poster: "assets/showcase/visual-01-poster.83c187fe48c3.jpg", videoSrc: "assets/showcase/visual-01-video.9c27cb947e04.mp4" },
+        { id: "edit", title: "开箱种草", poster: "assets/showcase/edit-poster.a9f6376c8b97.jpg", videoSrc: "assets/showcase/edit-video.76513101be9d.mp4" },
     ],
 ];
