@@ -26,9 +26,9 @@
 .creation-showcase-hero::after { position: absolute; inset: 0; content: ""; pointer-events: none; background: linear-gradient(0deg, var(--showcase-surface), transparent 28%); }
 .creation-showcase-media { position: relative; width: 100%; height: 100%; overflow: hidden; background: var(--user-surface-muted); }
 .creation-showcase-media > img, .creation-showcase-media > video { display: block; width: 100%; height: 100%; object-fit: cover; }
-.creation-showcase-hero .creation-showcase-media { width: 100%; max-width: 100%; height: auto; max-height: 100%; aspect-ratio: 720 / 358; margin-inline: auto; background: var(--showcase-surface); mask-image: linear-gradient(90deg, transparent, #000 20%, #000 80%, transparent); }
+.creation-showcase-hero .creation-showcase-media { width: 100%; height: 100%; min-width: 0; min-height: 0; background: var(--showcase-surface); mask-image: linear-gradient(90deg, transparent, #000 20%, #000 80%, transparent); }
 .creation-showcase-hero .creation-showcase-media::after { position: absolute; z-index: 1; inset: 0; content: ""; pointer-events: none; background: linear-gradient(90deg, rgb(0 0 0 / .94), rgb(0 0 0 / .6) 12%, rgb(0 0 0 / .15) 28%, transparent 40%, transparent 60%, rgb(0 0 0 / .15) 72%, rgb(0 0 0 / .6) 88%, rgb(0 0 0 / .94)); }
-.creation-showcase-hero .creation-showcase-media > img, .creation-showcase-hero .creation-showcase-media > video { object-fit: contain; object-position: center; }
+.creation-showcase-hero .creation-showcase-media > img, .creation-showcase-hero .creation-showcase-media > video { object-fit: cover; object-position: center top; }
 .creation-showcase-wall { position: absolute; z-index: 1; top: -100px; right: -2%; bottom: -120px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--showcase-gap); width: 36%; overflow: hidden; transform: rotate(-9deg); mask-image: linear-gradient(transparent, #000 12%, #000 83%, transparent); }
 .creation-showcase-lane { min-width: 0; overflow: hidden; }
 .creation-showcase-track { animation: creation-showcase-drift 48s linear infinite; animation-delay: -9s; }
