@@ -10,9 +10,9 @@ export type CreationShowcaseMedia = {
 // their source and poster, without changing the scrolling composition.
 export const creationShowcaseHero: CreationShowcaseMedia = {
     id: "hero",
-    title: "XCSTUDIO · 境彻机甲英雄",
-    poster: "assets/showcase/hero-poster.bd53af28598c.jpg",
-    videoSrc: "assets/showcase/hero-video.a6b9e1addb3d.mp4",
+    title: "XCSTUDIO · 小彻城市飞行英雄",
+    poster: "assets/showcase/hero-poster.62d23310de1c.jpg",
+    videoSrc: "assets/showcase/hero-video.cfc1e4300abc.mp4",
     playbackRate: 0.4,
 };
 
