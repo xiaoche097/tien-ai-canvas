@@ -42,7 +42,7 @@
 | `create.path` | `"/v1/messages"` |
 | `create.contentType` | `"application/json"` |
 | `create.body.model` | `{"$ref":"request.model"}` |
-| `create.body.max_tokens` | `{"$coalesce":[{"$ref":"request.extra.max_tokens"},{"$ref":"request.providerOptions.claude-api.max_tokens"},4096]}` |
+| `create.body.max_tokens` | `{"$coalesce":[{"$ref":"request.extra.max_tokens"},{"$ref":"request.providerOptions.claude-api.max_tokens"},{"$ref":"request.providerOptions.claude-api.max_output_tokens"},4096]}` |
 | `create.body.system` | `{"$omitEmpty":{"$coalesce":[{"$ref":"request.instructions"},{"$ref":"request.providerOptions.claude-api.system"}]}}` |
 | `create.body.messages` | `{"$map":{"from":{"$filter":{"from":{"$ref":"request.messages"},"as":"message","where":{"$ne":[{"$ref":"message.role"},"system"]}}},"as":"message","in":{"role":{"$ref":"message.role"},"content":{"$if":{"condition":{"$ref":"message.content.0.type"},"then":{"$map":{"from":{"$ref":"message.content"},"as":"part","in":{"$if":{"condition":{"$eq":[{"$ref":"part.type"},"image_url"]},"then":{"type":"image","source":{"$if":{"condition":{"$eq":[{"$at":[{"$split":[{"$ref":"part.image_url.url"},":"]},0]},"data"]},"then":{"type":"base64","media_type":{"$dataMime":{"$ref":"part.image_url.url"}},"data":{"$dataPayload":{"$ref":"part.image_url.url"}}},"else":{"type":"url","url":{"$ref":"part.image_url.url"}}}}},"else":{"$ref":"part"}}}}},"else":{"$ref":"message.content"}}}}}}` |
 | `create.body.temperature` | `{"$omitEmpty":{"$ref":"request.providerOptions.claude-api.temperature"}}` |
@@ -243,6 +243,9 @@
                 },
                 {
                   "$ref": "request.providerOptions.claude-api.max_tokens"
+                },
+                {
+                  "$ref": "request.providerOptions.claude-api.max_output_tokens"
                 },
                 4096
               ]

@@ -210,6 +210,8 @@
 @container (max-width: 720px) {
     .creation-home .creation-chat-controls .creation-chat-control { width: var(--button-height); padding-inline: 0 !important; justify-content: center; }
     .creation-home .creation-chat-controls .creation-chat-control > span { display: none; }
+    .creation-home .creation-thinking-inline { width: 96px; padding-inline: 0; }
+    .creation-home .creation-thinking-inline .thinking-level-track { min-width: 56px; }
 }
 @container (max-width: 520px) {
     .creation-home .creation-chat-dock { --creation-toolbar-gap: var(--space-1); }

@@ -9,7 +9,9 @@ import { useWorkspaceTopBarMount } from "@/components/layout/workspace-top-bar-e
 import { Tooltip } from "@/components/ui/base/tooltip";
 import { Reorder, LayoutGroup, motion, useReducedMotion } from "motion/react";
 import type { Transition } from "motion/react";
-import { ArrowUp, ChevronDown, ChevronLeft, ChevronRight, Clapperboard, Clock3, Film, History, Image as ImageIcon, LoaderCircle, Maximize2, MessageSquareText, Minimize2, Plus, SlidersHorizontal, Trash2, Waves, X, Lightbulb, Orbit, PenLine } from "lucide-react";
+import { type ThinkingLevel, type ThinkingRequest } from "@/lib/text-thinking";
+import { ThinkingLevelSlider } from "@/components/thinking-level-slider";
+import { ArrowUp, ChevronDown, ChevronLeft, ChevronRight, Clapperboard, Clock3, Film, History, Image as ImageIcon, LoaderCircle, Maximize2, MessageSquareText, Minimize2, Plus, SlidersHorizontal, Trash2, Waves, X, Orbit, PenLine } from "lucide-react";
 
 import { WorkingGlow } from "@/components/ai/working-indicator";
 import { formatVideoResolutionLabel as videoResolutionLabel } from "@/lib/video-generation-options";
@@ -47,39 +49,98 @@ const CanvasPromptOptimizerDrawer = lazy(() => import("@/components/canvas/canva
 
 export const creationAssetCategoryLabels: Record<string, string> = { all: "全部素材", ...ASSET_CATEGORY_LABELS };
 
-export function CreationWorkspaceToolbar({ shots, onJumpToShot, onNewConversation, onOpenHistory, onContinueCanvas, openingCanvas }: { shots: CreationShotRailEntry[]; onJumpToShot: (shot: CreationShotRailEntry) => void; onNewConversation: () => void; onOpenHistory: () => void; onContinueCanvas: () => void; openingCanvas: boolean }) {
+export function CreationWorkspaceToolbar({
+    shots,
+    onJumpToShot,
+    onNewConversation,
+    onOpenHistory,
+    onContinueCanvas,
+    openingCanvas,
+}: {
+    shots: CreationShotRailEntry[];
+    onJumpToShot: (shot: CreationShotRailEntry) => void;
+    onNewConversation: () => void;
+    onOpenHistory: () => void;
+    onContinueCanvas: () => void;
+    openingCanvas: boolean;
+}) {
     const [railOpen, setRailOpen] = useState(false);
     const railRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
         if (!railOpen) return;
-        const onPointerDown = (event: MouseEvent) => { if (railRef.current && !railRef.current.contains(event.target as Node)) setRailOpen(false); };
+        const onPointerDown = (event: MouseEvent) => {
+            if (railRef.current && !railRef.current.contains(event.target as Node)) setRailOpen(false);
+        };
         window.addEventListener("mousedown", onPointerDown);
         return () => window.removeEventListener("mousedown", onPointerDown);
     }, [railOpen]);
     const mount = useWorkspaceTopBarMount();
-    const toolbar = <header className="creation-thread-toolbar">
-        <div className="creation-toolbar-shots" ref={railRef}>
-            <button type="button" className="creation-rail-trigger" aria-expanded={railOpen} aria-haspopup="listbox" onClick={() => setRailOpen((open) => !open)}><Clapperboard />镜头时间线{shots.length > 0 ? <em className="creation-rail-count">{shots.length}</em> : null}</button>
-            {railOpen ? <div className="creation-rail-pop" role="listbox" aria-label="镜头时间线">
-                <div className="creation-rail-pop-head"><span className="creation-rail-pop-title">镜头时间线<small>{shots.length ? `共 ${shots.length} 镜` : "空轨道"}</small></span><button type="button" className="creation-rail-pop-close" aria-label="关闭镜头列表" onClick={() => setRailOpen(false)}><X /></button></div>
-                {shots.length ? <ol className="creation-rail-list">{shots.map((shot) => {
-                    const resultStatus = shot.result?.status;
-                    const resultNeedsSync = Boolean(shot.result && creationMessageNeedsResultSync(shot.result));
-                    const statusLabel = resultStatus === "done" ? "完成" : resultNeedsSync ? "待同步" : resultStatus === "error" ? "生成失败" : resultStatus === "pending" ? "生成中" : resultStatus === "cancelled" ? "已停止" : "待生成";
-                    return <li key={shot.key}><button type="button" role="option" aria-selected="false" className="creation-rail-row" onClick={() => { setRailOpen(false); onJumpToShot(shot); }}>
-                        <span className="creation-rail-row-shot">{formatShotOrdinal(shot.ordinal - 1)}</span>
-                        <span className="creation-rail-row-prompt">{shot.user.content || "视频镜头"}</span>
-                        <span className={`creation-rail-row-state is-${resultNeedsSync ? "sync" : resultStatus || "idle"}`}>{statusLabel}</span>
-                    </button></li>;
-                })}</ol> : <p className="creation-rail-empty">在下方发送一条视频消息，就会自动成为第 1 镜。</p>}
-            </div> : null}
-        </div>
-        <div className="creation-toolbar-actions">
-            <Button size="small" loading={openingCanvas} onClick={onContinueCanvas}>画布中继续</Button>
-            <Tooltip title="新建创作"><button type="button" aria-label="新建创作" className="creation-toolbar-action" onClick={onNewConversation}><Plus /></button></Tooltip>
-            <Tooltip title="历史对话"><button type="button" aria-label="查看历史对话" className="creation-toolbar-action" onClick={onOpenHistory}><History /></button></Tooltip>
-        </div>
-    </header>;
+    const toolbar = (
+        <header className="creation-thread-toolbar">
+            <div className="creation-toolbar-shots" ref={railRef}>
+                <button type="button" className="creation-rail-trigger" aria-expanded={railOpen} aria-haspopup="listbox" onClick={() => setRailOpen((open) => !open)}>
+                    <Clapperboard />
+                    镜头时间线{shots.length > 0 ? <em className="creation-rail-count">{shots.length}</em> : null}
+                </button>
+                {railOpen ? (
+                    <div className="creation-rail-pop" role="listbox" aria-label="镜头时间线">
+                        <div className="creation-rail-pop-head">
+                            <span className="creation-rail-pop-title">
+                                镜头时间线<small>{shots.length ? `共 ${shots.length} 镜` : "空轨道"}</small>
+                            </span>
+                            <button type="button" className="creation-rail-pop-close" aria-label="关闭镜头列表" onClick={() => setRailOpen(false)}>
+                                <X />
+                            </button>
+                        </div>
+                        {shots.length ? (
+                            <ol className="creation-rail-list">
+                                {shots.map((shot) => {
+                                    const resultStatus = shot.result?.status;
+                                    const resultNeedsSync = Boolean(shot.result && creationMessageNeedsResultSync(shot.result));
+                                    const statusLabel = resultStatus === "done" ? "完成" : resultNeedsSync ? "待同步" : resultStatus === "error" ? "生成失败" : resultStatus === "pending" ? "生成中" : resultStatus === "cancelled" ? "已停止" : "待生成";
+                                    return (
+                                        <li key={shot.key}>
+                                            <button
+                                                type="button"
+                                                role="option"
+                                                aria-selected="false"
+                                                className="creation-rail-row"
+                                                onClick={() => {
+                                                    setRailOpen(false);
+                                                    onJumpToShot(shot);
+                                                }}
+                                            >
+                                                <span className="creation-rail-row-shot">{formatShotOrdinal(shot.ordinal - 1)}</span>
+                                                <span className="creation-rail-row-prompt">{shot.user.content || "视频镜头"}</span>
+                                                <span className={`creation-rail-row-state is-${resultNeedsSync ? "sync" : resultStatus || "idle"}`}>{statusLabel}</span>
+                                            </button>
+                                        </li>
+                                    );
+                                })}
+                            </ol>
+                        ) : (
+                            <p className="creation-rail-empty">在下方发送一条视频消息，就会自动成为第 1 镜。</p>
+                        )}
+                    </div>
+                ) : null}
+            </div>
+            <div className="creation-toolbar-actions">
+                <Button size="small" loading={openingCanvas} onClick={onContinueCanvas}>
+                    画布中继续
+                </Button>
+                <Tooltip title="新建创作">
+                    <button type="button" aria-label="新建创作" className="creation-toolbar-action" onClick={onNewConversation}>
+                        <Plus />
+                    </button>
+                </Tooltip>
+                <Tooltip title="历史对话">
+                    <button type="button" aria-label="查看历史对话" className="creation-toolbar-action" onClick={onOpenHistory}>
+                        <History />
+                    </button>
+                </Tooltip>
+            </div>
+        </header>
+    );
     if (mount) return createPortal(toolbar, mount);
     if (mount === null) return null;
     return toolbar;
@@ -128,8 +189,12 @@ type ComposerProps = {
     setCount: (value: string) => void;
     textStreaming: boolean;
     setTextStreaming: (value: boolean) => void;
-    textThinking: boolean;
-    setTextThinking: (value: boolean) => void;
+    /** 当前模型可选的思考档位；为空时不显示思考控件。 */
+    textThinkingLevels: ThinkingLevel[];
+    /** 当前生效档位；空字符串表示跟随模型默认且模型没有声明默认值。 */
+    textThinkingLevel: ThinkingLevel | "";
+    textThinkingRequest: ThinkingRequest;
+    setTextThinkingLevel: (value: ThinkingRequest) => void;
     promptOptimizerProvider: PromptOptimizerProvider | null;
     composerFocusRef: RefObject<HTMLTextAreaElement | null>;
     onPromptFocus: () => void;
@@ -204,14 +269,19 @@ export function CreationComposer(props: ComposerProps) {
     const referencesSupported = props.mode === "image" ? imageReferencesSupported : props.mode !== "video" || props.maxReferences > 0;
     const canAddMoreReferences = referencesSupported && props.attachments.length < props.maxReferences;
     const addReferenceLabel = interactionBusy ? (props.referenceReplacementBusy ? "正在替换参考图" : "生成中暂不能添加参考内容") : canAddMoreReferences ? "添加更多参考内容" : `已达到当前模型的参考内容上限（${props.maxReferences} 个）`;
-    const referenceCounts = useMemo(() => props.attachments.reduce((counts, attachment) => {
-        const kind = creationAttachmentKind(attachment);
-        counts[kind] += 1;
-        return counts;
-    }, { image: 0, video: 0, audio: 0, file: 0 }), [props.attachments]);
-    const visibleAttachments = useMemo(() => referenceFilter === "all"
-        ? props.attachments
-        : props.attachments.filter((attachment) => creationAttachmentKind(attachment) === referenceFilter), [props.attachments, referenceFilter]);
+    const referenceCounts = useMemo(
+        () =>
+            props.attachments.reduce(
+                (counts, attachment) => {
+                    const kind = creationAttachmentKind(attachment);
+                    counts[kind] += 1;
+                    return counts;
+                },
+                { image: 0, video: 0, audio: 0, file: 0 },
+            ),
+        [props.attachments],
+    );
+    const visibleAttachments = useMemo(() => (referenceFilter === "all" ? props.attachments : props.attachments.filter((attachment) => creationAttachmentKind(attachment) === referenceFilter)), [props.attachments, referenceFilter]);
     const imageSettingsSupported = props.imageProfile.size.parameter !== "none" || props.imageProfile.quality.supported || props.imageProfile.maxOutputs > 1;
     const updateTrackScrollState = useCallback(() => {
         const track = attachmentTrackRef.current;
@@ -255,7 +325,9 @@ export function CreationComposer(props: ComposerProps) {
         cardDragRef.current = null;
         if (drag.moved) {
             suppressAttachmentClickRef.current = true;
-            window.setTimeout(() => { suppressAttachmentClickRef.current = false; }, 0);
+            window.setTimeout(() => {
+                suppressAttachmentClickRef.current = false;
+            }, 0);
         }
         if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
         setTrackState((current) => ({ ...current, isDragging: false }));
@@ -272,15 +344,18 @@ export function CreationComposer(props: ComposerProps) {
         setPreviewType(type);
         setPreviewUrl(url);
     };
-    const reorderVisibleAttachments = useCallback((next: CreationAttachment[]) => {
-        if (referenceFilter === "all") {
-            props.onReorderAttachments(next);
-            return;
-        }
-        const visibleIds = new Set(visibleAttachments.map((attachment) => attachment.id));
-        const reordered = [...next];
-        props.onReorderAttachments(props.attachments.map((attachment) => visibleIds.has(attachment.id) ? reordered.shift() || attachment : attachment));
-    }, [props.attachments, props.onReorderAttachments, referenceFilter, visibleAttachments]);
+    const reorderVisibleAttachments = useCallback(
+        (next: CreationAttachment[]) => {
+            if (referenceFilter === "all") {
+                props.onReorderAttachments(next);
+                return;
+            }
+            const visibleIds = new Set(visibleAttachments.map((attachment) => attachment.id));
+            const reordered = [...next];
+            props.onReorderAttachments(props.attachments.map((attachment) => (visibleIds.has(attachment.id) ? reordered.shift() || attachment : attachment)));
+        },
+        [props.attachments, props.onReorderAttachments, referenceFilter, visibleAttachments],
+    );
     useEffect(() => {
         if (!canOptimizePrompt) setPromptOptimizerOpen(false);
     }, [canOptimizePrompt]);
@@ -412,13 +487,7 @@ export function CreationComposer(props: ComposerProps) {
                             {props.textStreaming ? <span className="size-1.5 rounded-full bg-blue-400 shrink-0 shadow-sm" /> : null}
                         </button>
                     </Tooltip>
-                    <Tooltip title={interactionBusy ? "生成中，此开关将在下次发送时生效" : (props.textThinking ? "思考已开启，会展示模型返回的推理摘要" : "开启模型思考")}>
-                        <button type="button" className="creation-chat-control" aria-label="模型思考" aria-pressed={props.textThinking} disabled={interactionBusy} onClick={() => props.setTextThinking(!props.textThinking)}>
-                            <Lightbulb />
-                            <span>思考</span>
-                            {props.textThinking ? <span className="size-1.5 rounded-full bg-current shrink-0" aria-hidden /> : null}
-                        </button>
-                    </Tooltip>
+                    <ThinkingControl levels={props.textThinkingLevels} value={props.textThinkingRequest} resolvedLevel={props.textThinkingLevel} onChange={props.setTextThinkingLevel} disabled={interactionBusy} />
                 </> : null}
             </div>
             {props.prompt.trim() || props.attachments.length || props.references.some((reference) => reference.active) ? <div className="creation-chat-clear"><Tooltip title="清空提示词和参考内容"><button type="button" className="creation-chat-control is-clear" onClick={props.onClearComposer} disabled={interactionBusy} aria-label="清空提示词和参考内容"><Trash2 /><span>清空</span></button></Tooltip></div> : null}
@@ -446,21 +515,23 @@ export function CreationComposer(props: ComposerProps) {
     if (!promptOptimizerOpen) return composer;
 
     return (
-        <Suspense fallback={composer}><CanvasPromptOptimizerDrawer
-            open={promptOptimizerOpen}
-            prompt={props.prompt}
-            generationMode={props.mode === "video" ? "video" : "image"}
-            targetModel={modelOptionName(props.model) || props.model}
-            targetProtocol={priceChannel.modelCosts?.find((item) => item.model === modelOptionName(props.model))?.protocol || priceChannel.interfaceType}
-            config={props.config}
-            optimizerModel={props.config.textModel}
-            references={optimizerReferences}
-            provider={props.promptOptimizerProvider}
-            onClose={() => setPromptOptimizerOpen(false)}
-            onApply={props.setPrompt}
-        >
-            {composer}
-        </CanvasPromptOptimizerDrawer></Suspense>
+        <Suspense fallback={composer}>
+            <CanvasPromptOptimizerDrawer
+                open={promptOptimizerOpen}
+                prompt={props.prompt}
+                generationMode={props.mode === "video" ? "video" : "image"}
+                targetModel={modelOptionName(props.model) || props.model}
+                targetProtocol={priceChannel.modelCosts?.find((item) => item.model === modelOptionName(props.model))?.protocol || priceChannel.interfaceType}
+                config={props.config}
+                optimizerModel={props.config.textModel}
+                references={optimizerReferences}
+                provider={props.promptOptimizerProvider}
+                onClose={() => setPromptOptimizerOpen(false)}
+                onApply={props.setPrompt}
+            >
+                {composer}
+            </CanvasPromptOptimizerDrawer>
+        </Suspense>
     );
 }
 
@@ -486,26 +557,43 @@ export function CreationModeCard({ mode, agentActive, onModeChange, onAgentSelec
     const [slide, setSlide] = useState({ index: activeIndex, direction: 0 });
     if (slide.index !== activeIndex) setSlide({ index: activeIndex, direction: Math.sign(activeIndex - slide.index) });
     const step = 100 / keys.length;
-    const tabTransition: Transition = reducedMotion ? { duration: 0 } : {
-        left: slide.direction < 0 ? folderTabLeadingSpring : folderTabTrailingSpring,
-        right: slide.direction > 0 ? folderTabLeadingSpring : folderTabTrailingSpring,
-    };
-    return <HoverBorderGradient as="div" duration={2.2} containerClassName="creation-mode-card" className="creation-mode-card-inner">
-        <div className="creation-mode-folder" role="group" aria-label="创作模式" data-active-mode={activeKey} style={{ "--creation-mode-count": keys.length } as CSSProperties}>
-            <motion.span className="creation-mode-folder-tab" aria-hidden initial={false} animate={{ left: `${activeIndex * step}%`, right: `${(keys.length - 1 - activeIndex) * step}%` }} transition={tabTransition}>
-                <CreationModeFolderWing side="start" />
-                <CreationModeFolderWing side="end" />
-            </motion.span>
-            {creationModeItems.map((item) => <button key={item.mode} type="button" className="creation-mode-folder-button" data-mode={item.mode} aria-pressed={activeKey === item.mode} aria-label={`${item.label}生成`} onClick={() => onModeChange(item.mode)}>{item.icon}<span>{item.label}</span></button>)}
-            <button type="button" className="creation-mode-folder-button" data-mode="agent" aria-pressed={agentActive} onClick={onAgentSelect}><Orbit /><span>Agent</span><i className="creation-mode-spark" aria-hidden /></button>
-        </div>
-        <div className="creation-mode-panel">{children}</div>
-    </HoverBorderGradient>;
+    const tabTransition: Transition = reducedMotion
+        ? { duration: 0 }
+        : {
+              left: slide.direction < 0 ? folderTabLeadingSpring : folderTabTrailingSpring,
+              right: slide.direction > 0 ? folderTabLeadingSpring : folderTabTrailingSpring,
+          };
+    return (
+        <HoverBorderGradient as="div" duration={2.2} containerClassName="creation-mode-card" className="creation-mode-card-inner">
+            <div className="creation-mode-folder" role="group" aria-label="创作模式" data-active-mode={activeKey} style={{ "--creation-mode-count": keys.length } as CSSProperties}>
+                <motion.span className="creation-mode-folder-tab" aria-hidden initial={false} animate={{ left: `${activeIndex * step}%`, right: `${(keys.length - 1 - activeIndex) * step}%` }} transition={tabTransition}>
+                    <CreationModeFolderWing side="start" />
+                    <CreationModeFolderWing side="end" />
+                </motion.span>
+                {creationModeItems.map((item) => (
+                    <button key={item.mode} type="button" className="creation-mode-folder-button" data-mode={item.mode} aria-pressed={activeKey === item.mode} aria-label={`${item.label}生成`} onClick={() => onModeChange(item.mode)}>
+                        {item.icon}
+                        <span>{item.label}</span>
+                    </button>
+                ))}
+                <button type="button" className="creation-mode-folder-button" data-mode="agent" aria-pressed={agentActive} onClick={onAgentSelect}>
+                    <Orbit />
+                    <span>Agent</span>
+                    <i className="creation-mode-spark" aria-hidden />
+                </button>
+            </div>
+            <div className="creation-mode-panel">{children}</div>
+        </HoverBorderGradient>
+    );
 }
 
 // 选中页签两侧的 S 形翼片：顶边水平切入、底边水平落到内容面；与页签主体重叠 1px，避免亚像素接缝。
 function CreationModeFolderWing({ side }: { side: "start" | "end" }) {
-    return <svg className={`creation-mode-folder-wing is-${side}`} viewBox="0 0 30 48" preserveAspectRatio="none" aria-hidden focusable="false"><path d="M30 0H28C14 0 14 48 0 48H30Z" /></svg>;
+    return (
+        <svg className={`creation-mode-folder-wing is-${side}`} viewBox="0 0 30 48" preserveAspectRatio="none" aria-hidden focusable="false">
+            <path d="M30 0H28C14 0 14 48 0 48H30Z" />
+        </svg>
+    );
 }
 
 export function CreationModeTabs({ mode, onModeChange, agentActive = false, onAgentSelect, orientation = "horizontal" }: { mode: CreationMode; onModeChange: (mode: CreationMode) => void; agentActive?: boolean; onAgentSelect?: () => void; orientation?: "horizontal" | "vertical" }) {
@@ -562,25 +650,153 @@ function GenerationSettingsMenu(props: ComposerProps) {
     ].join(" · ");
     const videoRatioSupported = props.mode === "video" && ratios.length > 0;
     const summary = props.mode === "video" ? [...(videoRatioSupported ? [props.ratio] : []), ...(videoResolutionSupported ? [videoResolutionLabel(props.videoQuality)] : [])].join(" · ") : imageSummary;
-    const panel = props.mode === "image" && props.imageProfile.parameters ? <div className="creation-parameter-menu max-h-[65vh] overflow-y-auto"><ImageParameterFields profile={props.imageProfile} config={{ ...props.config, model: props.model, size: props.ratio, quality: props.quality, imageResolution: props.imageResolution, imageParameters: props.imageParameters, count: props.count }} onChange={(key, value) => {
-        const setters = { size: props.setRatio, quality: props.setQuality, imageResolution: props.setImageResolution, imageParameters: props.setImageParameters, count: props.setCount, transparentBackground: props.setTransparentBackground };
-        setters[key](value);
-    }} /></div> : <div className="creation-parameter-menu">
-        {props.mode === "image" ? <ImageSizePicker profile={mergedProfile} size={props.ratio} quality={props.quality} imageResolution={props.imageResolution} onChange={(size, quality, resolution) => { props.setRatio(size); if (quality) props.setQuality(quality); if (resolution) props.setImageResolution(resolution); }} /> : videoRatioSupported ? <SettingSection title="画幅" value={props.ratio}><div className="creation-choice-grid is-ratio">{ratios.map((value) => <button key={value} type="button" aria-pressed={value === props.ratio} className={value === props.ratio ? "is-selected" : ""} onClick={() => props.setRatio(value)}><span className="creation-ratio-preview"><span style={ratioPreviewStyle(value)} /></span><span>{value}</span></button>)}</div></SettingSection> : null}
-        {props.mode === "image" && referenceImageSizeValue ? <button type="button" className="creation-custom-trigger" onClick={selectReferenceImageSize}>使用参考图尺寸 · {referenceImageSizeLabel}</button> : null}
-        {props.mode === "video" ? (videoResolutionSupported ? <SettingSection title="清晰度" value={videoResolutionLabel(props.videoQuality)}><div className="creation-choice-grid is-resolution">{resolutions.map((option) => <button key={option.value} type="button" aria-pressed={option.value === props.videoQuality} className={option.value === props.videoQuality ? "is-selected" : ""} onClick={() => props.setVideoQuality(option.value)}>{option.label}</button>)}</div></SettingSection> : null) : <>
-
-            {props.imageProfile.quality.supported && !imageResolutionUsesQuality(mergedProfile) ? <SettingSection title={activeQualityOptions.some((item) => item.value === "1k" || item.value === "2k") ? "分辨率" : "图片质量"} value={qualityLabel}><div className="creation-choice-grid is-quality">{activeQualityOptions.map((option) => <button key={option.value} type="button" aria-pressed={option.value === props.quality} className={option.value === props.quality ? "is-selected" : ""} onClick={() => props.setQuality(option.value)}><span>{option.label}</span><small>{option.description}</small></button>)}</div></SettingSection> : null}
-            {props.imageProfile.maxOutputs > 1 ? <SettingSection title="生成张数" value={`${props.count} 张`}><div className="creation-parameter-content"><div className="creation-choice-grid is-count">{countOptions.filter((option) => Number(option) <= props.imageProfile.maxOutputs).map((option) => <button key={option} type="button" aria-pressed={option === props.count} className={option === props.count ? "is-selected" : ""} onClick={() => props.setCount(option)}>{option}</button>)}</div><label className="creation-custom-value"><span>自定义</span><input inputMode="numeric" pattern="[0-9]*" value={props.count} onChange={(event) => props.setCount(String(Math.max(1, Math.min(props.imageProfile.maxOutputs, Number(event.target.value) || 1))))} aria-label={`生成张数，范围 1 到 ${props.imageProfile.maxOutputs}`} /><em>张</em></label></div></SettingSection> : null}
-        </>}
-    </div>;
-    return <Popover open={open} onOpenChange={setOpen} trigger="click" placement="bottom" arrow={false} classNames={{ root: "creation-control-popover", container: "creation-control-popover-surface", content: "creation-control-popover-content" }} content={panel}>
-        <button type="button" className="creation-chat-control" aria-label={`生成设置：${summary}`}><SlidersHorizontal /><span>{summary}</span><ChevronDown className={open ? "is-open" : ""} /></button>
-    </Popover>;
+    const panel =
+        props.mode === "image" && props.imageProfile.parameters ? (
+            <div className="creation-parameter-menu max-h-[65vh] overflow-y-auto">
+                <ImageParameterFields
+                    profile={props.imageProfile}
+                    config={{ ...props.config, model: props.model, size: props.ratio, quality: props.quality, imageResolution: props.imageResolution, imageParameters: props.imageParameters, count: props.count }}
+                    onChange={(key, value) => {
+                        const setters = {
+                            size: props.setRatio,
+                            quality: props.setQuality,
+                            imageResolution: props.setImageResolution,
+                            imageParameters: props.setImageParameters,
+                            count: props.setCount,
+                            transparentBackground: props.setTransparentBackground,
+                        };
+                        setters[key](value);
+                    }}
+                />
+            </div>
+        ) : (
+            <div className="creation-parameter-menu">
+                {props.mode === "image" ? (
+                    <ImageSizePicker
+                        profile={mergedProfile}
+                        size={props.ratio}
+                        quality={props.quality}
+                        imageResolution={props.imageResolution}
+                        onChange={(size, quality, resolution) => {
+                            props.setRatio(size);
+                            if (quality) props.setQuality(quality);
+                            if (resolution) props.setImageResolution(resolution);
+                        }}
+                    />
+                ) : videoRatioSupported ? (
+                    <SettingSection title="画幅" value={props.ratio}>
+                        <div className="creation-choice-grid is-ratio">
+                            {ratios.map((value) => (
+                                <button key={value} type="button" aria-pressed={value === props.ratio} className={value === props.ratio ? "is-selected" : ""} onClick={() => props.setRatio(value)}>
+                                    <span className="creation-ratio-preview">
+                                        <span style={ratioPreviewStyle(value)} />
+                                    </span>
+                                    <span>{value}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </SettingSection>
+                ) : null}
+                {props.mode === "image" && referenceImageSizeValue ? (
+                    <button type="button" className="creation-custom-trigger" onClick={selectReferenceImageSize}>
+                        使用参考图尺寸 · {referenceImageSizeLabel}
+                    </button>
+                ) : null}
+                {props.mode === "video" ? (
+                    videoResolutionSupported ? (
+                        <SettingSection title="清晰度" value={videoResolutionLabel(props.videoQuality)}>
+                            <div className="creation-choice-grid is-resolution">
+                                {resolutions.map((option) => (
+                                    <button key={option.value} type="button" aria-pressed={option.value === props.videoQuality} className={option.value === props.videoQuality ? "is-selected" : ""} onClick={() => props.setVideoQuality(option.value)}>
+                                        {option.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </SettingSection>
+                    ) : null
+                ) : (
+                    <>
+                        {props.imageProfile.quality.supported && !imageResolutionUsesQuality(mergedProfile) ? (
+                            <SettingSection title={activeQualityOptions.some((item) => item.value === "1k" || item.value === "2k") ? "分辨率" : "图片质量"} value={qualityLabel}>
+                                <div className="creation-choice-grid is-quality">
+                                    {activeQualityOptions.map((option) => (
+                                        <button key={option.value} type="button" aria-pressed={option.value === props.quality} className={option.value === props.quality ? "is-selected" : ""} onClick={() => props.setQuality(option.value)}>
+                                            <span>{option.label}</span>
+                                            <small>{option.description}</small>
+                                        </button>
+                                    ))}
+                                </div>
+                            </SettingSection>
+                        ) : null}
+                        {props.imageProfile.maxOutputs > 1 ? (
+                            <SettingSection title="生成张数" value={`${props.count} 张`}>
+                                <div className="creation-parameter-content">
+                                    <div className="creation-choice-grid is-count">
+                                        {countOptions
+                                            .filter((option) => Number(option) <= props.imageProfile.maxOutputs)
+                                            .map((option) => (
+                                                <button key={option} type="button" aria-pressed={option === props.count} className={option === props.count ? "is-selected" : ""} onClick={() => props.setCount(option)}>
+                                                    {option}
+                                                </button>
+                                            ))}
+                                    </div>
+                                    <label className="creation-custom-value">
+                                        <span>自定义</span>
+                                        <input
+                                            inputMode="numeric"
+                                            pattern="[0-9]*"
+                                            value={props.count}
+                                            onChange={(event) => props.setCount(String(Math.max(1, Math.min(props.imageProfile.maxOutputs, Number(event.target.value) || 1))))}
+                                            aria-label={`生成张数，范围 1 到 ${props.imageProfile.maxOutputs}`}
+                                        />
+                                        <em>张</em>
+                                    </label>
+                                </div>
+                            </SettingSection>
+                        ) : null}
+                    </>
+                )}
+            </div>
+        );
+    return (
+        <Popover
+            open={open}
+            onOpenChange={setOpen}
+            trigger="click"
+            placement="bottom"
+            arrow={false}
+            classNames={{ root: "creation-control-popover", container: "creation-control-popover-surface", content: "creation-control-popover-content" }}
+            content={panel}
+        >
+            <button type="button" className="creation-chat-control" aria-label={`生成设置：${summary}`}>
+                <SlidersHorizontal />
+                <span>{summary}</span>
+                <ChevronDown className={open ? "is-open" : ""} />
+            </button>
+        </Popover>
+    );
 }
 
 function SettingSection({ title, value, children }: { title: string; value?: string; children: ReactNode }) {
-    return <section className="creation-parameter-section"><header><h3>{title}</h3>{value ? <span>{value}</span> : null}</header>{children}</section>;
+    return (
+        <section className="creation-parameter-section">
+            <header>
+                <h3>{title}</h3>
+                {value ? <span>{value}</span> : null}
+            </header>
+            {children}
+        </section>
+    );
+}
+
+// 首页与 Agent 共用离散档位滑条，保留模型默认意图，不把它提前固化为某个档位。
+function ThinkingControl({ levels, value, resolvedLevel, onChange, disabled }: { levels: ThinkingLevel[]; value: ThinkingRequest; resolvedLevel: ThinkingLevel | ""; onChange: (value: ThinkingRequest) => void; disabled: boolean }) {
+    if (!levels.length) return null;
+    return (
+        <div className="creation-thinking-inline">
+            <ThinkingLevelSlider levels={levels} value={value} resolvedLevel={resolvedLevel} onChange={onChange} disabled={disabled} />
+        </div>
+    );
 }
 
 function DurationMenu({ profile, seconds, onChange }: { profile: VideoCapabilityConfig; seconds: string; onChange: (value: string) => void }) {
@@ -591,14 +807,67 @@ function DurationMenu({ profile, seconds, onChange }: { profile: VideoCapability
     const min = profile.duration.selection === "range" ? profile.duration.min || 1 : Math.min(...fallbackPreset);
     const max = profile.duration.selection === "range" ? Math.max(min, profile.duration.max || min) : Math.max(...fallbackPreset);
     const step = Math.max(1, profile.duration.step || 1);
-    const durationControl = profile.duration.selection === "range" ? <>
-        <input className="h-8 w-full" style={{ accentColor: "var(--creation-text)" }} type="range" min={min} max={max} step={step} value={value} aria-label="视频时长（秒）" onChange={(event) => onChange(event.target.value)} />
-        <div className="flex justify-between px-0.5 text-[var(--fs-tiny)] text-[var(--creation-muted)]"><span>{min}s</span><span>{max}s</span></div>
-        <label className="creation-custom-value is-duration"><span>自定义时长</span><span className="creation-duration-custom-field"><input type="number" min={min} max={max} step={step} inputMode="numeric" value={seconds} onFocus={(event) => event.currentTarget.select()} onBlur={() => onChange(String(value))} onChange={(event) => onChange(event.target.value)} aria-label="自定义视频时长，单位秒" /><em>秒</em></span></label>
-    </> : <div className="creation-duration-choices">{presets.map((item) => <button key={item} type="button" className={item === value ? "is-selected" : ""} onClick={() => onChange(String(item))}>{item}s</button>)}</div>;
-    return <Popover open={open} onOpenChange={setOpen} trigger="click" placement="bottom" arrow={false} classNames={{ root: "creation-control-popover", container: "creation-control-popover-surface", content: "creation-control-popover-content" }} content={<div className="creation-duration-menu"><div className="creation-duration-heading"><span>时长</span><strong>{value} 秒</strong></div>{durationControl}</div>}>
-        <button type="button" className="creation-chat-control is-duration" aria-label={`视频时长：${value}秒`}><Clock3 /><span>{value}s</span><ChevronDown className={open ? "is-open" : ""} /></button>
-    </Popover>;
+    const durationControl =
+        profile.duration.selection === "range" ? (
+            <>
+                <input className="h-8 w-full" style={{ accentColor: "var(--creation-text)" }} type="range" min={min} max={max} step={step} value={value} aria-label="视频时长（秒）" onChange={(event) => onChange(event.target.value)} />
+                <div className="flex justify-between px-0.5 text-[var(--fs-tiny)] text-[var(--creation-muted)]">
+                    <span>{min}s</span>
+                    <span>{max}s</span>
+                </div>
+                <label className="creation-custom-value is-duration">
+                    <span>自定义时长</span>
+                    <span className="creation-duration-custom-field">
+                        <input
+                            type="number"
+                            min={min}
+                            max={max}
+                            step={step}
+                            inputMode="numeric"
+                            value={seconds}
+                            onFocus={(event) => event.currentTarget.select()}
+                            onBlur={() => onChange(String(value))}
+                            onChange={(event) => onChange(event.target.value)}
+                            aria-label="自定义视频时长，单位秒"
+                        />
+                        <em>秒</em>
+                    </span>
+                </label>
+            </>
+        ) : (
+            <div className="creation-duration-choices">
+                {presets.map((item) => (
+                    <button key={item} type="button" className={item === value ? "is-selected" : ""} onClick={() => onChange(String(item))}>
+                        {item}s
+                    </button>
+                ))}
+            </div>
+        );
+    return (
+        <Popover
+            open={open}
+            onOpenChange={setOpen}
+            trigger="click"
+            placement="bottom"
+            arrow={false}
+            classNames={{ root: "creation-control-popover", container: "creation-control-popover-surface", content: "creation-control-popover-content" }}
+            content={
+                <div className="creation-duration-menu">
+                    <div className="creation-duration-heading">
+                        <span>时长</span>
+                        <strong>{value} 秒</strong>
+                    </div>
+                    {durationControl}
+                </div>
+            }
+        >
+            <button type="button" className="creation-chat-control is-duration" aria-label={`视频时长：${value}秒`}>
+                <Clock3 />
+                <span>{value}s</span>
+                <ChevronDown className={open ? "is-open" : ""} />
+            </button>
+        </Popover>
+    );
 }
 
 function ratioPreviewStyle(value: string) {
