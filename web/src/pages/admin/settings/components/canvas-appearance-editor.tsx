@@ -34,7 +34,7 @@ export function CanvasAppearanceEditor({ value, onChange, disabled, onUploading 
     const [bundleError, setBundleError] = useState("");
     const [selectedAvatarState, setSelectedAvatarState] = useState<AgentAvatarState>("idle");
     const url = value.live2dResourceId ? live2DModelURL(value.live2dResourceId, value.live2dEntry, true) : "";
-    const previewURL = value.avatarType === "jingche" ? jingcheModelURL(theme) : url;
+    const previewURL = value.avatarType === "bundle" ? "" : value.avatarType === "jingche" ? jingcheModelURL(theme) : url;
     const bundleID = value.avatarBundleResourceId;
     const bundleManifestURL = bundleID ? agentAvatarBundleFileURL(bundleID, "avatar.json", true) : "/doll/avatar.json";
     const previewClip = bundleManifest ? agentAvatarClipForState(value, selectedAvatarState, bundleManifest) : "";
@@ -230,6 +230,7 @@ export function CanvasAppearanceEditor({ value, onChange, disabled, onUploading 
                     </div>
                 ) : null}
 
+                {value.avatarType !== "bundle" ? <>
                 <div className="grid gap-2 text-sm">
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                         <span className="text-foreground/60">参考资料</span>
@@ -272,6 +273,7 @@ export function CanvasAppearanceEditor({ value, onChange, disabled, onUploading 
                         </Button>
                     ) : null}
                 </div>
+                </> : null}
                 <label className="flex items-center gap-3 text-sm">
                     形象高度
                     <InputNumber aria-label="形象高度" min={value.avatarType === "live2d" || value.avatarType === "bundle" ? 120 : 60} max={360} value={value.avatarHeight} disabled={disabled || uploading} onChange={(height) => height !== null && change({ avatarHeight: height })} />
@@ -314,7 +316,7 @@ export function CanvasAppearanceEditor({ value, onChange, disabled, onUploading 
                     <p className="text-sm text-foreground/60">{agentCopy(value.welcomeDescription, value.agentName)}</p>
                     {previewURL ? <small>{readyURL === previewURL ? "预览已就绪，可保存启用" : "等待模型预览就绪"}</small> : null}
                 </div>
-                {error ? (
+                {value.avatarType !== "bundle" && error ? (
                     <Alert
                         type="warning"
                         showIcon
@@ -333,7 +335,7 @@ export function CanvasAppearanceEditor({ value, onChange, disabled, onUploading 
                         }
                     />
                 ) : null}
-                <p className="text-xs text-foreground/60">项目已内置 Cubism Core，无需另行安装。使用前仍需确认 Live2D SDK 及模型素材的适用授权。未启用的导入包可在资源管理中清理。</p>
+                {value.avatarType !== "bundle" ? <p className="text-xs text-foreground/60">项目已内置 Cubism Core，无需另行安装。使用前仍需确认 Live2D SDK 及模型素材的适用授权。未启用的导入包可在资源管理中清理。</p> : null}
             </div>
         </div>
     );
