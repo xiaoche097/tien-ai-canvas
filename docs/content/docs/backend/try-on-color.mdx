@@ -1,0 +1,38 @@
+---
+title: AI 换色与色彩保真
+description: 换色色库、参考图取色、生成约束和真彩还原技术边界
+---
+
+# AI 换色与色彩保真
+
+## 公开页面研究结论
+
+研究对象为用户指定的 [AI 换色页面](https://marketing.k-fashionshop.com/task-data/model/change-color)。仅读取无需登录即可获取的页面、前端脚本和查询色库接口，没有创建生成任务，也没有获取私有后台算法。
+
+- 公开前端通过 `POST /api/marketing/image_color/query_list` 读取颜色。返回 221 个条目、16 个分组，包含色名、RGB 与中文色系。当前页面色库按这些数据逐项整理，名称、色值、分组均与公开数据核对一致，不再使用截图估算值；产品运行时使用本地数据，不请求对方服务。
+- [公开色库调用与任务配置脚本](https://cjh-open.oss-cn-hangzhou.aliyuncs.com/sell-well/1792664770546_ci/_next/static/chunks/9667-96f04f57d7c7a74d.js) 显示目标颜色字段为 `color_hex_code`，“真彩还原”为布尔字段 `betterColorAccuracy`，默认关闭；该值也用于任务信息展示。
+- [公开换色页面脚本](https://cjh-open.oss-cn-hangzhou.aliyuncs.com/sell-well/1792664770546_ci/_next/static/chunks/app/task-data/model/(pages)/change-color/page-1339d4d26f625797.js) 显示开启后隐藏 `4k` 清晰度选项，已有 4k 选择会被调整。这证明存在参数与能力约束，不能据此证明它使用了特定分割模型、色彩算法、模型供应商或色差校正流程。
+- 因为看不到服务端实现，不能断言“真彩还原”就是提示词、某个模型，或某种后处理。公开客户端证据只支持上述参数层面的结论。
+
+## 当前实现
+
+AI 换色保留一张原商品／模特图，提供两种颜色来源：
+
+1. **替换颜色**：16 组共 221 色，支持分类筛选、色名／HEX 搜索、自定义颜色和六位 HEX 输入。
+2. **参考图颜色**：上传、拖入、粘贴或从素材库选一张参考图。可以点击图中位置读取不透明像素的 RGB，再转换为 HEX；键盘激活取图像中心色。未指定取色点时，由图像模型参考主要商品的颜色。替换或移除图片会清除取色值。
+
+换色对象与补充说明独立输入，默认对象为“主服装”。后端校验 `colorEdit` 的模式、目标对象、色值与真实图片数量，把目标色及保留边界写入保护上下文，其他工具不能携带该字段。HEX 为材质中间调的目标，不要求把整件衣服的每个像素涂成同一色值；印花、标志、金属件、纹理及高光阴影保留。
+
+“真彩还原 · 色彩保真增强”当前实现为生成约束增强：重点保持目标色相、饱和度、中性灰关系及非编辑区域。它不包含商品分割、反射率分解、ICC 管理、输出色差测量或反馈校正，不应宣称完成实物校色或零色差。不自动增加模型调用，不自动重生成；AI 扩写仍属于用户主动触发的收费文本功能。
+
+## 更严格的色彩还原如何实现
+
+下面是可进一步开发的技术路线，属于建议方案，不代表本项目或对方平台已经实现：
+
+1. **确定换色区域**：生成或取得精确商品遮罩，排除皮肤、背景、印花与五金；处理袖口、发丝和半透明边缘。遮罩不准确时，后续算法会污染非目标区域。
+2. **统一颜色解释**：识别输入图的色彩空间与配置，统一到受管理的工作空间。一个 HEX 只是某色彩空间中的数值，不能直接代表不同屏幕与光照下的实物颜色。[ICC 的 sRGB 定义](https://registry.color.org/rgb-registry/srgb) 和 [色彩管理 FAQ](https://www.color.org/faqs/) 说明了这类颜色解释与设备转换问题。
+3. **分离底色与光照**：理想情况下分离材质反射率与照明／阴影，再修改反射率并重建画面，保留质感和真实受光。相关原始研究包括 [Intrinsic Image Decomposition via Ordinal Shading](https://arxiv.org/abs/2311.12792) 与 [Illumination Decomposition for Material Recoloring with Consistent Interreflections](https://vision.ucsd.edu/sites/default/files/publications/pdfs/Illumination%20Decomposition%20for%20Material%20Recoloring%20with%20Consistent%20Interreflections.pdf)。简单替换 Lab 色度并保留亮度可以作为近似方案，但不能等同于准确的材质与照明分解；极暗转浅色、金属、反光与透明面料尤其困难。
+4. **输出测量与局部修正**：在受控的中间调区域计算 Lab 色差等指标，排除高光、深阴影和不同材质；必要时进行有界局部校正，再检查纹理、边缘和非编辑区域。整件衣服不应该与一个 HEX 的所有像素完全一致。OpenCV 提供 [Lab 等色彩空间转换](https://docs.opencv.org/4.12.0/d8/d01/group__imgproc__color__conversions.html)，但转换本身不是校色算法。
+5. **实物校色验证**：需要可追溯的实体色样、受控光照、相机配置与经过校准的显示设备。普通网络照片的取色只能作为图像颜色参考，无法反推出未经测量的实物绝对颜色。
+
+验收应同时考察目标区域颜色、服装结构与纹理保留、人物与背景是否不变，以及不同光照和面料的失败率；不能只看健康检查或单张样例。
