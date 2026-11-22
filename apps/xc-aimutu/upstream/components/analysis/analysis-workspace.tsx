@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { fileToBase64Payload } from "@/lib/utils/base64-upload";
 import { getAuthHeaders } from "@/lib/utils/auth-client";
-import { assetTypeLabels, platformLabels, platformOptions, styleLabels, styleOptions } from "@/types/domain";
+import { assetTypeLabels, platformLabels, styleLabels, styleOptions } from "@/types/domain";
 
 interface AnalysisWorkspaceProps {
   project: any;
@@ -44,6 +44,7 @@ export function AnalysisWorkspace({
   source,
 }: AnalysisWorkspaceProps) {
   const [projectState, setProjectState] = useState(project);
+  const appliedTemplate = projectState.modelSnapshot?.templateApplication;
   const [analysis, setAnalysis] = useState(project.analysis?.normalizedResult ?? null);
   const [running, setRunning] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -89,7 +90,6 @@ export function AnalysisWorkspace({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: projectState.name,
-          platform: projectState.platform,
           style: projectState.style,
           description: projectState.description ?? "",
         }),
@@ -279,32 +279,29 @@ export function AnalysisWorkspace({
               <Input value={projectState.name ?? ""} onChange={(event) => updateProjectField("name", event.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>平台</Label>
-              <select
-                className="flex h-10 w-full rounded-xl border border-input bg-white px-3 text-sm"
-                value={projectState.platform}
-                onChange={(event) => updateProjectField("platform", event.target.value)}
-              >
-                {platformOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {platformLabels[option]}
-                  </option>
-                ))}
-              </select>
+              <Label htmlFor="project-current-platform">平台（在输出配置中修改）</Label>
+              <Input id="project-current-platform" readOnly value={platformLabels[project.platform as keyof typeof platformLabels] ?? project.platform} />
             </div>
             <div className="space-y-2">
-              <Label>风格</Label>
-              <select
+              <Label htmlFor="project-style">{appliedTemplate?.name ? "套版风格" : "风格"}</Label>
+              {appliedTemplate?.name ? <>
+                <Input id="project-style" readOnly value={appliedTemplate.name} />
+                <p className="text-xs text-muted-foreground">已绑定此套版；商品分析更新产品信息，不替换所选套版风格。</p>
+              </> : <select
+                id="project-style"
                 className="flex h-10 w-full rounded-xl border border-input bg-white px-3 text-sm"
                 value={projectState.style}
                 onChange={(event) => updateProjectField("style", event.target.value)}
               >
+                {projectState.style && !styleOptions.some((option) => option === projectState.style) ? (
+                  <option value={projectState.style}>{projectState.style}</option>
+                ) : null}
                 {styleOptions.map((option) => (
                   <option key={option} value={option}>
                     {styleLabels[option]}
                   </option>
                 ))}
-              </select>
+              </select>}
             </div>
             <div className="space-y-2 md:col-span-2">
               <Label>备注</Label>

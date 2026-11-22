@@ -160,6 +160,9 @@ function setMeta(targetDocument: Document, attribute: "name" | "property", key: 
 }
 
 export function appearanceLogoURL(appearance: PublicAppearance, theme: "light" | "dark") {
+    if (!appearance.logoConfigured && !appearance.darkLogoConfigured && appearance.brandName === DEFAULT_PUBLIC_APPEARANCE.brandName && appearance.brandSlug === DEFAULT_PUBLIC_APPEARANCE.brandSlug) {
+        return `${import.meta.env.BASE_URL || "/"}jingche-favicon-${theme}.ico?v=2`;
+    }
     return theme === "dark" ? appearance.darkLogoUrl || appearance.logoUrl : appearance.logoUrl || appearance.darkLogoUrl;
 }
 

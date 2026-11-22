@@ -70,24 +70,27 @@ export function useAppearancePreviews(setting: AdminAppearance | null, files: Dr
     const videoObjectURL = useObjectURL(files.video);
     const posterObjectURL = useObjectURL(files.poster);
     return useMemo(() => {
-        if (!setting) return { logoLight: DEFAULT_PUBLIC_APPEARANCE.logoUrl, logoDark: DEFAULT_PUBLIC_APPEARANCE.darkLogoUrl, video: DEFAULT_PUBLIC_APPEARANCE.authVideoUrl, poster: DEFAULT_PUBLIC_APPEARANCE.authVideoPosterUrl };
+        if (!setting) return { logoBuiltin: true, logoLight: `${import.meta.env.BASE_URL || "/"}jingche-logo.png?v=2`, logoDark: `${import.meta.env.BASE_URL || "/"}jingche-logo.png?v=2`, video: DEFAULT_PUBLIC_APPEARANCE.authVideoUrl, poster: DEFAULT_PUBLIC_APPEARANCE.authVideoPosterUrl };
         const customVideo = Boolean(files.video || (!resets.video && setting.authVideoResourceId));
         const lightLogo = logoObjectURL || (!resets.logo && setting.logoResourceId ? setting.public.logoUrl : "");
         const darkLogo = darkLogoObjectURL || (!resets["logo-dark"] && setting.darkLogoResourceId ? setting.public.darkLogoUrl : "");
+        const logoBuiltin = !lightLogo && !darkLogo && setting.brandName === DEFAULT_PUBLIC_APPEARANCE.brandName && setting.brandSlug === DEFAULT_PUBLIC_APPEARANCE.brandSlug;
+        const builtinURL = `${import.meta.env.BASE_URL || "/"}jingche-logo.png?v=2`;
         return {
-            logoLight: lightLogo || darkLogo || DEFAULT_PUBLIC_APPEARANCE.logoUrl,
-            logoDark: darkLogo || lightLogo || DEFAULT_PUBLIC_APPEARANCE.darkLogoUrl,
+            logoBuiltin,
+            logoLight: lightLogo || darkLogo || (logoBuiltin ? builtinURL : DEFAULT_PUBLIC_APPEARANCE.logoUrl),
+            logoDark: darkLogo || lightLogo || (logoBuiltin ? builtinURL : DEFAULT_PUBLIC_APPEARANCE.darkLogoUrl),
             video: videoObjectURL || (resets.video ? DEFAULT_PUBLIC_APPEARANCE.authVideoUrl : setting.public.authVideoUrl),
             poster: posterObjectURL || (resets.poster ? (customVideo ? "" : DEFAULT_PUBLIC_APPEARANCE.authVideoPosterUrl) : setting.public.authVideoPosterUrl),
         };
     }, [darkLogoObjectURL, files.video, logoObjectURL, posterObjectURL, resets, setting, videoObjectURL]);
 }
 
-export function LogoThemePreview({ label, icon, src, dark, frameEnabled }: { label: string; icon: ReactNode; src: string; dark: boolean; frameEnabled: boolean }) {
+export function LogoThemePreview({ label, icon, src, dark, frameEnabled, builtin = false }: { label: string; icon: ReactNode; src: string; dark: boolean; frameEnabled: boolean; builtin?: boolean }) {
     return (
         <div className={cn("admin-appearance-logo-preview", dark ? "is-dark" : "is-light")}>
-            <span className={cn("admin-appearance-logo-preview-mark", !frameEnabled && "is-unframed")}>
-                <img src={src} alt="" />
+            <span className={cn("admin-appearance-logo-preview-mark", (!frameEnabled || builtin) && "is-unframed")} style={builtin ? { background: "transparent", boxShadow: "none", borderColor: "transparent" } : undefined}>
+                <img src={src} alt="" style={builtin && dark ? { filter: "invert(1)" } : undefined} />
             </span>
             <span className="admin-appearance-logo-preview-label">
                 {icon}

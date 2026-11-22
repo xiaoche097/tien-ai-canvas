@@ -576,8 +576,8 @@ export default function AppearanceSettingsPage() {
                                                     </div>
                                                 </div>
                                                 <div className="admin-appearance-logo-preview-grid" aria-label="深浅模式 Logo 预览">
-                                                    <LogoThemePreview label="浅色界面" icon={<Sun />} src={previews.logoLight} dark={false} frameEnabled={logoFrameEnabled} />
-                                                    <LogoThemePreview label="深色界面" icon={<Moon />} src={previews.logoDark} dark frameEnabled={logoFrameEnabled} />
+                                                    <LogoThemePreview label="浅色界面" icon={<Sun />} src={previews.logoLight} dark={false} frameEnabled={logoFrameEnabled} builtin={previews.logoBuiltin} />
+                                                    <LogoThemePreview label="深色界面" icon={<Moon />} src={previews.logoDark} dark frameEnabled={logoFrameEnabled} builtin={previews.logoBuiltin} />
                                                 </div>
                                             </div>
                                         </div>

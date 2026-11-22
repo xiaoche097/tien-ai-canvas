@@ -1,4 +1,4 @@
-import { ArrowRight, ChevronLeft, ChevronRight, Clapperboard, Puzzle } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Clapperboard, Megaphone, Palette, Puzzle, ShoppingBag } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "antd";
 
@@ -140,6 +140,7 @@ export function SkillMarketDiscovery({ onOpen, onBrowse }: { onOpen: (skill: Ski
 }
 
 function FeaturedSkill({ skill, onOpen }: { skill: Skill; onOpen: (skill: Skill) => void }) {
+    const CategoryIcon = ({ ecommerce: ShoppingBag, creative: Palette, social: Megaphone, drama: Clapperboard } as Record<string, typeof Puzzle>)[skill.tag] || Puzzle;
     const media = skill.showcaseMedia?.find((item) => item.type === "image" && item.showcaseUrl) || skill.showcaseMedia?.find((item) => item.showcaseUrl);
     const [failed, setFailed] = useState(false);
     return (
@@ -152,7 +153,8 @@ function FeaturedSkill({ skill, onOpen }: { skill: Skill; onOpen: (skill: Skill)
                 )
             ) : (
                 <div className="market-featured-fallback">
-                    <Clapperboard />
+                    <CategoryIcon />
+                    <span>{skillCategoryLabel(skill.tag)}</span>
                     <strong>{skill.skillName}</strong>
                 </div>
             )}

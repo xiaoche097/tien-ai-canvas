@@ -79,6 +79,7 @@ export class CanvasProviderAdapter implements ProviderAdapter {
   private async runTask(input: {
     route: ModelRoute; mode: "text" | "image"; prompt: string; systemPrompt?: string;
     images?: string[]; mask?: string; monitor?: AiMonitorContext; timeoutMs?: number;
+    aspectRatio?: ImageGenerationRequest["aspectRatio"];
   }) {
     const signal = input.monitor?.signal;
     const referenceImages = await Promise.all((input.images ?? []).map((image) => this.uploadImage(image, signal)));
@@ -89,7 +90,7 @@ export class CanvasProviderAdapter implements ProviderAdapter {
         type: `canvas_${input.mode}`, operation: input.mode, prompt: input.prompt, model: input.route.modelKey,
         input: {
           mode: input.mode, prompt: input.prompt,
-          config: { channelId: input.route.channelId, model: input.route.modelKey, ...(input.systemPrompt ? { systemPrompt: input.systemPrompt } : {}) },
+          config: { channelId: input.route.channelId, model: input.route.modelKey, ...(input.systemPrompt ? { systemPrompt: input.systemPrompt } : {}), ...(input.mode === "image" && input.aspectRatio ? { size: input.aspectRatio } : {}) },
           ...(input.mode === "text" ? { textOptions: { stream: false } } : {}),
           referenceImages, ...(mask ? { mask } : {}),
         },
@@ -119,7 +120,7 @@ export class CanvasProviderAdapter implements ProviderAdapter {
   }
 
   private async taskImage(input: ImageGenerationRequest, route: ModelRoute, images: string[], mask?: string) {
-    const result = await this.runTask({ route, mode: "image", prompt: input.prompt, images, mask, monitor: input.monitor });
+    const result = await this.runTask({ route, mode: "image", prompt: input.prompt, images, mask, aspectRatio: input.aspectRatio, monitor: input.monitor });
     const image = result.images?.[0];
     if (!image) throw new Error("境彻任务没有返回图片");
     if (image.storageKey?.startsWith("resource:")) {

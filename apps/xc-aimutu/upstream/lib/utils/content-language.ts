@@ -23,3 +23,7 @@ export function normalizeContentLanguage(value: unknown): ContentLanguage {
 
   return "zh-CN";
 }
+
+export function projectContentLanguage(platform: string | undefined, value?: unknown): ContentLanguage {
+  return value == null ? (platform === "amazon" ? "en-US" : "zh-CN") : normalizeContentLanguage(value);
+}

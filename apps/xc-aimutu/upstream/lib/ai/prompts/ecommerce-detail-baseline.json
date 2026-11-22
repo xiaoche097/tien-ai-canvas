@@ -1,0 +1,134 @@
+[
+  {
+    "name": "buildSectionImagePrompt",
+    "args": [
+      {
+        "type": "DETAIL_CLOSEUP",
+        "title": "商品细节",
+        "goal": "解释材质和工艺",
+        "copy": "完整说明材质、结构与参数。",
+        "visualPrompt": "展示真实细节与功能分区，不改变产品。"
+      },
+      [],
+      "3:4",
+      "zh-CN"
+    ],
+    "expected": "You are a senior e-commerce key-visual designer creating marketplace-ready product artwork.\nSection type: DETAIL_CLOSEUP\nSection title: 商品细节\nSection goal: 解释材质和工艺\nSection copy: 完整说明材质、结构与参数。\nVisual prompt guidance: 展示真实细节与功能分区，不改变产品。\nNo reference images were provided.\nIf no product image reference is provided, infer the product carefully from the structured analysis and keep the same product identity across all generated sections.\nThe final image must be a vertical 3:4 marketplace poster composition.\nAll user-facing marketing copy that appears inside the image must be written in Simplified Chinese. The section title, key selling points, short supporting copy, disclaimers, and CTA should all be in Simplified Chinese when they appear in the image. Do not mix in Simplified Chinese unless the target language is Simplified Chinese. Keep the typography native, polished, and commercially readable for the target language.\nGenerate one high-conversion mobile e-commerce visual for this section.\nThe image should emphasize product clarity, composition hierarchy, material texture, and marketplace aesthetics.\nThe headline, selling points, supporting copy, and CTA should be visually designed inside the image rather than left for later DOM text insertion.\nMake the result feel like finished commercial artwork, not a blank template.\nIMPORTANT: Any text embedded in the image must comply with Chinese Advertising Law. Do not include absolute superlatives (最, 第一, 顶级, 最佳, 唯一, 根治, 治愈, 100%, etc.), false medical claims, or unverified certifications inside the image text.\nCRITICAL: If the section involves nutrition facts, ingredients, or specifications, do NOT invent or estimate any numbers, percentages, or values. Only use exact data provided in the section copy. If specific numbers are not provided, show the layout/design without filling in fabricated data."
+  },
+  {
+    "name": "buildRegenerationPrompt",
+    "args": [
+      {
+        "type": "DETAIL_CLOSEUP",
+        "title": "商品细节",
+        "goal": "解释材质和工艺",
+        "copy": "完整说明材质、结构与参数。",
+        "visualPrompt": "展示真实细节与功能分区，不改变产品。"
+      },
+      [],
+      "3:4",
+      "zh-CN"
+    ],
+    "expected": "You are a senior e-commerce key-visual designer creating marketplace-ready product artwork.\nSection type: DETAIL_CLOSEUP\nSection title: 商品细节\nSection goal: 解释材质和工艺\nSection copy: 完整说明材质、结构与参数。\nVisual prompt guidance: 展示真实细节与功能分区，不改变产品。\nNo reference images were provided.\nIf no product image reference is provided, infer the product carefully from the structured analysis and keep the same product identity across all generated sections.\nThe final image must be a vertical 3:4 marketplace poster composition.\nAll user-facing marketing copy that appears inside the image must be written in Simplified Chinese. The section title, key selling points, short supporting copy, disclaimers, and CTA should all be in Simplified Chinese when they appear in the image. Do not mix in Simplified Chinese unless the target language is Simplified Chinese. Keep the typography native, polished, and commercially readable for the target language.\nGenerate one high-conversion mobile e-commerce visual for this section.\nThe image should emphasize product clarity, composition hierarchy, material texture, and marketplace aesthetics.\nThe headline, selling points, supporting copy, and CTA should be visually designed inside the image rather than left for later DOM text insertion.\nMake the result feel like finished commercial artwork, not a blank template.\nIMPORTANT: Any text embedded in the image must comply with Chinese Advertising Law. Do not include absolute superlatives (最, 第一, 顶级, 最佳, 唯一, 根治, 治愈, 100%, etc.), false medical claims, or unverified certifications inside the image text.\nCRITICAL: If the section involves nutrition facts, ingredients, or specifications, do NOT invent or estimate any numbers, percentages, or values. Only use exact data provided in the section copy. If specific numbers are not provided, show the layout/design without filling in fabricated data.\nThis is a regeneration task. Keep the same product identity and selling-point direction, but improve composition accuracy, completion quality, and conversion appeal."
+  },
+  {
+    "name": "buildImageEditPrompt",
+    "args": [
+      {
+        "type": "DETAIL_CLOSEUP",
+        "title": "商品细节",
+        "goal": "解释材质和工艺",
+        "copy": "完整说明材质、结构与参数。",
+        "visualPrompt": "展示真实细节与功能分区，不改变产品。"
+      },
+      [],
+      "repaint",
+      "3:4",
+      "zh-CN"
+    ],
+    "expected": "You are a senior e-commerce key-visual designer creating marketplace-ready product artwork.\nSection type: DETAIL_CLOSEUP\nSection title: 商品细节\nSection goal: 解释材质和工艺\nSection copy: 完整说明材质、结构与参数。\nVisual prompt guidance: 展示真实细节与功能分区，不改变产品。\nNo reference images were provided.\nIf no product image reference is provided, infer the product carefully from the structured analysis and keep the same product identity across all generated sections.\nThe final image must be a vertical 3:4 marketplace poster composition.\nAll user-facing marketing copy that appears inside the image must be written in Simplified Chinese. The section title, key selling points, short supporting copy, disclaimers, and CTA should all be in Simplified Chinese when they appear in the image. Do not mix in Simplified Chinese unless the target language is Simplified Chinese. Keep the typography native, polished, and commercially readable for the target language.\nGenerate one high-conversion mobile e-commerce visual for this section.\nThe image should emphasize product clarity, composition hierarchy, material texture, and marketplace aesthetics.\nThe headline, selling points, supporting copy, and CTA should be visually designed inside the image rather than left for later DOM text insertion.\nMake the result feel like finished commercial artwork, not a blank template.\nIMPORTANT: Any text embedded in the image must comply with Chinese Advertising Law. Do not include absolute superlatives (最, 第一, 顶级, 最佳, 唯一, 根治, 治愈, 100%, etc.), false medical claims, or unverified certifications inside the image text.\nCRITICAL: If the section involves nutrition facts, ingredients, or specifications, do NOT invent or estimate any numbers, percentages, or values. Only use exact data provided in the section copy. If specific numbers are not provided, show the layout/design without filling in fabricated data.\nThis is a repaint task. Use the current image as the base, keep the same product identity, and redesign the composition, atmosphere, styling, and conversion emphasis according to the section goal.\nThe current section image must be treated as the editable base image.\nKeep the product identical to the uploaded main product image and do not replace it with a different item.\nOutput one marketplace-ready mobile e-commerce image only."
+  },
+  {
+    "name": "buildImageEditPrompt",
+    "args": [
+      {
+        "type": "DETAIL_CLOSEUP",
+        "title": "商品细节",
+        "goal": "解释材质和工艺",
+        "copy": "完整说明材质、结构与参数。",
+        "visualPrompt": "展示真实细节与功能分区，不改变产品。"
+      },
+      [],
+      "enhance",
+      "3:4",
+      "zh-CN"
+    ],
+    "expected": "You are a senior e-commerce key-visual designer creating marketplace-ready product artwork.\nSection type: DETAIL_CLOSEUP\nSection title: 商品细节\nSection goal: 解释材质和工艺\nSection copy: 完整说明材质、结构与参数。\nVisual prompt guidance: 展示真实细节与功能分区，不改变产品。\nNo reference images were provided.\nIf no product image reference is provided, infer the product carefully from the structured analysis and keep the same product identity across all generated sections.\nThe final image must be a vertical 3:4 marketplace poster composition.\nAll user-facing marketing copy that appears inside the image must be written in Simplified Chinese. The section title, key selling points, short supporting copy, disclaimers, and CTA should all be in Simplified Chinese when they appear in the image. Do not mix in Simplified Chinese unless the target language is Simplified Chinese. Keep the typography native, polished, and commercially readable for the target language.\nGenerate one high-conversion mobile e-commerce visual for this section.\nThe image should emphasize product clarity, composition hierarchy, material texture, and marketplace aesthetics.\nThe headline, selling points, supporting copy, and CTA should be visually designed inside the image rather than left for later DOM text insertion.\nMake the result feel like finished commercial artwork, not a blank template.\nIMPORTANT: Any text embedded in the image must comply with Chinese Advertising Law. Do not include absolute superlatives (最, 第一, 顶级, 最佳, 唯一, 根治, 治愈, 100%, etc.), false medical claims, or unverified certifications inside the image text.\nCRITICAL: If the section involves nutrition facts, ingredients, or specifications, do NOT invent or estimate any numbers, percentages, or values. Only use exact data provided in the section copy. If specific numbers are not provided, show the layout/design without filling in fabricated data.\nThis is an enhancement task. Use the current image as the base, preserve the overall framing, and improve realism, texture, lighting, clarity, edge quality, and commercial polish.\nThe current section image must be treated as the editable base image.\nKeep the product identical to the uploaded main product image and do not replace it with a different item.\nOutput one marketplace-ready mobile e-commerce image only."
+  },
+  {
+    "name": "buildSectionImagePrompt",
+    "args": [
+      {
+        "type": "DETAIL_CLOSEUP",
+        "title": "商品细节",
+        "goal": "解释材质和工艺",
+        "copy": "完整说明材质、结构与参数。",
+        "visualPrompt": "展示真实细节与功能分区，不改变产品。"
+      },
+      [],
+      "9:16",
+      "zh-CN"
+    ],
+    "expected": "You are a senior e-commerce key-visual designer creating marketplace-ready product artwork.\nSection type: DETAIL_CLOSEUP\nSection title: 商品细节\nSection goal: 解释材质和工艺\nSection copy: 完整说明材质、结构与参数。\nVisual prompt guidance: 展示真实细节与功能分区，不改变产品。\nNo reference images were provided.\nIf no product image reference is provided, infer the product carefully from the structured analysis and keep the same product identity across all generated sections.\nThe final image must be a vertical 9:16 long-form mobile commerce composition.\nAll user-facing marketing copy that appears inside the image must be written in Simplified Chinese. The section title, key selling points, short supporting copy, disclaimers, and CTA should all be in Simplified Chinese when they appear in the image. Do not mix in Simplified Chinese unless the target language is Simplified Chinese. Keep the typography native, polished, and commercially readable for the target language.\nGenerate one high-conversion mobile e-commerce visual for this section.\nThe image should emphasize product clarity, composition hierarchy, material texture, and marketplace aesthetics.\nThe headline, selling points, supporting copy, and CTA should be visually designed inside the image rather than left for later DOM text insertion.\nMake the result feel like finished commercial artwork, not a blank template.\nIMPORTANT: Any text embedded in the image must comply with Chinese Advertising Law. Do not include absolute superlatives (最, 第一, 顶级, 最佳, 唯一, 根治, 治愈, 100%, etc.), false medical claims, or unverified certifications inside the image text.\nCRITICAL: If the section involves nutrition facts, ingredients, or specifications, do NOT invent or estimate any numbers, percentages, or values. Only use exact data provided in the section copy. If specific numbers are not provided, show the layout/design without filling in fabricated data."
+  },
+  {
+    "name": "buildRegenerationPrompt",
+    "args": [
+      {
+        "type": "DETAIL_CLOSEUP",
+        "title": "商品细节",
+        "goal": "解释材质和工艺",
+        "copy": "完整说明材质、结构与参数。",
+        "visualPrompt": "展示真实细节与功能分区，不改变产品。"
+      },
+      [],
+      "9:16",
+      "zh-CN"
+    ],
+    "expected": "You are a senior e-commerce key-visual designer creating marketplace-ready product artwork.\nSection type: DETAIL_CLOSEUP\nSection title: 商品细节\nSection goal: 解释材质和工艺\nSection copy: 完整说明材质、结构与参数。\nVisual prompt guidance: 展示真实细节与功能分区，不改变产品。\nNo reference images were provided.\nIf no product image reference is provided, infer the product carefully from the structured analysis and keep the same product identity across all generated sections.\nThe final image must be a vertical 9:16 long-form mobile commerce composition.\nAll user-facing marketing copy that appears inside the image must be written in Simplified Chinese. The section title, key selling points, short supporting copy, disclaimers, and CTA should all be in Simplified Chinese when they appear in the image. Do not mix in Simplified Chinese unless the target language is Simplified Chinese. Keep the typography native, polished, and commercially readable for the target language.\nGenerate one high-conversion mobile e-commerce visual for this section.\nThe image should emphasize product clarity, composition hierarchy, material texture, and marketplace aesthetics.\nThe headline, selling points, supporting copy, and CTA should be visually designed inside the image rather than left for later DOM text insertion.\nMake the result feel like finished commercial artwork, not a blank template.\nIMPORTANT: Any text embedded in the image must comply with Chinese Advertising Law. Do not include absolute superlatives (最, 第一, 顶级, 最佳, 唯一, 根治, 治愈, 100%, etc.), false medical claims, or unverified certifications inside the image text.\nCRITICAL: If the section involves nutrition facts, ingredients, or specifications, do NOT invent or estimate any numbers, percentages, or values. Only use exact data provided in the section copy. If specific numbers are not provided, show the layout/design without filling in fabricated data.\nThis is a regeneration task. Keep the same product identity and selling-point direction, but improve composition accuracy, completion quality, and conversion appeal."
+  },
+  {
+    "name": "buildImageEditPrompt",
+    "args": [
+      {
+        "type": "DETAIL_CLOSEUP",
+        "title": "商品细节",
+        "goal": "解释材质和工艺",
+        "copy": "完整说明材质、结构与参数。",
+        "visualPrompt": "展示真实细节与功能分区，不改变产品。"
+      },
+      [],
+      "repaint",
+      "9:16",
+      "zh-CN"
+    ],
+    "expected": "You are a senior e-commerce key-visual designer creating marketplace-ready product artwork.\nSection type: DETAIL_CLOSEUP\nSection title: 商品细节\nSection goal: 解释材质和工艺\nSection copy: 完整说明材质、结构与参数。\nVisual prompt guidance: 展示真实细节与功能分区，不改变产品。\nNo reference images were provided.\nIf no product image reference is provided, infer the product carefully from the structured analysis and keep the same product identity across all generated sections.\nThe final image must be a vertical 9:16 long-form mobile commerce composition.\nAll user-facing marketing copy that appears inside the image must be written in Simplified Chinese. The section title, key selling points, short supporting copy, disclaimers, and CTA should all be in Simplified Chinese when they appear in the image. Do not mix in Simplified Chinese unless the target language is Simplified Chinese. Keep the typography native, polished, and commercially readable for the target language.\nGenerate one high-conversion mobile e-commerce visual for this section.\nThe image should emphasize product clarity, composition hierarchy, material texture, and marketplace aesthetics.\nThe headline, selling points, supporting copy, and CTA should be visually designed inside the image rather than left for later DOM text insertion.\nMake the result feel like finished commercial artwork, not a blank template.\nIMPORTANT: Any text embedded in the image must comply with Chinese Advertising Law. Do not include absolute superlatives (最, 第一, 顶级, 最佳, 唯一, 根治, 治愈, 100%, etc.), false medical claims, or unverified certifications inside the image text.\nCRITICAL: If the section involves nutrition facts, ingredients, or specifications, do NOT invent or estimate any numbers, percentages, or values. Only use exact data provided in the section copy. If specific numbers are not provided, show the layout/design without filling in fabricated data.\nThis is a repaint task. Use the current image as the base, keep the same product identity, and redesign the composition, atmosphere, styling, and conversion emphasis according to the section goal.\nThe current section image must be treated as the editable base image.\nKeep the product identical to the uploaded main product image and do not replace it with a different item.\nOutput one marketplace-ready mobile e-commerce image only."
+  },
+  {
+    "name": "buildImageEditPrompt",
+    "args": [
+      {
+        "type": "DETAIL_CLOSEUP",
+        "title": "商品细节",
+        "goal": "解释材质和工艺",
+        "copy": "完整说明材质、结构与参数。",
+        "visualPrompt": "展示真实细节与功能分区，不改变产品。"
+      },
+      [],
+      "enhance",
+      "9:16",
+      "zh-CN"
+    ],
+    "expected": "You are a senior e-commerce key-visual designer creating marketplace-ready product artwork.\nSection type: DETAIL_CLOSEUP\nSection title: 商品细节\nSection goal: 解释材质和工艺\nSection copy: 完整说明材质、结构与参数。\nVisual prompt guidance: 展示真实细节与功能分区，不改变产品。\nNo reference images were provided.\nIf no product image reference is provided, infer the product carefully from the structured analysis and keep the same product identity across all generated sections.\nThe final image must be a vertical 9:16 long-form mobile commerce composition.\nAll user-facing marketing copy that appears inside the image must be written in Simplified Chinese. The section title, key selling points, short supporting copy, disclaimers, and CTA should all be in Simplified Chinese when they appear in the image. Do not mix in Simplified Chinese unless the target language is Simplified Chinese. Keep the typography native, polished, and commercially readable for the target language.\nGenerate one high-conversion mobile e-commerce visual for this section.\nThe image should emphasize product clarity, composition hierarchy, material texture, and marketplace aesthetics.\nThe headline, selling points, supporting copy, and CTA should be visually designed inside the image rather than left for later DOM text insertion.\nMake the result feel like finished commercial artwork, not a blank template.\nIMPORTANT: Any text embedded in the image must comply with Chinese Advertising Law. Do not include absolute superlatives (最, 第一, 顶级, 最佳, 唯一, 根治, 治愈, 100%, etc.), false medical claims, or unverified certifications inside the image text.\nCRITICAL: If the section involves nutrition facts, ingredients, or specifications, do NOT invent or estimate any numbers, percentages, or values. Only use exact data provided in the section copy. If specific numbers are not provided, show the layout/design without filling in fabricated data.\nThis is an enhancement task. Use the current image as the base, preserve the overall framing, and improve realism, texture, lighting, clarity, edge quality, and commercial polish.\nThe current section image must be treated as the editable base image.\nKeep the product identical to the uploaded main product image and do not replace it with a different item.\nOutput one marketplace-ready mobile e-commerce image only."
+  }
+]

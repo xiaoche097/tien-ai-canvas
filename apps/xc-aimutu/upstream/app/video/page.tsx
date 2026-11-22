@@ -305,57 +305,28 @@ export default function VideoPage() {
       ) : (
         <>
           <PageHeader
-            eyebrow="AI 视频生成"
-            title="短视频创意工作台"
-            description="基于 MoneyPrinterTurbo 引擎，从产品图直接生成 TikTok 风格分镜脚本，或拆解爆款视频结构进行复刻。"
+            title="视频生成"
+            description="从商品图规划分镜，或拆解参考视频后替换商品。"
           />
 
           {/* Mode switcher */}
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="motu-mode-tabs flex flex-wrap gap-1 border-b border-border" aria-label="视频创作方式">
         <button
           onClick={() => setMode("pipeline")}
-          className={`flex items-center gap-4 rounded-3xl border p-5 text-left transition-all ${
-            mode === "pipeline"
-              ? "border-primary bg-primary/5 shadow-sm"
-              : "border-border bg-muted/40 hover:bg-muted/60"
-          }`}
+          aria-pressed={mode === "pipeline"}
+          className="motu-mode-tab"
         >
-          <div
-            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${
-              mode === "pipeline" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground"
-            }`}
-          >
-            <Sparkles className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="font-medium">产品流水线</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              上传产品图 + 卖点描述 → AI 生成分镜脚本
-            </p>
-          </div>
+          <Clapperboard className="h-4 w-4" aria-hidden />
+          产品流水线
         </button>
 
         <button
           onClick={() => setMode("clone")}
-          className={`flex items-center gap-4 rounded-3xl border p-5 text-left transition-all ${
-            mode === "clone"
-              ? "border-primary bg-primary/5 shadow-sm"
-              : "border-border bg-muted/40 hover:bg-muted/60"
-          }`}
+          aria-pressed={mode === "clone"}
+          className="motu-mode-tab"
         >
-          <div
-            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${
-              mode === "clone" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground"
-            }`}
-          >
-            <Film className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="font-medium">爆款复刻</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              上传参考视频 → AI 拆解结构 → 替换产品复刻
-            </p>
-          </div>
+          <Film className="h-4 w-4" aria-hidden />
+          爆款复刻
         </button>
       </div>
 

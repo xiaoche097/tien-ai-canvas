@@ -8,6 +8,7 @@ import { Cable, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { Tooltip } from "@/components/ui/base/tooltip";
 import "./canvas-cloud-agent-connectors.css";
+import { AstraviaConnector } from "./canvas-astravia-connector";
 
 type AgentConnector = {
     id: string;
@@ -113,7 +114,7 @@ const AGENT_CONNECTORS: AgentConnector[] = [
 ];
 
 /** 输入框底部的连接器条，流光溢彩背景，紧凑图标阵列。 */
-export function AgentConnectorsBar({ onClose }: { onClose: () => void }) {
+export function AgentConnectorsBar({ onClose, canvasId }: { onClose: () => void; canvasId: string }) {
     const { message } = App.useApp();
     return (
         <div className="agent-connectors" role="group" aria-label="连接器">
@@ -122,6 +123,7 @@ export function AgentConnectorsBar({ onClose }: { onClose: () => void }) {
                 <span>连接器</span>
             </div>
             <div className="agent-connectors-list">
+                <AstraviaConnector key={canvasId} canvasId={canvasId} />
                 {AGENT_CONNECTORS.map((connector) => (
                     <Tooltip key={connector.id} title={`${connector.name} · 研发中`} placement="top">
                         <button type="button" className="agent-connector-item" aria-label={`${connector.name}（研发中）`} onClick={() => message.info({ content: `${connector.name}连接器研发中，敬请期待`, key: `agent-connector-${connector.id}` })}>

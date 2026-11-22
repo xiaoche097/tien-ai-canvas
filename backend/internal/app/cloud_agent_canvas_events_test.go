@@ -31,6 +31,8 @@ func TestCloudAgentCanvasPatchesPersistDraftSubmissionAndAllTerminalStates(t *te
 	for _, status := range []model.TaskStatus{model.TaskStatusSucceeded, model.TaskStatusFailed, model.TaskStatusCancelled} {
 		t.Run(string(status), func(t *testing.T) {
 			s, db, args := agentMediaFixture(t)
+			// Terminal transitions are driven by this test, not a background waiter.
+			s.closeApprovedCloudAgentMediaWaiters()
 			run, _ := agentMediaRun(t, s, args, "request_approval")
 			if err := s.advanceCloudAgentByID("user", run.ID); err != nil {
 				t.Fatal(err)
@@ -270,6 +272,9 @@ func TestCloudAgentCanvasOperationTraceSharesToolCallID(t *testing.T) {
 
 func TestCloudAgentMissingCanvasStillCheckpointsMediaFailure(t *testing.T) {
 	s, db, args := agentMediaFixture(t)
+	// This test advances cleanup directly; keep the approval waiter from
+	// concurrently changing the revision after its deliberate task failure.
+	s.closeApprovedCloudAgentMediaWaiters()
 	run, _ := agentMediaRun(t, s, args, "request_approval")
 	if err := s.advanceCloudAgentByID("user", run.ID); err != nil {
 		t.Fatal(err)
@@ -299,12 +304,12 @@ func TestCloudAgentMissingCanvasStillCheckpointsMediaFailure(t *testing.T) {
 }
 
 func TestCloudAgentMediaPolicyAllowsDefaultsWithoutBypassingApproval(t *testing.T) {
-	_, media, err := prompts.LoadAgentPolicies()
+	system, _, err := prompts.LoadAgentPolicies()
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, text := range []string{"安全默认", "不要求四项逐个确认", "一次性询问", "界面独立审批", "失败不得自动重提"} {
-		if !strings.Contains(media.Text, text) {
+	for _, text := range []string{"安全默认", "不要求四项逐个确认", "一次性询问", "界面独立审批", "不得自动重提"} {
+		if !strings.Contains(system.Text, text) {
 			t.Fatalf("media policy lost %q", text)
 		}
 	}

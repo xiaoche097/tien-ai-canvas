@@ -31,6 +31,7 @@ export function CanvasNodeLayerDecompositionDialog({
     open,
     config,
     sourceSize,
+    inline = false,
     onClose,
     onConfirm,
 }: {
@@ -38,6 +39,7 @@ export function CanvasNodeLayerDecompositionDialog({
     open: boolean;
     config: AiConfig;
     sourceSize?: { width: number; height: number };
+    inline?: boolean;
     onClose: () => void;
     onConfirm: (payload: CanvasImageLayerDecompositionPayload) => void;
 }) {
@@ -90,10 +92,9 @@ export function CanvasNodeLayerDecompositionDialog({
         if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
     };
 
-    return (
-        <AppModal flush open={open && Boolean(dataUrl)} onCancel={onClose} footer={null} centered width={1120} title="AI 图层拆分">
-            <div className="grid max-h-[82vh] gap-6 overflow-y-auto p-5 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]" data-canvas-no-zoom>
-                <div className="grid min-h-[260px] place-items-center overflow-hidden rounded-xl bg-black/5 p-3 dark:bg-white/[0.04] md:min-h-[480px]">
+    const content = (
+            <div className={inline ? "grid gap-4" : "grid max-h-[82vh] gap-6 overflow-y-auto p-5 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]"} data-canvas-no-zoom>
+                <div className={inline ? "grid place-items-center overflow-hidden rounded-xl bg-black/5 p-2 dark:bg-white/[0.04]" : "grid min-h-[260px] place-items-center overflow-hidden rounded-xl bg-black/5 p-3 dark:bg-white/[0.04] md:min-h-[480px]"}>
                     <div
                         ref={imageFrameRef}
                         aria-label="框选重点区域"
@@ -121,7 +122,7 @@ export function CanvasNodeLayerDecompositionDialog({
                         <img
                             src={dataUrl}
                             alt="待拆分图片"
-                            className="block max-h-[60vh] max-w-full object-contain"
+                            className={inline ? "block max-h-40 max-w-full object-contain" : "block max-h-[60vh] max-w-full object-contain"}
                             draggable={false}
                             onLoad={(event) => setMeasuredSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })}
                         />
@@ -135,8 +136,8 @@ export function CanvasNodeLayerDecompositionDialog({
                 </div>
                 <div className="flex min-w-0 flex-col gap-4">
                     <div>
-                        <h3 className="text-lg font-semibold">拆分图片图层</h3>
-                        <p className="mt-2 text-sm opacity-60">可在图片上拖拽框选重点区域，AI 将规划并拆出完整背景与独立图层，在画布中收纳为一组。</p>
+                        {!inline && <h3 className="text-lg font-semibold">拆分图片图层</h3>}
+                        <p className="mt-2 text-sm opacity-60">{inline ? "可在缩略图上框选重点区域；拆分背景、商品与可编辑文字，完成后在此校对并应用。" : "可在图片上拖拽框选重点区域，AI 将规划并拆出完整背景与独立图层，在画布中收纳为一组。"}</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                         {regions.length ? <Tag color="blue">已框选 {regions.length} 个区域</Tag> : <span className="rounded-md bg-black/5 px-2 py-1 text-xs dark:bg-white/5">未框选，按描述拆分</span>}
@@ -161,6 +162,7 @@ export function CanvasNodeLayerDecompositionDialog({
                             fullWidth
                             showSelectedPrice
                             placeholder="选择视觉规划模型"
+                            initialView={inline ? "groups" : "selected"}
                             modelFilter={(model) => !imageLayerPlannerError(config, model)}
                             onMissingConfig={() => navigateToSettings({ continueCreation: true })}
                             onChange={setPlannerModel}
@@ -180,6 +182,7 @@ export function CanvasNodeLayerDecompositionDialog({
                             fullWidth
                             showSelectedPrice
                             placeholder="选择图层拆分模型"
+                            initialView={inline ? "groups" : "selected"}
                             modelFilter={(model) => supportsLayerDecomposition(config, model) || supportsExperimentalLayerExtraction(config, model)}
                             onMissingConfig={() => navigateToSettings({ continueCreation: true })}
                             onChange={(model) => setGenerationConfig((current) => ({ ...current, model, imageModel: model, ...defaultImageParamsForModel(current, model) }))}
@@ -196,9 +199,9 @@ export function CanvasNodeLayerDecompositionDialog({
                         ) : null}
                     </div>
                     <div className="mt-auto flex justify-end gap-2 pt-2">
-                        <Button icon={<X className="size-4" />} onClick={onClose}>
+                        {!inline && <Button icon={<X className="size-4" />} onClick={onClose}>
                             取消
-                        </Button>
+                        </Button>}
                         <Button
                             type="primary"
                             icon={<Layers3 className="size-4" />}
@@ -224,8 +227,9 @@ export function CanvasNodeLayerDecompositionDialog({
                     </div>
                 </div>
             </div>
-        </AppModal>
     );
+    if (inline) return open && dataUrl ? content : null;
+    return <AppModal flush open={open && Boolean(dataUrl)} onCancel={onClose} footer={null} centered width={1120} title="AI 图层拆分">{content}</AppModal>;
 }
 
 function RegionBox({ region, label, draft = false }: { region: [number, number, number, number]; label: number; draft?: boolean }) {

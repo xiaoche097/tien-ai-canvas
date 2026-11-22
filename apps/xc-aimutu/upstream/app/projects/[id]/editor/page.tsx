@@ -3,10 +3,12 @@ import { notFound } from "next/navigation";
 
 import { BatchGenerateButton } from "@/components/editor/batch-generate-button";
 import { EditorWorkspace } from "@/components/editor/editor-workspace";
+import { WorkbenchPageFrame } from "@/components/editor/workbench-page-frame";
 import { HeroBatchGenerator } from "@/components/editor/hero-batch-generator";
+import { ProjectExportButton } from "@/components/export/project-export-button";
 import { PageHeader } from "@/components/shared/page-header";
 import { ProjectOutputConfigCard } from "@/components/shared/project-output-config-card";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { getProjectDetail } from "@/lib/services/project-service";
 
 export default async function ProjectEditorPage({ params }: { params: { id: string } }) {
@@ -20,26 +22,24 @@ export default async function ProjectEditorPage({ params }: { params: { id: stri
   }));
 
   return (
-    <div className="space-y-8">
+    <WorkbenchPageFrame title={project.name} header={
       <PageHeader
         eyebrow="预览与编辑"
         title={`${project.name} 的商品页工作台`}
-        description="左侧选择模块，中间查看手机商品页预览，右侧逐段编辑标题、文案和双语视觉 Prompt，并支持单独生成、重绘与版本切换。"
+        description="左侧选择模块，中间切换桌面或移动端商品页预览，右侧编辑标题、文案和双语视觉 Prompt，并支持生成、重绘与版本切换。"
         actions={
           <>
             <HeroBatchGenerator projectId={project.id} />
             <BatchGenerateButton projectId={project.id} sections={sections} />
-            <Link href={`/projects/${project.id}/export`}>
-              <Button variant="outline">进入导出中心</Button>
+            <Link href={`/projects/${project.id}/export`} className={buttonVariants({ variant: "outline" })}>
+              进入导出中心
             </Link>
-            <a href={`/api/projects/${project.id}/export/images`}>
-              <Button>一键导出详情页图像</Button>
-            </a>
+            <ProjectExportButton projectId={project.id}>一键导出详情页图像</ProjectExportButton>
           </>
         }
       />
-      <ProjectOutputConfigCard project={project} />
+    } configuration={<ProjectOutputConfigCard project={project} />}>
       <EditorWorkspace project={project} />
-    </div>
+    </WorkbenchPageFrame>
   );
 }

@@ -1,4 +1,7 @@
+import { renderEcommercePrompt, type EcommercePromptTemplates } from "@/lib/ai/prompts/ecommerce-templates";
 import type { PageSection, ProductAsset } from "@prisma/client";
+import { normalizeHeroComposition, normalizeDetailComposition } from "@/lib/utils/section-aspect-ratio";
+import type { SectionImageAspectRatio } from "@/lib/utils/section-aspect-ratio";
 
 import {
   contentLanguageNamesForPrompt,
@@ -27,7 +30,11 @@ function buildMainImageInstruction(referenceAssets: ProductAsset[]) {
   ].join(" ");
 }
 
-function buildAspectInstruction(aspectRatio: "1:1" | "3:4" | "9:16") {
+function buildAspectInstruction(aspectRatio: SectionImageAspectRatio, sectionType: string) {
+  if (aspectRatio === "16:9" || aspectRatio === "21:9") return `The final image must be a horizontal landscape ${aspectRatio} composition. Arrange product and copy across the wide canvas; do not create a vertical poster or rotate a portrait image.`;
+  if (sectionType === "HERO") {
+    return `The final image must be a ${aspectRatio === "1:1" ? "square" : "vertical"} ${aspectRatio} e-commerce product-gallery hero composition, with one dominant product and a concise cover layout.`;
+  }
   if (aspectRatio === "1:1") {
     return "The final image must be a square 1:1 e-commerce hero composition, optimized for tappable product gallery covers.";
   }
@@ -51,93 +58,74 @@ function buildTargetLanguageInstruction(contentLanguage: ContentLanguage) {
 export function buildSectionImagePrompt(
   section: PageSection,
   referenceAssets: ProductAsset[] = [],
-  aspectRatio: "1:1" | "3:4" | "9:16" = "9:16",
+  aspectRatio: SectionImageAspectRatio = "9:16",
   contentLanguage: ContentLanguage = "zh-CN",
+  templates?: EcommercePromptTemplates,
 ) {
-  return [
-    "You are a senior e-commerce key-visual designer creating marketplace-ready product artwork.",
-    `Section type: ${section.type}`,
-    `Section title: ${section.title}`,
-    `Section goal: ${section.goal}`,
-    `Section copy: ${section.copy}`,
-    `Visual prompt guidance: ${section.visualPrompt}`,
-    buildReferenceText(referenceAssets),
-    buildMainImageInstruction(referenceAssets),
-    buildAspectInstruction(aspectRatio),
-    buildTargetLanguageInstruction(contentLanguage),
-    "Generate one high-conversion mobile e-commerce visual for this section.",
-    "The image should emphasize product clarity, composition hierarchy, material texture, and marketplace aesthetics.",
-    "The headline, selling points, supporting copy, and CTA should be visually designed inside the image rather than left for later DOM text insertion.",
-    "Make the result feel like finished commercial artwork, not a blank template.",
-    "IMPORTANT: Any text embedded in the image must comply with Chinese Advertising Law. Do not include absolute superlatives (最, 第一, 顶级, 最佳, 唯一, 根治, 治愈, 100%, etc.), false medical claims, or unverified certifications inside the image text.",
-    "CRITICAL: If the section involves nutrition facts, ingredients, or specifications, do NOT invent or estimate any numbers, percentages, or values. Only use exact data provided in the section copy. If specific numbers are not provided, show the layout/design without filling in fabricated data.",
-  ].join("\n");
+  const visualPrompt = section.type === "HERO"
+    ? normalizeHeroComposition(section.visualPrompt, aspectRatio)
+    : normalizeDetailComposition(section.visualPrompt, aspectRatio);
+  return renderEcommercePrompt(section.type === "HERO" ? "ecommerce_workflow_hero_image" : "ecommerce_workflow_image", {
+    "模块类型": section.type,
+    "模块标题": section.title,
+    "模块目标": section.goal,
+    "模块文案": section.copy,
+    "模块视觉提示词": visualPrompt,
+    "参考素材说明": buildReferenceText(referenceAssets),
+    "商品保真要求": buildMainImageInstruction(referenceAssets),
+    "画幅要求": buildAspectInstruction(aspectRatio, section.type),
+    "语言要求": buildTargetLanguageInstruction(contentLanguage),
+  }, templates);
 }
 
 export function buildRegenerationPrompt(
   section: PageSection,
   referenceAssets: ProductAsset[] = [],
-  aspectRatio: "1:1" | "3:4" | "9:16" = "9:16",
+  aspectRatio: SectionImageAspectRatio = "9:16",
   contentLanguage: ContentLanguage = "zh-CN",
+  templates?: EcommercePromptTemplates,
 ) {
-  return [
-    buildSectionImagePrompt(section, referenceAssets, aspectRatio, contentLanguage),
-    "This is a regeneration task. Keep the same product identity and selling-point direction, but improve composition accuracy, completion quality, and conversion appeal.",
-  ].join("\n");
+  return renderEcommercePrompt("ecommerce_workflow_image_regenerate", {
+    "基础出图提示词": buildSectionImagePrompt(section, referenceAssets, aspectRatio, contentLanguage, templates),
+  }, templates);
 }
 
 export function buildImageEditPrompt(
   section: PageSection,
   referenceAssets: ProductAsset[] = [],
   mode: "repaint" | "enhance" = "repaint",
-  aspectRatio: "1:1" | "3:4" | "9:16" = "9:16",
+  aspectRatio: SectionImageAspectRatio = "9:16",
   contentLanguage: ContentLanguage = "zh-CN",
+  templates?: EcommercePromptTemplates,
 ) {
   const modeInstruction =
     mode === "enhance"
       ? "This is an enhancement task. Use the current image as the base, preserve the overall framing, and improve realism, texture, lighting, clarity, edge quality, and commercial polish."
       : "This is a repaint task. Use the current image as the base, keep the same product identity, and redesign the composition, atmosphere, styling, and conversion emphasis according to the section goal.";
 
-  return [
-    buildSectionImagePrompt(section, referenceAssets, aspectRatio, contentLanguage),
-    modeInstruction,
-    "The current section image must be treated as the editable base image.",
-    "Keep the product identical to the uploaded main product image and do not replace it with a different item.",
-    "Output one marketplace-ready mobile e-commerce image only.",
-  ].join("\n");
+  return renderEcommercePrompt("ecommerce_workflow_image_edit", {
+    "基础出图提示词": buildSectionImagePrompt(section, referenceAssets, aspectRatio, contentLanguage, templates),
+    "编辑模式指令": modeInstruction,
+  }, templates);
 }
 
 export function buildSectionSvgLayoutPrompt(
   section: PageSection,
   referenceAssets: ProductAsset[] = [],
-  aspectRatio: "1:1" | "3:4" | "9:16" = "9:16",
+  aspectRatio: SectionImageAspectRatio = "9:16",
   contentLanguage: ContentLanguage = "zh-CN",
+  templates?: EcommercePromptTemplates,
 ) {
   const targetLanguage = contentLanguageNamesForPrompt[normalizeContentLanguage(contentLanguage)];
 
-  return [
-    "You are designing a mobile e-commerce section poster that will be rendered as SVG.",
-    "Return one strict JSON object only.",
-    `All user-facing copy must be written in ${targetLanguage}.`,
-    `Section type: ${section.type}`,
-    `Section title: ${section.title}`,
-    `Section goal: ${section.goal}`,
-    `Section copy: ${section.copy}`,
-    `Visual prompt guidance: ${section.visualPrompt}`,
-    `Target aspect ratio: ${aspectRatio}`,
-    buildReferenceText(referenceAssets),
-    "Use the main uploaded product image as the product identity reference when composing the layout.",
-    "Target JSON shape:",
-    `{
-  "headline": "string",
-  "subheadline": "string",
-  "badge": "string",
-  "highlights": ["string", "string", "string"],
-  "backgroundColor": "#F5E9D8",
-  "accentColor": "#A85A2A",
-  "panelColor": "#FFF8F0"
-}`,
-    "Keep the headline concise and commercial.",
-    "highlights should contain 2 to 4 short selling points.",
-  ].join("\n");
+  return renderEcommercePrompt("ecommerce_workflow_svg_layout", {
+    "目标语言名称": targetLanguage,
+    "模块类型": section.type,
+    "模块标题": section.title,
+    "模块目标": section.goal,
+    "模块文案": section.copy,
+    "模块视觉提示词": section.visualPrompt,
+    "图片比例": aspectRatio,
+    "参考素材说明": buildReferenceText(referenceAssets),
+  }, templates);
 }

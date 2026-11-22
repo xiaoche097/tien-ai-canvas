@@ -105,7 +105,12 @@ export function CreativeAppCarousel({ applications, onOpen }: { applications: Cr
             <div className="creative-app-carousel-track" ref={track}>
                 {applications.map((application) => (
                     <button key={application.id} type="button" className="creative-app-feature" aria-label={`打开${application.title}`} onClick={() => onOpen(application)}>
-                        <ApplicationVideo application={application} paused={paused || Boolean(reducedMotion)} />
+                        {application.video ? <ApplicationVideo application={application} paused={paused || Boolean(reducedMotion)} /> : (
+                            <span className="creative-app-feature-art" aria-hidden>
+                                <application.icon />
+                                <span>ECOMMERCE AGENT</span>
+                            </span>
+                        )}
                         <span className="creative-app-feature-scrim" aria-hidden />
                         <span className="creative-app-feature-copy">
                             <strong>{application.title}</strong>

@@ -1,5 +1,6 @@
 #!/bin/sh
 set -eu
+set -o pipefail
 
 release_dir=${CANVAS_WEB_RELEASE_DIR:-/opt/canvas-release}
 html_dir=${CANVAS_WEB_HTML_DIR:-/usr/share/nginx/html}
@@ -9,10 +10,10 @@ test -s "$release_dir/index.html"
 
 mkdir -p "$html_dir"
 # One writer per volume; do not serve a partial publication after a copy error.
-lock="$html_dir/.canvas-publish-lock"
-mkdir "$lock" || { echo 'Another publication is active; inspect the publication lock' >&2; exit 1; }
+exec 9>"$html_dir/.canvas-publish.lock"
+flock -n 9 || { echo 'Another publication is active; inspect the publication lock' >&2; exit 1; }
 stage=''
-cleanup() { test -z "$stage" || rm -rf "$stage"; rmdir "$lock"; }
+cleanup() { test -z "$stage" || rm -rf "$stage"; flock -u 9; exec 9>&-; }
 trap cleanup EXIT
 trap 'exit 1' HUP INT TERM
 stage=$(mktemp -d "$html_dir/.canvas-stage.XXXXXX")

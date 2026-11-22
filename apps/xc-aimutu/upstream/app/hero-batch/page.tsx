@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/shared/page-header";
 
 const PRESET_STYLES = [
   "白底简约，产品居中，柔和影棚光，干净背景",
@@ -217,18 +218,10 @@ export default function HeroBatchPage() {
   };
 
   return (
-    <div className="container mx-auto max-w-6xl py-8 px-4">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Sparkles className="h-6 w-6" />
-          批量主图生成器
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          上传商品图，选择风格，一次生成 10-20 张电商主图
-        </p>
-      </div>
+    <div className="w-full min-w-0 space-y-6">
+      <PageHeader title="批量主图" description="上传商品图片，选择风格与数量，批量生成主图。" />
 
-      <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
+      <div className="grid items-start gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
         {/* Left Panel - Settings */}
         <div className="space-y-4">
           <Card>

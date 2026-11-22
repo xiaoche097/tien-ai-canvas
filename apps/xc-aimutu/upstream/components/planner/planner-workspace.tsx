@@ -32,8 +32,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { getAuthHeaders } from "@/lib/utils/auth-client";
 import { motuFileUrl } from "@/lib/utils/public-url";
-import { contentLanguageLabels, type ContentLanguage } from "@/lib/utils/content-language";
+import { contentLanguageLabels, projectContentLanguage, type ContentLanguage } from "@/lib/utils/content-language";
+import { normalizeDetailAspectRatio, type DetailAspectRatio } from "@/lib/utils/section-aspect-ratio";
 import { sectionTypeLabels } from "@/types/domain";
+import { getSectionAspectRatio } from "@/lib/utils/section-aspect-ratio";
 
 interface PlannerWorkspaceProps {
   project: any;
@@ -41,8 +43,9 @@ interface PlannerWorkspaceProps {
 
 interface PreviewConfig {
   heroImageCount: number;
+  heroAspectRatio: "1:1" | "3:4";
   detailSectionCount: number;
-  imageAspectRatio: "3:4" | "9:16";
+  imageAspectRatio: DetailAspectRatio;
   contentLanguage: ContentLanguage;
 }
 
@@ -66,6 +69,7 @@ interface PlanningProgressState {
 
 const defaultPreviewConfig: PreviewConfig = {
   heroImageCount: 4,
+  heroAspectRatio: "1:1",
   detailSectionCount: 6,
   imageAspectRatio: "9:16",
   contentLanguage: "zh-CN",
@@ -100,12 +104,13 @@ function getPreviewConfig(project: any): PreviewConfig {
   const config = project?.modelSnapshot?.previewConfig ?? {};
   return {
     heroImageCount: Math.min(5, Math.max(3, Number(config.heroImageCount ?? defaultPreviewConfig.heroImageCount))),
+    heroAspectRatio: config.heroAspectRatio === "3:4" ? "3:4" : "1:1",
     detailSectionCount: Math.min(
       10,
       Math.max(4, Number(config.detailSectionCount ?? defaultPreviewConfig.detailSectionCount)),
     ),
-    imageAspectRatio: config.imageAspectRatio === "3:4" ? "3:4" : defaultPreviewConfig.imageAspectRatio,
-    contentLanguage: config.contentLanguage ?? defaultPreviewConfig.contentLanguage,
+    imageAspectRatio: normalizeDetailAspectRatio(config.imageAspectRatio, project?.platform),
+    contentLanguage: projectContentLanguage(project?.platform, config.contentLanguage),
   };
 }
 
@@ -413,7 +418,7 @@ export function PlannerWorkspace({ project }: PlannerWorkspaceProps) {
         copy: "",
         visualPrompt:
           kind === "hero"
-            ? "Primary Prompt: 生成一张 1:1 电商头图，突出商品主体、清晰标题、核心卖点和轻行动号召，图中文字直接由图像模型生成。\nEnglish Prompt: Create a square e-commerce hero image with strong product focus, clear headline, key selling copy, and a subtle CTA generated directly inside the image."
+            ? `Primary Prompt: 生成一张 ${previewConfig.heroAspectRatio} 电商头图，突出商品主体、清晰标题、核心卖点和轻行动号召，图中文字直接由图像模型生成。\nEnglish Prompt: Create a ${previewConfig.heroAspectRatio === "1:1" ? "square 1:1" : "vertical 3:4"} e-commerce hero image with strong product focus, clear headline, key selling copy, and a subtle CTA generated directly inside the image.`
             : "Primary Prompt: 生成一张电商详情页模块图，突出商品主体、清晰卖点和高级质感，图内直接排版标题、卖点和 CTA。\nEnglish Prompt: Create an e-commerce detail section image with strong product focus, clear selling points, and premium in-image marketing copy plus CTA.",
         editableFields: {},
       }),
@@ -713,7 +718,7 @@ export function PlannerWorkspace({ project }: PlannerWorkspaceProps) {
                 <div className="space-y-3 rounded-2xl border border-border bg-background p-4">
                   <div className="flex flex-wrap gap-2 text-sm">
                     <Badge variant="outline">内容语言：{contentLanguageLabels[previewConfig.contentLanguage]}</Badge>
-                    <Badge variant="outline">头图目标：{previewConfig.heroImageCount} 张（1:1）</Badge>
+                    <Badge variant="outline">头图目标：{previewConfig.heroImageCount} 张（{previewConfig.heroAspectRatio}）</Badge>
                     <Badge variant="outline">详情页目标：{previewConfig.detailSectionCount} 张</Badge>
                     <Badge variant="outline">详情图比例：{previewConfig.imageAspectRatio}</Badge>
                   </div>
@@ -721,7 +726,7 @@ export function PlannerWorkspace({ project }: PlannerWorkspaceProps) {
                     <NoticeCard
                       variant="info"
                       title="检测到服装类产品"
-                      description="系统将自动使用服装类固定详情页模板（11 个模块），并强制使用 3:4 比例生成详情图。执行 AI 规划后会自动覆盖当前配置。"
+                      description={project.platform === "amazon" ? "服装类使用固定内容结构，保留输出配置中选择的横版或竖版画幅。" : "系统将自动使用服装类固定详情页模板（11 个模块），并强制使用 3:4 比例生成详情图。执行 AI 规划后会自动覆盖当前配置。"}
                     />
                   ) : null}
                   <div className="flex flex-wrap gap-2 text-sm">
@@ -891,7 +896,7 @@ export function PlannerWorkspace({ project }: PlannerWorkspaceProps) {
               当前已规划 <span className="font-semibold text-slate-950 dark:text-white">{heroSections.length}</span> 张头图、<span className="font-semibold text-slate-950 dark:text-white">{detailSections.length}</span> 张详情页，已生成 <span className="font-semibold text-slate-950 dark:text-white">{generatedCount}</span> 个模块图。
             </p>
             <p className="mt-3 text-xs leading-6 text-slate-600 dark:text-slate-400">
-              一键生成会按当前规划结构逐个请求真实 AI 出图。头图固定按 1:1 生成，详情页按分析页保存的比例生成；页面壳层不参与出图。
+              一键生成会按当前规划结构逐个请求真实 AI 出图。头图默认按输出配置的 {previewConfig.heroAspectRatio} 生成，单个模块可另设比例；详情页按分析页保存的比例生成，页面壳层不参与出图。
             </p>
 
             {bulkProgress ? (
@@ -946,7 +951,7 @@ export function PlannerWorkspace({ project }: PlannerWorkspaceProps) {
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
                 <CardTitle>头图规划</CardTitle>
-                <CardDescription>每张头图都是独立规划项，固定 1:1，最终会直接进入头图轮播。这里建议只保留最核心的首屏表达角度。</CardDescription>
+                <CardDescription>每张头图都是独立规划项，默认使用输出配置的 {previewConfig.heroAspectRatio} 比例，最终会直接进入头图轮播。这里建议只保留最核心的首屏表达角度。</CardDescription>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Badge variant="outline">当前 {heroSections.length} 张</Badge>
@@ -972,7 +977,7 @@ export function PlannerWorkspace({ project }: PlannerWorkspaceProps) {
                         <CardDescription>{section.sectionKey}</CardDescription>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline">1:1 头图</Badge>
+                        <Badge variant="outline">{getSectionAspectRatio(section, previewConfig.imageAspectRatio, previewConfig.heroAspectRatio)} 头图</Badge>
                         {(section.editableData?.referenceAssetIds as string[] | undefined)?.length ? (
                           <Badge variant="outline" className="gap-0.5 text-[10px]">
                             <Upload className="h-2.5 w-2.5" />

@@ -19,6 +19,8 @@ interface PhonePreviewPanelProps {
   selectedHeroIndex: number;
   onSelectHeroIndex: (index: number) => void;
   onOpenLightbox: (src: string) => void;
+  embedded?: boolean;
+  emptyHeroTitle?: string;
 }
 
 export const PhonePreviewPanel = React.memo(function PhonePreviewPanel({
@@ -26,11 +28,13 @@ export const PhonePreviewPanel = React.memo(function PhonePreviewPanel({
   selectedHeroIndex,
   onSelectHeroIndex,
   onOpenLightbox,
+  embedded = false,
+  emptyHeroTitle,
 }: PhonePreviewPanelProps) {
   const previewConfig = React.useMemo(() => getPreviewConfig(project), [project]);
   const previewUi = React.useMemo(() => previewTexts[previewConfig.contentLanguage], [previewConfig.contentLanguage]);
   const galleryImages = React.useMemo(() => buildGalleryImages(project, previewConfig.heroImageCount), [project, previewConfig.heroImageCount]);
-  const activeHeroImage = galleryImages[selectedHeroIndex] ?? galleryImages[0] ?? null;
+  const activeHeroImage = emptyHeroTitle ? null : galleryImages[selectedHeroIndex] ?? galleryImages[0] ?? null;
   const comments = React.useMemo(() => buildCommentCards(project.analysis?.normalizedResult), [project.analysis?.normalizedResult]);
   const productDescription = React.useMemo(
     () => buildProductDescription(project.analysis?.normalizedResult, project.sections),
@@ -41,31 +45,32 @@ export const PhonePreviewPanel = React.memo(function PhonePreviewPanel({
     [project.sections]
   );
 
+  const Container = embedded ? "div" : Card;
   return (
-    <Card className="flex min-h-0 min-w-0 flex-col xl:h-[920px]">
-      <CardHeader>
+    <Container className={embedded ? "flex h-full min-h-0 flex-col" : "flex min-h-0 min-w-0 flex-col xl:h-[920px]"}>
+      {!embedded && <CardHeader>
         <CardTitle>手机商品页预览</CardTitle>
         <CardDescription>头图支持点击切换，详情图无缝衔接，底部栏贴边显示。</CardDescription>
-      </CardHeader>
-      <CardContent className="min-h-0 flex flex-1 items-stretch justify-center overflow-y-auto overflow-x-hidden">
+      </CardHeader>}
+      <CardContent className={`min-h-0 flex flex-1 items-stretch justify-center overflow-y-auto overflow-x-hidden ${embedded ? "p-0" : ""}`}>
         <div className="relative flex h-full max-h-full w-[396px] max-w-full flex-col overflow-hidden rounded-[3.2rem] border border-black/70 bg-[radial-gradient(circle_at_top,_#6b7280,_#1f2937_40%,_#030712_100%)] p-[10px] shadow-[0_30px_80px_rgba(15,23,42,0.38)]">
           <div className="pointer-events-none absolute left-1/2 top-[14px] z-20 h-[34px] w-[132px] -translate-x-1/2 rounded-full bg-black shadow-[0_8px_20px_rgba(0,0,0,0.38)]" />
           <div className="absolute left-[6px] top-[160px] h-[96px] w-[4px] rounded-full bg-white/15" />
           <div className="absolute right-[6px] top-[190px] h-[132px] w-[4px] rounded-full bg-white/15" />
           <div className="relative isolate flex h-full flex-col overflow-hidden rounded-[2.55rem] border border-white/10 bg-[#f7f7f7]">
-            <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain">
-              <section className="bg-white">
+            <div data-preview-scroll className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain">
+              <section data-preview-hero className="bg-white">
                 <div className="overflow-hidden">
-                  {galleryImages.length > 0 ? (
+                  {galleryImages.length > 0 && !emptyHeroTitle ? (
                     <div className="space-y-2">
-                      <div className="relative aspect-square bg-slate-100">
+                      <div className="relative bg-slate-100">
                         {activeHeroImage ? (
                           <img
                             src={activeHeroImage.url}
                             alt={activeHeroImage.label}
                             loading="lazy"
                             decoding="async"
-                            className="h-full w-full cursor-zoom-in object-cover"
+                            className="block h-auto w-full cursor-zoom-in"
                             onClick={() => onOpenLightbox(activeHeroImage.url)}
                           />
                         ) : null}
@@ -82,11 +87,12 @@ export const PhonePreviewPanel = React.memo(function PhonePreviewPanel({
                               key={image?.id ?? `placeholder-${index}`}
                               type="button"
                               onClick={() => image?.url && onSelectHeroIndex(index)}
-                              className={`relative aspect-square overflow-hidden rounded-2xl bg-slate-100 ${isActive ? "ring-2 ring-primary ring-offset-2 ring-offset-white" : ""}`}
+                              className={`relative self-start overflow-hidden rounded-2xl bg-slate-100 ${isActive ? "ring-2 ring-primary ring-offset-2 ring-offset-white" : ""}`}
+                              style={image?.url ? undefined : { aspectRatio: previewConfig.heroAspectRatio.replace(":", "/") }}
                             >
                               {image?.url ? (
                                 <>
-                                  <img src={image.url} alt={image.label} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                                  <img src={image.url} alt={image.label} loading="lazy" decoding="async" className="block h-auto w-full" />
                                   {image.generationLabel ? (
                                     <div className="absolute inset-x-1 bottom-1 rounded-full bg-black/60 px-1 py-0.5 text-center text-[10px] text-white">{image.generationLabel}</div>
                                   ) : null}
@@ -100,7 +106,7 @@ export const PhonePreviewPanel = React.memo(function PhonePreviewPanel({
                       </div>
                     </div>
                   ) : (
-                    <div className="flex aspect-square items-center justify-center bg-slate-100 px-6 text-sm text-muted-foreground">{previewUi.heroPlaceholder}</div>
+                    <div className="flex items-center justify-center bg-slate-100 px-6 text-sm text-muted-foreground" style={{ aspectRatio: previewConfig.heroAspectRatio.replace(":", "/") }}>{previewUi.heroPlaceholder}</div>
                   )}
                 </div>
 
@@ -152,7 +158,7 @@ export const PhonePreviewPanel = React.memo(function PhonePreviewPanel({
 
               <div className="space-y-0 pb-0">
                 {detailSections.map((section: any) => (
-                  <section key={section.id} className="bg-white">
+                  <section key={section.id} data-preview-section={section.id} className="bg-white">
                     {section.imageUrl ? (
                       <div className="relative bg-slate-100">
                         <img
@@ -214,6 +220,6 @@ export const PhonePreviewPanel = React.memo(function PhonePreviewPanel({
           </div>
         </div>
       </CardContent>
-    </Card>
+    </Container>
   );
 });

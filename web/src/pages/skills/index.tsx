@@ -475,12 +475,6 @@ export default function SkillsPage({ embedded = false }: { embedded?: boolean } 
                         </div>
                     )}
                     {marketBrowse && !filtersActive && <SkillMarketDiscovery onOpen={(skill) => void openSkill(skill)} onBrowse={() => document.getElementById("market-catalog-title")?.scrollIntoView({ block: "start" })} />}
-                    {marketBrowse && (
-                        <h2 id="market-catalog-title" className="market-catalog-title">
-                            {filtersActive ? "筛选结果" : "全部技能"}
-                            <span>{total} 个</span>
-                        </h2>
-                    )}
                     <SkillCurationBrowser
                         data={curation}
                         value={platformCategory}
@@ -492,9 +486,17 @@ export default function SkillsPage({ embedded = false }: { embedded?: boolean } 
                         error={curationError}
                         retry={retryCuration}
                     />
+                    <div className="skills-catalog-toolbar">
+                    {marketBrowse && (
+                        <h2 id="market-catalog-title" className="market-catalog-title">
+                            {filtersActive ? "筛选结果" : "全部技能"}
+                            <span>{total} 个技能</span>
+                        </h2>
+                    )}
                     <CollectionToolbar active={filtersActive} onReset={resetFilters}>
                         <Input
-                            className="min-w-0 sm:!w-56"
+                            className="skills-market-search"
+                            aria-label="搜索技能或作者"
                             prefix={<Search className="size-4 text-foreground/38" />}
                             value={search}
                             allowClear
@@ -506,7 +508,7 @@ export default function SkillsPage({ embedded = false }: { embedded?: boolean } 
                         />
                         <Select
                             aria-label="技能排序"
-                            className="w-24"
+                            className="skills-market-sort"
                             value={sort}
                             options={sortOptions}
                             onChange={(value) => {
@@ -515,6 +517,7 @@ export default function SkillsPage({ embedded = false }: { embedded?: boolean } 
                             }}
                         />
                     </CollectionToolbar>
+                    </div>
                 </div>
 
                 <div className="skills-library-layout">

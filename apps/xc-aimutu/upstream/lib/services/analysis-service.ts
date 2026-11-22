@@ -6,7 +6,10 @@ import { productAnalysisOutputSchema } from "@/lib/ai/schemas/product-analysis";
 import { prisma } from "@/lib/db/prisma";
 import { getProviderAdapter } from "@/lib/services/provider-service";
 import { completeTask, createTask, failTask, findRecentRunningTask } from "@/lib/services/task-service";
-import { readStorageFile, statStorageFile } from "@/lib/storage/asset-manager";
+import { readStorageFile } from "@/lib/storage/asset-manager";
+import { prepareAnalysisImage } from "@/lib/ai/analysis-image";
+import { loadEcommercePromptTemplates } from "@/lib/canvas/prompt-templates";
+import type { EcommercePromptTemplates } from "@/lib/ai/prompts/ecommerce-templates";
 
 function normalizeModelId(value: string) {
   return value.toLowerCase();
@@ -64,18 +67,20 @@ function shouldAttemptRepair(error: unknown) {
 function pickAnalysisModel(
   provider: Awaited<ReturnType<typeof getProviderAdapter>>["provider"],
   preferredModelId?: string | null,
+  requiresVision = false,
 ) {
   if (preferredModelId) {
     const preferred = provider.models.find((item) => item.modelId === preferredModelId);
-    if (preferred && hasCapability(preferred, "text")) {
+    if (preferred && hasCapability(preferred, "text") && (!requiresVision || hasCapability(preferred, "vision"))) {
       return preferred.modelId;
     }
+    if (requiresVision) throw new Error("当前分析模型不支持图片识别，请选择支持看图的模型。");
   }
 
   const textVisionModels = provider.models.filter(
     (item) => hasCapability(item, "text") && hasCapability(item, "vision"),
   );
-  const textModels = provider.models.filter((item) => hasCapability(item, "text"));
+  const textModels = provider.models.filter((item) => hasCapability(item, "text") && (!requiresVision || hasCapability(item, "vision")));
 
   const findMatch = (
     models: typeof provider.models,
@@ -106,11 +111,11 @@ function pickAnalysisModel(
 
 async function assetToDataUrl(asset: { filePath: string; mimeType: string | null }) {
   const buffer = await readStorageFile(asset.filePath);
-  const mimeType = asset.mimeType ?? "image/png";
-  return `data:${mimeType};base64,${buffer.toString("base64")}`;
+  return prepareAnalysisImage(buffer, asset.mimeType);
 }
 
 async function repairAnalysisOutput(input: {
+  templates: EcommercePromptTemplates;
   adapter: Awaited<ReturnType<typeof getProviderAdapter>>["adapter"];
   model: string;
   raw: string;
@@ -118,7 +123,7 @@ async function repairAnalysisOutput(input: {
   const repaired = await input.adapter.generateText({
     model: input.model,
     systemPrompt: "Return one strict JSON object only.",
-    userPrompt: buildProductAnalysisRepairPrompt(input.raw),
+    userPrompt: buildProductAnalysisRepairPrompt(input.raw, input.templates),
     monitor: {
       operation: "analysis_output_repair",
     },
@@ -156,15 +161,16 @@ function normalizeAnalysisProviderError(error: unknown): never {
 export async function analyzeProject(projectId: string, preferredModelId?: string | null) {
   const project = await prisma.project.findUnique({
     where: { id: projectId },
-    include: { assets: { orderBy: { sortOrder: "asc" } } },
+    include: { assets: { where: { type: { notIn: ["GENERATED", "EXPORTED"] } }, orderBy: [{ isMain: "desc" }, { sortOrder: "asc" }] } },
   });
 
   if (!project) {
     throw new Error("Project not found.");
   }
 
+  const templates = await loadEcommercePromptTemplates();
   const { provider, adapter } = await getProviderAdapter("text");
-  const model = pickAnalysisModel({ ...provider, models: provider.models }, preferredModelId);
+  const model = pickAnalysisModel({ ...provider, models: provider.models }, preferredModelId, project.assets.length > 0);
 
   if (!model) {
     throw new Error("No analysis model available.");
@@ -191,24 +197,14 @@ export async function analyzeProject(projectId: string, preferredModelId?: strin
     let prompt: string;
 
     if (hasAssets) {
-      const MAX_IMAGE_SIZE_BYTES = 1.5 * 1024 * 1024;
       const MAX_IMAGES = 3;
-      const eligibleAssets: typeof project.assets = [];
-      for (const asset of project.assets.slice(0, 6)) {
-        try {
-          const stats = await statStorageFile(asset.filePath);
-          if (stats.size <= MAX_IMAGE_SIZE_BYTES) {
-            eligibleAssets.push(asset);
-            if (eligibleAssets.length >= MAX_IMAGES) break;
-          }
-        } catch {
-          // skip files that can't be stat'd
-        }
-      }
-      if (eligibleAssets.length > 0) {
+      const eligibleAssets = project.assets.slice(0, MAX_IMAGES);
+      try {
         imageUrls = await Promise.all(eligibleAssets.map((asset) => assetToDataUrl(asset)));
+      } catch {
+        throw new Error("商品图片读取或处理失败，未提交无图分析。请检查上传素材后重试。");
       }
-      prompt = buildProductAnalysisPrompt(eligibleAssets.length > 0 ? eligibleAssets : project.assets);
+      prompt = `${buildProductAnalysisPrompt(eligibleAssets, templates)}\n\n商品补充信息（与图片共同核对，不将配件误认为整机）：\n${JSON.stringify({ name: project.name, description: project.description })}`;
     } else {
       prompt = buildTextAnalysisPrompt({
         name: project.name,
@@ -216,7 +212,7 @@ export async function analyzeProject(projectId: string, preferredModelId?: strin
         category: (project.modelSnapshot as Record<string, unknown> | null)?.category as string | undefined,
         sellingPoints: (project.modelSnapshot as Record<string, unknown> | null)?.sellingPoints as string | undefined,
         targetAudience: (project.modelSnapshot as Record<string, unknown> | null)?.targetAudience as string | undefined,
-      });
+      }, templates);
     }
 
     let parsedResult: Prisma.JsonObject;
@@ -274,6 +270,7 @@ export async function analyzeProject(projectId: string, preferredModelId?: strin
         };
       } catch {
       const repaired = await repairAnalysisOutput({
+        templates,
         adapter,
         model,
         raw: fallbackText.text,
@@ -297,6 +294,7 @@ export async function analyzeProject(projectId: string, preferredModelId?: strin
       }
     }
 
+    rawResult = { ...rawResult, imageCount: imageUrls.length };
     const saved = await prisma.productAnalysis.upsert({
       where: { projectId },
       update: {

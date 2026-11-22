@@ -100,23 +100,22 @@ export default function NewModelPage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="w-full min-w-0 max-w-3xl space-y-6">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="sm" className="rounded-2xl" onClick={() => router.back()}>
+        <Button variant="ghost" size="sm" onClick={() => router.back()}>
           <ArrowLeft className="h-4 w-4 mr-1" />
           返回
         </Button>
         <h1 className="text-xl font-bold">新建模特模板</h1>
       </div>
 
-      <div className="space-y-5 rounded-[2rem] border border-white/80 bg-white/70 p-6 shadow-sm dark:border-white/10 dark:bg-[#141416]/70">
+      <div className="space-y-5 border-t border-border pt-6">
         <div className="space-y-2">
           <Label>模特名称</Label>
           <Input
             placeholder="例如：小雅"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="rounded-2xl"
             disabled={generating}
           />
         </div>
@@ -127,7 +126,6 @@ export default function NewModelPage() {
             placeholder="简短描述这位模特的特点"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="rounded-2xl"
             disabled={generating}
           />
         </div>
@@ -138,7 +136,7 @@ export default function NewModelPage() {
             placeholder="例如：25岁亚洲女性，黑色长发，五官精致，身材标准，气质优雅大方"
             value={characterPrompt}
             onChange={(e) => setCharacterPrompt(e.target.value)}
-            className="min-h-[100px] rounded-2xl"
+            className="min-h-[100px]"
             disabled={generating}
           />
           <p className="text-xs text-slate-500">
@@ -154,10 +152,11 @@ export default function NewModelPage() {
                 <button
                   key={t.value}
                   onClick={() => setBodyType(t.value)}
+                  aria-pressed={bodyType === t.value}
                   disabled={generating}
-                  className={`rounded-xl px-3 py-2 text-sm transition-all ${
+                  className={`rounded-md px-3 py-2 text-sm transition-colors ${
                     bodyType === t.value
-                      ? "bg-slate-900 text-white dark:bg-white dark:text-black"
+                      ? "bg-accent text-accent-foreground"
                       : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-300"
                   }`}
                 >
@@ -174,7 +173,6 @@ export default function NewModelPage() {
               placeholder="170"
               value={heightCm}
               onChange={(e) => setHeightCm(e.target.value)}
-              className="rounded-2xl"
               disabled={generating}
             />
           </div>
@@ -187,10 +185,11 @@ export default function NewModelPage() {
               <button
                 key={tag}
                 onClick={() => toggleStyleTag(tag)}
+                aria-pressed={styleTags.includes(tag)}
                 disabled={generating}
-                className={`rounded-xl px-3 py-1.5 text-xs transition-all ${
+                className={`rounded-md px-3 py-1.5 text-xs transition-colors ${
                   styleTags.includes(tag)
-                    ? "bg-blue-500 text-white"
+                    ? "bg-accent text-accent-foreground"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-300"
                 }`}
               >
@@ -208,7 +207,7 @@ export default function NewModelPage() {
         )}
 
         <Button
-          className="w-full rounded-2xl gap-2"
+          className="gap-2"
           size="lg"
           onClick={handleCreate}
           disabled={generating || !name.trim() || !characterPrompt.trim()}

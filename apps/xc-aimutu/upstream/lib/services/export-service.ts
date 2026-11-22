@@ -1,25 +1,28 @@
 import fs from "fs";
 import fsp from "fs/promises";
 import path from "path";
+import { tmpdir } from "os";
 
 import archiver from "archiver";
 
 import { prisma } from "@/lib/db/prisma";
 import { completeTask, createTask, failTask, findRecentRunningTask } from "@/lib/services/task-service";
 import { readStorageFile } from "@/lib/storage/asset-manager";
-import { contentLanguageLabels, normalizeContentLanguage } from "@/lib/utils/content-language";
+import { contentLanguageLabels, projectContentLanguage } from "@/lib/utils/content-language";
 import { extFromMime, sanitizeFileName } from "@/lib/utils/files";
 import { assetTypeLabels, sectionTypeLabels } from "@/types/domain";
+import { normalizeDetailAspectRatio } from "@/lib/utils/section-aspect-ratio";
 
-function getPreviewConfig(project: { modelSnapshot: unknown } | null) {
+function getPreviewConfig(project: { modelSnapshot: unknown; platform?: string } | null) {
   const snapshot = (project?.modelSnapshot as Record<string, unknown> | null) ?? {};
   const config = (snapshot.previewConfig as Record<string, unknown> | null) ?? {};
 
   return {
     heroImageCount: Math.min(5, Math.max(3, Number(config.heroImageCount ?? 4))),
     detailSectionCount: Math.min(10, Math.max(4, Number(config.detailSectionCount ?? 6))),
-    imageAspectRatio: config.imageAspectRatio === "3:4" ? "3:4" : "9:16",
-    contentLanguage: normalizeContentLanguage(config.contentLanguage),
+    heroAspectRatio: config.heroAspectRatio === "3:4" ? "3:4" : "1:1",
+    imageAspectRatio: normalizeDetailAspectRatio(config.imageAspectRatio),
+    contentLanguage: projectContentLanguage(project?.platform, config.contentLanguage),
   };
 }
 
@@ -106,7 +109,11 @@ export async function buildImageArchive(projectId: string) {
     where: { id: projectId },
     include: {
       assets: {
-        orderBy: [{ isMain: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }],
+        orderBy: [
+          { isMain: "desc" },
+          { sortOrder: "asc" },
+          { createdAt: "asc" },
+        ],
       },
       sections: {
         orderBy: { order: "asc" },
@@ -142,73 +149,90 @@ export async function buildImageArchive(projectId: string) {
     inputPayload: { type: "detail-page-images" },
   });
 
+  let tempDirectory: string | undefined;
+  let output: fs.WriteStream | undefined;
+  const archive = archiver("zip", { zlib: { level: 9 } });
   try {
-    const archive = archiver("zip", { zlib: { level: 9 } });
-    const tempZipPath = path.join(process.cwd(), `tmp-export-${projectId}-${Date.now()}.zip`);
-    const output = fs.createWriteStream(tempZipPath);
-    archive.pipe(output);
+    tempDirectory = await fsp.mkdtemp(path.join(tmpdir(), "motu-export-"));
+    const tempZipPath = path.join(tempDirectory, "images.zip");
+    output = fs.createWriteStream(tempZipPath);
 
     const galleryAssets = buildGalleryAssets(project);
     const detailAssets = buildDetailAssets(project);
 
     await Promise.all([
-      ...galleryAssets.map(async (item, index) => {
-        const buffer = await readStorageFile(item.asset.filePath);
-        const ext = path.extname(item.asset.fileName) || `.${extFromMime(item.asset.mimeType)}`;
-        const safeTitle = sanitizeFileName(item.title || `hero-${index + 1}`);
-        archive.append(buffer, {
-          name: `00-头图/${String(index + 1).padStart(2, "0")}-${safeTitle}${ext}`,
-        });
+      new Promise<void>((resolve, reject) => {
+        output!.once("close", resolve);
+        output!.once("error", reject);
+        archive.once("error", reject);
+        archive.pipe(output!);
       }),
-      ...detailAssets.map(async (item, index) => {
-        const buffer = await readStorageFile(item.asset.filePath);
-        const ext = path.extname(item.asset.fileName) || `.${extFromMime(item.asset.mimeType)}`;
-        const safeTitle = sanitizeFileName(item.section.title || item.section.sectionKey || `detail-${index + 1}`);
-        archive.append(buffer, {
-          name: `01-详情页/${String(index + 1).padStart(2, "0")}-${safeTitle}${ext}`,
+      (async () => {
+        await Promise.all([
+          ...galleryAssets.map(async (item, index) => {
+            const buffer = await readStorageFile(item.asset.filePath);
+            const ext =
+              path.extname(item.asset.fileName) ||
+              `.${extFromMime(item.asset.mimeType)}`;
+            const safeTitle = sanitizeFileName(
+              item.title || `hero-${index + 1}`,
+            );
+            archive.append(buffer, {
+              name: `00-头图/${String(index + 1).padStart(2, "0")}-${safeTitle}${ext}`,
+            });
+          }),
+          ...detailAssets.map(async (item, index) => {
+            const buffer = await readStorageFile(item.asset.filePath);
+            const ext =
+              path.extname(item.asset.fileName) ||
+              `.${extFromMime(item.asset.mimeType)}`;
+            const safeTitle = sanitizeFileName(
+              item.section.title ||
+                item.section.sectionKey ||
+                `detail-${index + 1}`,
+            );
+            archive.append(buffer, {
+              name: `01-详情页/${String(index + 1).padStart(2, "0")}-${safeTitle}${ext}`,
+            });
+          }),
+        ]);
+
+        const manifest = {
+          projectId: project.id,
+          projectName: project.name,
+          exportedAt: new Date().toISOString(),
+          heroImageCount: galleryAssets.length,
+          detailImageCount: detailAssets.length,
+          previewConfig: getPreviewConfig(project),
+          outputLanguageLabel:
+            contentLanguageLabels[getPreviewConfig(project).contentLanguage],
+          gallery: galleryAssets.map((item, index) => ({
+            order: index + 1,
+            title: item.title,
+            sourceLabel: item.sourceLabel,
+            fileName: item.asset.fileName,
+            mimeType: item.asset.mimeType,
+          })),
+          details: detailAssets.map((item, index) => ({
+            order: index + 1,
+            sectionKey: item.section.sectionKey,
+            title: item.section.title,
+            sectionType: item.section.type,
+            sourceLabel: item.sourceLabel,
+            fileName: item.asset.fileName,
+            mimeType: item.asset.mimeType,
+          })),
+        };
+
+        archive.append(JSON.stringify(manifest, null, 2), {
+          name: "export-manifest.json",
         });
-      }),
+
+        await archive.finalize();
+      })(),
     ]);
 
-    const manifest = {
-      projectId: project.id,
-      projectName: project.name,
-      exportedAt: new Date().toISOString(),
-      heroImageCount: galleryAssets.length,
-      detailImageCount: detailAssets.length,
-      previewConfig: getPreviewConfig(project),
-      outputLanguageLabel: contentLanguageLabels[getPreviewConfig(project).contentLanguage],
-      gallery: galleryAssets.map((item, index) => ({
-        order: index + 1,
-        title: item.title,
-        sourceLabel: item.sourceLabel,
-        fileName: item.asset.fileName,
-        mimeType: item.asset.mimeType,
-      })),
-      details: detailAssets.map((item, index) => ({
-        order: index + 1,
-        sectionKey: item.section.sectionKey,
-        title: item.section.title,
-        sectionType: item.section.type,
-        sourceLabel: item.sourceLabel,
-        fileName: item.asset.fileName,
-        mimeType: item.asset.mimeType,
-      })),
-    };
-
-    archive.append(JSON.stringify(manifest, null, 2), {
-      name: "export-manifest.json",
-    });
-
-    await archive.finalize();
-    await new Promise<void>((resolve, reject) => {
-      output.on("close", () => resolve());
-      output.on("error", reject);
-      archive.on("error", reject);
-    });
-
     const zipBuffer = await fsp.readFile(tempZipPath);
-    await fsp.rm(tempZipPath, { force: true });
 
     await completeTask(task.id, {
       exportedHeroImages: galleryAssets.length,
@@ -217,7 +241,15 @@ export async function buildImageArchive(projectId: string) {
 
     return zipBuffer;
   } catch (error) {
-    await failTask(task.id, error instanceof Error ? error.message : "Export failed");
+    archive.abort();
+    output?.destroy();
+    await failTask(
+      task.id,
+      error instanceof Error ? error.message : "Export failed",
+    );
     throw error;
+  } finally {
+    if (tempDirectory)
+      await fsp.rm(tempDirectory, { recursive: true, force: true });
   }
 }

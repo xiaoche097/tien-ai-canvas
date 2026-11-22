@@ -280,9 +280,6 @@
     .app-workspace-account-chevron {
         display: none;
     }
-    .app-workspace-topnav-brand > span.truncate {
-        display: none;
-    }
     .app-workspace-topbar-credit-pill > span:not(.app-workspace-credit-gift) {
         display: none;
     }
@@ -308,7 +305,7 @@
         margin-left: 0;
     }
     .app-workspace-topbar.app-workspace-topnav {
-        grid-template-columns: auto 1fr;
+        grid-template-columns: minmax(0, 1fr) auto;
         gap: 4px;
         padding: 0 8px;
     }
@@ -368,24 +365,20 @@
         padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
     }
 
-    /* 手机端顶部：logo 与图标整体缩小，避免过大遮挡内容 */
+    /* 手机端保留完整品牌，品牌区可收缩以容纳右侧工具。 */
     .app-workspace-topnav-brand {
-        padding: 2px 4px;
-        gap: 5px;
-    }
-
-    .app-workspace-topnav-brand .size-9 {
-        width: 26px;
-        height: 26px;
+        max-width: 100%;
+        padding: var(--space-1);
+        gap: var(--space-2);
     }
 
     .app-workspace-topnav-brand .size-\[22px\] {
-        width: 15px;
-        height: 15px;
+        width: var(--space-6);
+        height: var(--space-6);
     }
 
     .app-workspace-topnav-brand span.truncate {
-        font-size: 15px;
+        font-size: var(--fs-heading-lg);
     }
 
     .app-workspace-topbar-icon-button {

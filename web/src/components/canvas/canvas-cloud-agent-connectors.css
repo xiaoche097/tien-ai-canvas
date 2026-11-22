@@ -49,6 +49,17 @@
     height: 20px;
 }
 
+.agent-connector-item--connected {
+    border-radius: var(--radius-sm);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--status-success) 65%, transparent),
+        0 0 0 3px color-mix(in srgb, var(--status-success) 12%, transparent);
+}
+
+.agent-connector-item:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 4px;
+}
+
 .agent-connector-item:hover {
     transform: translateY(-1px) scale(1.08);
 }

@@ -1,0 +1,7 @@
+{
+  "id": "jingche-connection", "name": "境彻连接状态", "version": "0.1.3", "pluginApiVersion": "^2.0.0",
+  "description": "在 Astravia 输入栏显示境彻图标和 Agent 会话连接状态。仅访问本机连接程序，不读取密钥、不调用生成模型。",
+  "author": "境彻", "icon": "icon.svg", "entry": "dist/mf-manifest.json",
+  "moduleFederation": { "remoteName": "jingche_connection", "expose": "./plugin" },
+  "permissions": ["ui.slot.input-action", "network.fetch"], "network": { "allowedHosts": ["127.0.0.1"] }
+}

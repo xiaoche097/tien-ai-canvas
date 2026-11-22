@@ -18,6 +18,34 @@ import (
 )
 
 func RegisterUserDataRoutes(r *gin.RouterGroup, svc *service.Service) {
+	r.GET("/ecommerce/prompt-templates", func(c *gin.Context) {
+		c.Header("Cache-Control", "no-store")
+		user, err := currentUser(c, svc)
+		if err != nil {
+			failService(c, err)
+			return
+		}
+		templates, err := svc.EcommercePromptTemplates(user)
+		if err != nil {
+			failService(c, err)
+			return
+		}
+		ok(c, gin.H{"templates": templates})
+	})
+	r.GET("/ecommerce/style-prompt", func(c *gin.Context) {
+		c.Header("Cache-Control", "no-store")
+		user, err := currentUser(c, svc)
+		if err != nil {
+			failService(c, err)
+			return
+		}
+		compiled, err := svc.CompileEcommerceStyle(user, c.Query("style"))
+		if err != nil {
+			failService(c, err)
+			return
+		}
+		ok(c, gin.H{"content": compiled.Content, "templateId": compiled.TemplateID, "templateVersion": compiled.TemplateVersion})
+	})
 	r.POST("/resources/access", func(c *gin.Context) {
 		user, err := currentUser(c, svc)
 		if err != nil {
@@ -555,6 +583,43 @@ func RegisterUserDataRoutes(r *gin.RouterGroup, svc *service.Service) {
 			return
 		}
 		okCanvasProject(c, project)
+	})
+	r.GET("/canvas-projects/:id/sync-status", func(c *gin.Context) {
+		user, err := currentUser(c, svc)
+		if err != nil {
+			failService(c, err)
+			return
+		}
+		status, err := svc.UserCanvasSyncStatus(user.ID, c.Param("id"))
+		if err != nil {
+			failService(c, err)
+			return
+		}
+		c.Header("Cache-Control", "no-store")
+		ok(c, status)
+	})
+	r.POST("/canvas-projects/:id/edit-lease", func(c *gin.Context) {
+		user, err := currentUser(c, svc)
+		if err != nil {
+			failService(c, err)
+			return
+		}
+		if !enforceRateLimit(c, "canvas-lease:"+user.ID, 240, time.Minute) {
+			return
+		}
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 2048)
+		var req service.CanvasEditLeaseRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			fail(c, http.StatusBadRequest, service.BadAuthRequest("编辑租约请求格式错误"))
+			return
+		}
+		result, err := svc.ChangeUserCanvasEditLease(user.ID, c.Param("id"), req)
+		if err != nil {
+			failService(c, err)
+			return
+		}
+		c.Header("Cache-Control", "no-store")
+		ok(c, result)
 	})
 	r.PATCH("/canvas-projects/:id/operations", func(c *gin.Context) {
 		user, err := currentUser(c, svc)

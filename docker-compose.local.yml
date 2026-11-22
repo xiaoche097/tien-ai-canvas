@@ -75,6 +75,7 @@ services:
       dockerfile: Dockerfile
     environment:
       CANVAS_BACKEND_INTERNAL_URL: http://backend:8080
+      MOTU_PSD_STORAGE_LIMIT_BYTES: "1073741824"
     volumes:
       - motu-data:/data
     depends_on:

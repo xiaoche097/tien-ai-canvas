@@ -96,6 +96,20 @@
     inset: 0;
     object-fit: cover;
 }
+.creative-app-feature-art {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    padding-bottom: var(--space-12);
+    background: color-mix(in srgb, var(--workspace-accent) 14%, var(--creative-media-surface));
+    color: var(--creative-media-ink);
+}
+.creative-app-feature-art > svg { width: 56px; height: 56px; stroke-width: 1.25; }
+.creative-app-feature-art > span { font-size: var(--fs-caption); letter-spacing: .16em; }
 .creative-app-feature-scrim {
     position: absolute;
     inset: 0;

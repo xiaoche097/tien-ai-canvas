@@ -28,6 +28,7 @@ export default function StoryboardPromptsPage() {
     const [searchParams, setSearchParams] = useSearchParams();
     const keyword = searchParams.get("filter") || "";
     const operationFilter = searchParams.get("operation") || "all";
+    const categoryFilter = searchParams.get("category") || "all";
     const status = searchParams.get("status") === "enabled" || searchParams.get("status") === "disabled" ? searchParams.get("status") as "enabled" | "disabled" : "all";
     const [templates, setTemplates] = useState<PromptTemplate[]>([]);
     const [definitions, setDefinitions] = useState<PromptOperationDefinition[]>([]);
@@ -46,7 +47,7 @@ export default function StoryboardPromptsPage() {
     const draftName = Form.useWatch("name", form) || "";
     const draftEnabled = Form.useWatch("enabled", form) === true;
     const selectedDefinition = definitions.find((item) => item.operation === draftOperation);
-    const hasFilters = Boolean(keyword || operationFilter !== "all" || status !== "all");
+    const hasFilters = Boolean(keyword || operationFilter !== "all" || categoryFilter !== "all" || status !== "all");
     const dirty = Boolean(draftBaseline) && (
         draftOperation !== draftBaseline?.operation
         || draftName !== draftBaseline?.name
@@ -54,7 +55,7 @@ export default function StoryboardPromptsPage() {
         || editorContent !== draftBaseline?.content
     );
 
-    const updateUrl = (patch: { filter?: string; operation?: string; status?: string }) => {
+    const updateUrl = (patch: { filter?: string; operation?: string; category?: string; status?: string }) => {
         setPage(1);
         const next = new URLSearchParams(searchParams);
         Object.entries(patch).forEach(([key, value]) => value && value !== "all" ? next.set(key, value) : next.delete(key));
@@ -82,10 +83,11 @@ export default function StoryboardPromptsPage() {
         const normalizedKeyword = keyword.trim().toLowerCase();
         if (normalizedKeyword && !`${template.name} ${template.content} ${definition?.label || ""}`.toLowerCase().includes(normalizedKeyword)) return false;
         if (operationFilter !== "all" && template.operation !== operationFilter) return false;
+        if (categoryFilter !== "all" && definition?.category !== categoryFilter) return false;
         if (status === "enabled" && !template.enabled) return false;
         if (status === "disabled" && template.enabled) return false;
         return true;
-    }), [definitionByOperation, keyword, operationFilter, status, templates]);
+    }), [definitionByOperation, keyword, operationFilter, categoryFilter, status, templates]);
     const paginatedTemplates = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
 
     const activeTemplateFor = (operation: string) => templates.find((template) => template.operation === operation && template.enabled);
@@ -106,7 +108,7 @@ export default function StoryboardPromptsPage() {
     };
 
     const openDrawer = (template?: PromptTemplate) => {
-        const operation = template?.operation || definitions[0]?.operation || "";
+        const operation = template?.operation || (operationFilter !== "all" ? operationFilter : definitions.find((item) => categoryFilter === "all" || item.category === categoryFilter)?.operation) || "";
         setBaseTemplate(template || null);
         form.resetFields();
         loadDraftBaseline(operation, template);
@@ -181,8 +183,8 @@ export default function StoryboardPromptsPage() {
             <AdminDataTable
                 toolbar={<AdminSearchInput allowClear className="app-list-search" prefix={<Search className="size-4 text-foreground/40" />} value={keyword} aria-label="搜索提示词模板" placeholder="搜索模板或内容" onValueChange={(value) => updateUrl({ filter: value })} />}
                 toolbarActive={hasFilters}
-                toolbarFilters={<><Select aria-label="筛选提示词类型" className="w-40" value={operationFilter} onChange={(value) => updateUrl({ operation: value })} options={[{ label: "全部类型", value: "all" }, ...definitions.map((item) => ({ label: item.label, value: item.operation }))]} /><Select aria-label="筛选提示词状态" className="w-32" value={status} onChange={(value) => updateUrl({ status: value })} options={[{ label: "全部状态", value: "all" }, { label: "启用中", value: "enabled" }, { label: "历史版本", value: "disabled" }]} /></>}
-                onReset={() => updateUrl({ filter: "", operation: "all", status: "all" })}
+                toolbarFilters={<><Select aria-label="筛选提示词分类" className="w-40" value={categoryFilter} onChange={(value) => updateUrl({ category: value, operation: "all" })} options={[{ label: "全部分类", value: "all" }, ...Array.from(new Set(definitions.map((item) => item.category))).map((category) => ({ label: category, value: category }))]} /><Select aria-label="筛选提示词类型" className="w-40" value={operationFilter} onChange={(value) => updateUrl({ operation: value })} options={[{ label: "全部类型", value: "all" }, ...definitions.filter((item) => categoryFilter === "all" || item.category === categoryFilter).map((item) => ({ label: item.label, value: item.operation }))]} /><Select aria-label="筛选提示词状态" className="w-32" value={status} onChange={(value) => updateUrl({ status: value })} options={[{ label: "全部状态", value: "all" }, { label: "启用中", value: "enabled" }, { label: "历史版本", value: "disabled" }]} /></>}
+                onReset={() => updateUrl({ filter: "", operation: "all", category: "all", status: "all" })}
                 table={{ className: "app-data-table", size: "small", rowKey: "id", loading, pagination: false, columns, dataSource: paginatedTemplates, scroll: { x: 1120 }, expandable: { expandedRowRender: (template) => <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-md bg-muted/50 p-3 text-xs leading-5 text-foreground/75">{template.content}</pre> } }}
                 empty={<AdminTableEmpty filtered={hasFilters} />}
                 footer={<PaginationBar alwaysShow current={page} pageSize={pageSize} total={filtered.length} onChange={(nextPage, nextPageSize) => { setPage(nextPageSize !== pageSize ? 1 : nextPage); setPageSize(nextPageSize); }} />}

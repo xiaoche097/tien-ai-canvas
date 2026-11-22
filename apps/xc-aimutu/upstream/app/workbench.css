@@ -1,0 +1,90 @@
+/* All Motu pages use the full-width shell; only the editor uses a viewport grid. */
+.motu-workbench > div { max-width: none; gap: 16px; padding: 16px; min-height: 100dvh; }
+.motu-workbench > div > aside { position: static; width: 200px; height: auto; padding: 16px; border-right: 0; }
+.motu-workbench > div > main { display: flex; flex-direction: column; padding: 12px 16px; }
+.motu-workbench > div > main > div:first-child { min-height: 40px; margin-bottom: 10px; padding: 0 0 8px; }
+.motu-workbench-page { display: flex; flex: 1; min-height: 0; min-width: 0; flex-direction: column; gap: 10px; }
+.motu-workbench-command-row { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
+.motu-workbench-command-row > button { flex-shrink: 0; }
+.motu-workbench:has(.motu-workbench-page[data-focused="true"]) > div > main > div:first-child { display: none; }
+/* Keep the live iframe mounted while reclaiming the surrounding workspace. */
+.motu-workbench:has(.motu-psd-editor[data-focused="true"]) > div { height: 100dvh; min-height: 0; padding: 8px; gap: 0; }
+.motu-workbench:has(.motu-psd-editor[data-focused="true"]) > div > aside,
+.motu-workbench:has(.motu-psd-editor[data-focused="true"]) > div > main > div:first-child,
+.motu-workbench-page:has(.motu-psd-editor[data-focused="true"]) > .motu-workbench-command-row,
+.motu-workbench-page:has(.motu-psd-editor[data-focused="true"]) > .motu-workbench-configuration { display: none; }
+.motu-workbench:has(.motu-psd-editor[data-focused="true"]) > div > main { min-height: 0; padding: 0; border: 0; }
+.motu-editor-grid > div > .rounded-2xl > .motu-preview-toolbar { flex-flow: row wrap; align-items: center; gap: 8px; }
+.motu-preview-toolbar button { height: 32px; padding-left: 8px; padding-right: 8px; }
+.motu-preview-toolbar select { height: 32px; }
+.motu-workbench-heading > div { flex-flow: row wrap; align-items: center; gap: 8px 16px; }
+.motu-workbench-heading > div > div:first-child { flex: 1; }
+.motu-workbench-heading h1 { font-size: 20px; line-height: 1.4; }
+.motu-workbench-heading > div > div:first-child > p,
+.motu-workbench-heading > div > div:first-child > div > p { display: none; }
+.motu-workbench-heading details { margin-top: 4px; }
+.motu-workbench-summary > div > div { padding: 8px 12px; }
+.motu-workbench-summary .space-y-3 { margin: 0; }
+.motu-workbench-summary .space-y-3 > p { display: none; }
+.motu-workbench-summary .space-y-3 > div { gap: 6px 10px; }
+.motu-workbench-layout { display: flex; flex: 1; flex-direction: column; min-width: 0; min-height: 0; gap: 4px; }
+.motu-workbench-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.motu-workbench-tools button { height: 30px; padding: 0 8px; font-size: 12px; }
+.motu-editor-grid {
+  --left-track: 0px;
+  --right-track: 0px;
+  --left-gutter: 0px;
+  --right-gutter: 0px;
+  display: grid; position: relative; flex: 1; min-height: 0; min-width: 0;
+  grid-template-columns: var(--left-track) var(--left-gutter) minmax(0, 1fr) var(--right-gutter) var(--right-track);
+  grid-template-rows: minmax(0, 1fr);
+}
+.motu-editor-grid[data-left="true"][data-left-overlay="false"] { --left-track: var(--left-width); --left-gutter: 12px; }
+.motu-editor-grid[data-right="true"][data-right-overlay="false"] { --right-track: var(--right-width); --right-gutter: 12px; }
+.motu-workbench-left { grid-column: 1; }
+.motu-workbench-preview { grid-column: 3; }
+.motu-workbench-right { grid-column: 5; }
+.motu-editor-grid > .motu-workbench-left,
+.motu-editor-grid > .motu-workbench-preview,
+.motu-editor-grid > .motu-workbench-right { min-width: 0; min-height: 0; grid-row: 1; }
+.motu-editor-grid > div > .rounded-2xl { height: 100%; min-height: 0; }
+.motu-editor-grid > div > .rounded-2xl > div:first-child { padding: 12px; gap: 8px; }
+.motu-editor-grid > div > .rounded-2xl > div:first-child h3 { font-size: 15px; }
+.motu-editor-grid > .motu-workbench-left > div > div:first-child > p,
+.motu-editor-grid > .motu-workbench-right > div > div:first-child > p { display: none; }
+.motu-editor-grid > .motu-workbench-left > div > div:last-child,
+.motu-editor-grid > .motu-workbench-right > div > div:last-child { padding: 0 12px 12px; overscroll-behavior: contain; }
+.motu-workbench-separator { grid-row: 1; position: relative; cursor: col-resize; touch-action: none; outline-offset: -3px; }
+.motu-separator-left { grid-column: 2; }
+.motu-separator-right { grid-column: 4; }
+.motu-workbench-separator span { display: block; position: absolute; inset: 0 4px; border-radius: 4px; }
+.motu-workbench-separator:hover span,
+.motu-workbench-separator:focus-visible span { background: hsl(var(--border)); }
+.motu-workbench-separator:focus-visible { outline: 2px solid hsl(var(--ring)); }
+.motu-editor-grid:not([data-left="true"]) > .motu-separator-left,
+.motu-editor-grid:not([data-right="true"]) > .motu-separator-right,
+.motu-editor-grid[data-left-overlay="true"] > .motu-separator-left,
+.motu-editor-grid[data-right-overlay="true"] > .motu-separator-right { display: none; }
+.motu-editor-grid[data-resizing] { user-select: none; }
+.motu-editor-grid[data-resizing] .motu-workbench-preview { pointer-events: none; }
+.motu-editor-grid[data-left="true"][data-left-overlay="true"] > .motu-workbench-left,
+.motu-editor-grid[data-right="true"][data-right-overlay="true"] > .motu-workbench-right {
+  position: absolute; top: 0; bottom: 0; z-index: 20; width: min(100%, var(--left-width));
+  box-shadow: 0 8px 24px hsl(var(--foreground) / .12);
+}
+.motu-editor-grid[data-right="true"][data-right-overlay="true"] > .motu-workbench-right { right: 0; width: min(100%, var(--right-width)); }
+.motu-workbench-backdrop { position: absolute; inset: 0; z-index: 10; background: hsl(var(--foreground) / .08); }
+@media (min-width: 768px) {
+  .motu-workbench > div { height: 100dvh; min-height: 0; }
+  .motu-workbench > div > aside { overflow-y: auto; overscroll-behavior: contain; }
+  .motu-workbench > div > main { min-height: 0; }
+}
+@media (max-width: 1199px) and (min-width: 768px) {
+  .motu-workbench > div > aside { width: 168px; padding: 12px; }
+  .motu-workbench > div > aside nav a { padding: 10px; }
+}
+@media (max-width: 767px) {
+  .motu-workbench > div { padding: 12px 16px; }
+  .motu-workbench > div > main { padding: 10px; }
+  .motu-editor-grid { height: 75dvh; min-height: 480px; flex: none; }
+}

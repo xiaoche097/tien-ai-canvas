@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Toaster } from "sonner";
 
 import "./globals.css";
+import "./workbench.css";
 
 import { ThemeScript } from "@/components/layout/theme-script";
 import { BackToTopButton } from "@/components/shared/back-to-top-button";
@@ -9,7 +10,6 @@ import { ChunkReloadGuard } from "@/components/shared/chunk-reload-guard";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { FetchInterceptor } from "@/components/providers/fetch-interceptor";
 import { RootLayoutClient } from "@/components/layout/root-layout-client";
-import { ParticleBackground } from "@/components/layout/particle-background";
 import { CanvasFavicon } from "@/components/layout/canvas-favicon";
 
 export const metadata: Metadata = {
@@ -25,7 +25,6 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" suppressHydrationWarning>
       <body suppressHydrationWarning>
-        <ParticleBackground />
         <ThemeScript />
         <CanvasFavicon />
         <ChunkReloadGuard />

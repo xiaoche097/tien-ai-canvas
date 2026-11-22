@@ -55,8 +55,10 @@ export function RecentProjectList({ initialProjects }: RecentProjectListProps) {
 
   if (projects.length === 0) {
     return (
-      <div className="rounded-3xl border border-dashed border-border p-8 text-sm text-muted-foreground dark:border-white/10 dark:bg-white/[0.03]">
-        还没有历史项目，先从上方上传一张主商品图开始。
+      <div className="motu-empty-state">
+        <Layers3 className="h-8 w-8 text-muted-foreground" aria-hidden />
+        <p className="text-sm font-medium">还没有商品项目</p>
+        <Link href="/" className={buttonVariants({ variant: "outline", size: "sm" })}>创建第一个项目<ArrowRight className="h-4 w-4" aria-hidden /></Link>
       </div>
     );
   }
@@ -66,18 +68,18 @@ export function RecentProjectList({ initialProjects }: RecentProjectListProps) {
       {projects.map((project) => (
         <article
           key={project.id}
-          className="group mb-4 break-inside-avoid overflow-hidden rounded-[28px] border border-border bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:border-white/10 dark:bg-white/[0.04]"
+          className="group mb-5 break-inside-avoid overflow-hidden rounded-lg border border-border bg-card"
         >
-          <div className="relative overflow-hidden rounded-t-[28px] bg-muted">
+          <div className="relative overflow-hidden bg-muted">
             {project.coverImageUrl ? (
               <img
                 src={project.coverImageUrl}
                 alt={project.name}
-                className="block h-auto w-full rounded-t-[28px] transition duration-300 group-hover:scale-[1.02]"
+                className="block h-auto w-full"
                 suppressHydrationWarning
               />
             ) : (
-              <div className="flex min-h-[280px] w-full items-center justify-center rounded-t-[28px] bg-gradient-to-br from-white via-slate-100 to-zinc-100 text-slate-500 dark:from-white/[0.08] dark:via-white/[0.04] dark:to-black dark:text-slate-400">
+              <div className="flex min-h-[200px] w-full items-center justify-center bg-muted text-muted-foreground">
                 <div className="flex flex-col items-center gap-3 text-center">
                   <Layers3 className="h-8 w-8" />
                   <p className="text-sm font-medium">暂无封面图</p>
@@ -95,16 +97,16 @@ export function RecentProjectList({ initialProjects }: RecentProjectListProps) {
             <button
               type="button"
               onClick={() => setPendingDelete({ id: project.id, name: project.name })}
-              className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-white/90 text-slate-700 shadow-sm transition hover:scale-105 hover:bg-white active:scale-95 dark:border-white/10 dark:bg-black/45 dark:text-slate-200 dark:hover:bg-black/60"
+              className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
               aria-label={`删除项目 ${project.name}`}
             >
               <Trash2 className="h-4 w-4 text-rose-500" />
             </button>
           </div>
 
-          <div className="space-y-4 p-5">
+          <div className="space-y-3 p-4">
             <div className="space-y-2">
-              <h3 className="line-clamp-2 text-lg font-semibold leading-7 text-slate-900 dark:text-white">{project.name}</h3>
+              <h3 className="line-clamp-2 text-base font-semibold leading-6 text-foreground">{project.name}</h3>
               <p className="text-sm leading-6 text-muted-foreground">
                 平台：{platformLabels[project.platform as keyof typeof platformLabels] ?? project.platform}
                 <br />
@@ -112,7 +114,7 @@ export function RecentProjectList({ initialProjects }: RecentProjectListProps) {
               </p>
             </div>
 
-            <div className="rounded-2xl bg-slate-50 px-4 py-3 text-xs text-slate-500 dark:bg-white/[0.06] dark:text-slate-400">
+            <div className="text-xs text-muted-foreground">
               最近更新：{formatDate(project.updatedAt)}
             </div>
 

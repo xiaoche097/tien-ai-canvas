@@ -1,6 +1,7 @@
-import { normalizeContentLanguage, type ContentLanguage } from "@/lib/utils/content-language";
+import { projectContentLanguage, type ContentLanguage } from "@/lib/utils/content-language";
 
-export type ImageAspectRatio = "3:4" | "9:16";
+import { normalizeDetailAspectRatio, type DetailAspectRatio } from "@/lib/utils/section-aspect-ratio";
+export type ImageAspectRatio = DetailAspectRatio;
 export type SectionKind =
   | "hero"
   | "selling_points"
@@ -16,6 +17,7 @@ export type SectionKind =
 
 export interface PreviewConfig {
   heroImageCount: number;
+  heroAspectRatio: "1:1" | "3:4";
   detailSectionCount: number;
   imageAspectRatio: ImageAspectRatio;
   contentLanguage: ContentLanguage;
@@ -132,20 +134,22 @@ export function getPreviewConfig(project: any): PreviewConfig {
   const config = project?.modelSnapshot?.previewConfig ?? {};
   return {
     heroImageCount: Math.min(5, Math.max(3, Number(config.heroImageCount ?? 4))),
+    heroAspectRatio: config.heroAspectRatio === "3:4" ? "3:4" : "1:1",
     detailSectionCount: Math.min(10, Math.max(4, Number(config.detailSectionCount ?? 6))),
-    imageAspectRatio: config.imageAspectRatio === "3:4" ? "3:4" : "9:16",
-    contentLanguage: normalizeContentLanguage(config.contentLanguage),
+    imageAspectRatio: normalizeDetailAspectRatio(config.imageAspectRatio, project?.platform),
+    contentLanguage: projectContentLanguage(project?.platform, config.contentLanguage),
   };
 }
 
 export function getAspectRatioClass(aspectRatio: ImageAspectRatio) {
-  return aspectRatio === "3:4" ? "aspect-[3/4]" : "aspect-[9/16]";
+  return { "3:4": "aspect-[3/4]", "9:16": "aspect-[9/16]", "16:9": "aspect-video", "21:9": "aspect-[21/9]" }[aspectRatio];
 }
 
 export function getGenerationLabel(section: any) {
   const mode = section?.currentImageAsset?.metadata?.mode;
   if (mode === "image_api") return "AI 真图";
   if (mode === "svg_fallback") return "SVG 兜底";
+  if (mode === "psd_refine") return "PSD 精修";
   return null;
 }
 
@@ -158,7 +162,7 @@ export function buildGalleryImages(project: any, heroImageCount: number) {
       id: section.id,
       url: section.imageUrl,
       label: section.title || `头图 ${index + 1}`,
-      generationLabel: section.currentImageAsset?.metadata?.mode === "svg_fallback" ? "SVG 兜底" : "AI 真图",
+      generationLabel: getGenerationLabel(section) ?? "AI 真图",
     }));
 
   const merged = [
@@ -226,6 +230,7 @@ export function buildProductDescription(analysis: any, sections: any[]) {
 }
 
 export function getActionText(action: string | null) {
+  if (action === "reference") return "正在处理模块参考图，请稍候…";
   if (action === "generate") return "正在生成当前模块图，请稍候...";
   if (action === "regenerate") return "正在重新生成当前模块图，请稍候...";
   if (action === "repaint") return "正在基于当前图重绘，请稍候...";
