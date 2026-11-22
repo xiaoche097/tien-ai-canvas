@@ -7,6 +7,8 @@ import { Link } from "react-router";
 import { AppChangelogButton } from "@/components/layout/app-changelog-modal";
 import { WorkspaceAccountCard } from "./workspace-account-card";
 import { UserAvatar } from "./user-avatar";
+import { AuthLoginLink } from "@/components/auth/auth-login-link";
+import { UserGroupAvatarRing } from "./user-group-badge";
 import { openWorkspaceWallet } from "@/lib/workspace-wallet";
 import { useThemeStore } from "@/stores/use-theme-store";
 import { useUserStore } from "@/stores/use-user-store";
@@ -74,9 +76,9 @@ export function WorkspaceAccountMenu() {
             </Popover>
         </>
     ) : (
-        <Link to="/login" className="inline-flex items-center gap-1.5 px-1.5 text-xs text-foreground/55" aria-label="登录" title="登录">
+        <AuthLoginLink className="inline-flex items-center gap-1.5 px-1.5 text-xs text-foreground/55" aria-label="登录" title="登录">
             <CircleUserRound className="size-5" />
             <span className="hidden sm:inline">游客</span>
-        </Link>
+        </AuthLoginLink>
     );
 }

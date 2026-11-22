@@ -1,0 +1,6 @@
+**
+!web/
+!web/dist/
+!web/dist/**
+!docker/
+!docker/canvas-web-entrypoint.sh

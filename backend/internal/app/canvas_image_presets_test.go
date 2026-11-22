@@ -33,7 +33,7 @@ func newCanvasImagePresetTestService(t *testing.T) (*Service, *gorm.DB) {
 func TestCanvasImagePresetsPreserveLegacyTokensAndParameters(t *testing.T) {
 	svc, _ := newCanvasImagePresetTestService(t)
 	presets, err := tools.BuiltinImagePresets()
-	if err != nil || len(presets) != 9 {
+	if err != nil || len(presets) != 11 {
 		t.Fatalf("preset catalog: %d %v", len(presets), err)
 	}
 	admin := &model.User{ID: "admin", Role: model.UserRoleAdmin}
@@ -47,7 +47,7 @@ func TestCanvasImagePresetsPreserveLegacyTokensAndParameters(t *testing.T) {
 			count++
 		}
 	}
-	if count != 9 {
+	if count != 11 {
 		t.Fatalf("admin image preset definitions: %d", count)
 	}
 	if err := svc.EnsureDefaultPromptTemplates(); err != nil {

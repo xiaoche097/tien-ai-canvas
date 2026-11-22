@@ -159,21 +159,21 @@ func (s *Service) AstraviaCall(ctx context.Context, userID, canvasID, name strin
 	case "jingche_get_canvas":
 		return s.UserCanvasProject(userID, canvasID)
 	case "jingche_list_models":
-		logical, err := s.PublicLogicalModels(nil)
+		actor, err := s.repo.User(userID)
 		if err != nil {
 			return nil, err
 		}
-		channels, err := s.PublicSystemChannels()
+		catalog, err := s.ModelCatalogForUser(actor, nil)
 		if err != nil {
 			return nil, err
 		}
+		logical := catalog.Models
 		// Explicit projection excludes upstream URLs, headers and credentials.
 		selections := []map[string]any{}
-		for _, channel := range channels {
-			if channel.Enabled {
-				for _, item := range channel.ModelCosts {
-					selections = append(selections, map[string]any{"channelId": channel.ID, "channelModelKey": item.Model, "name": item.DisplayName, "capability": item.Capability})
-				}
+		for _, channel := range catalog.Channels {
+			for _, item := range channel.Models {
+				if !item.Available { continue }
+				selections = append(selections, map[string]any{"id": item.ID, "channelId": channel.ID, "channelModelKey": item.ModelKey, "name": item.DisplayName, "capability": item.Capability, "priceLabel": item.PriceLabel, "capabilityConfig": item.CapabilityConfig})
 			}
 		}
 		textLogical := []PublicLogicalModel{}

@@ -2,7 +2,7 @@
 
 使用内置 image_gen 工具生成，同一款无品牌随行杯作为统一视觉示例；图片属于能力示意，不代表真实商品或真实业务生成记录。
 
-原始 PNG 已保存在工作区 `.local/design/ecommerce-capabilities/originals/`。首页使用 640px 宽 WebP，保持原始构图；使用内容摘要文件名和静态缓存。
+原始 PNG 保存在本地工作区 `.local/design/ecommerce-capabilities/originals/`。仓库内的 640px 宽 WebP 用于首页电商能力展示方案，保留原始构图并使用内容摘要命名。
 
 ## 资源与最终提示词
 

@@ -20,16 +20,6 @@ web/.next
 web/dist
 web/node_modules
 web/out
-apps/xc-aimutu
-!apps/xc-aimutu/
-apps/xc-aimutu/*
-!apps/xc-aimutu/upstream/
-apps/xc-aimutu/upstream/*
-!apps/xc-aimutu/upstream/lib/
-apps/xc-aimutu/upstream/lib/*
-!apps/xc-aimutu/upstream/lib/psd/
-apps/xc-aimutu/upstream/lib/psd/*
-!apps/xc-aimutu/upstream/lib/psd/layer-contract.ts
 *.log
 *.db
 *.sqlite

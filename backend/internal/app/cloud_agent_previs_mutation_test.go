@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"yingce/backend/internal/model"
+	"yingce/backend/internal/repository"
 )
 
 func previsMutationFixture(t *testing.T) (*Service, *model.CanvasProject) {
@@ -74,9 +75,22 @@ func TestCloudAgentPrevisSceneCreateAndPatchKeepSemanticAndCanvasHashesSeparate(
 		"title":              "客厅对白",
 		"templateId":         "dialogue",
 	})
-	createResult, err := applyCloudAgentPrevisMutation(s.repo, "user", canvas.ID, createCall, policy, cloudAgentMutationRecorderForRun(run.ID))
+	captureRecorder, recordedPreview := cloudAgentCaptureMutationPreview()
+	createRecorder := cloudAgentMutationRecorder(func(repo *repository.Repository, input cloudAgentMutationInput) error {
+		if err := cloudAgentMutationRecorderForRun(run.ID)(repo, input); err != nil {
+			return err
+		}
+		return captureRecorder(repo, input)
+	})
+	createResult, err := applyCloudAgentPrevisMutation(s.repo, "user", canvas.ID, createCall, policy, createRecorder)
 	if err != nil {
 		t.Fatal(err)
+	}
+	createResultMap := createResult.(map[string]any)
+	createPreview := createResultMap["preview"].(cloudAgentApprovalPreview)
+	assertCloudAgentAppliedPreview(t, createPreview, createPreview.Items[0].Summary)
+	if recorded, ok := recordedPreview(); !ok || recorded.Description != createPreview.Description || recorded.Status != createPreview.Status {
+		t.Fatalf("previs mutation event preview diverged from tool result: result=%+v recorded=%+v", createPreview, recorded)
 	}
 	createdSceneHash := previsResultString(t, createResult, "snapshotHash")
 	createdCanvasHash := previsResultString(t, createResult, "canvasSnapshotHash")
@@ -117,6 +131,9 @@ func TestCloudAgentPrevisSceneCreateAndPatchKeepSemanticAndCanvasHashesSeparate(
 	if err != nil {
 		t.Fatal(err)
 	}
+	patchResultMap := patchResult.(map[string]any)
+	patchPreview := patchResultMap["preview"].(cloudAgentApprovalPreview)
+	assertCloudAgentAppliedPreview(t, patchPreview, patchPreview.Items[0].Summary)
 	patchedSceneHash := previsResultString(t, patchResult, "snapshotHash")
 	patchedCanvasHash := previsResultString(t, patchResult, "canvasSnapshotHash")
 	if patchedSceneHash == createdSceneHash || patchedCanvasHash == createdCanvasHash {
@@ -852,9 +869,10 @@ func TestCloudAgentPrevisActorMotionOperations(t *testing.T) {
 
 func TestCloudAgentPrevisGroundScene(t *testing.T) {
 	scene := map[string]any{"objects": []any{
-		map[string]any{"id": "a", "kind": "actor", "transform": map[string]any{"position": []any{1.0, -14.54, 2.0}}, "keyframes": []any{map[string]any{"transform": map[string]any{"position": []any{0.0, 3.0, 0.0}}}}, "motionPath": map[string]any{"points": []any{[]any{0.0, -1.0, 0.0}, []any{1.0, 2.0, 1.0}}}},
+		map[string]any{"id": "a", "kind": "actor", "transform": map[string]any{"position": []any{1.0, -14.54, 2.0}}, "keyframes": []any{map[string]any{"transform": map[string]any{"position": []any{0.0, 3.0, 0.0}}}, map[string]any{"transform": map[string]any{"position": []any{0.0, -1.0, 0.0}}}}, "motionPath": map[string]any{"points": []any{[]any{0.0, -1.0, 0.0}, []any{1.0, 2.0, 1.0}}}},
 		map[string]any{"id": "b", "kind": "primitive", "transform": map[string]any{"position": []any{0.0, 0.8, 0.0}}},
 		map[string]any{"id": "c", "kind": "primitive", "transform": map[string]any{"position": []any{0.0, -2.0, 0.0}}},
+		map[string]any{"id": "d", "kind": "actor", "transform": map[string]any{"position": []any{0.0, 0.76, 0.0}}},
 	}}
 	cloudAgentPrevisGroundScene(scene)
 	objects := creationMaps(scene["objects"])
@@ -864,12 +882,58 @@ func TestCloudAgentPrevisGroundScene(t *testing.T) {
 	if y(objects[0]) != 0 || y(objects[1]) != 0.8 || y(objects[2]) != 0 {
 		t.Fatalf("unexpected heights: %v %v %v", y(objects[0]), y(objects[1]), y(objects[2]))
 	}
-	if y(creationMaps(objects[0]["keyframes"])[0]) != 0 {
-		t.Fatal("actor keyframe must be grounded")
+	if y(objects[3]) != 0.76 {
+		t.Fatalf("raised actor must keep its height, got %v", y(objects[3]))
 	}
-	for _, point := range objects[0]["motionPath"].(map[string]any)["points"].([]any) {
-		if numberValue(point.([]any)[1], -99) != 0 {
-			t.Fatal("actor path must be grounded")
+	keyframes := creationMaps(objects[0]["keyframes"])
+	if y(keyframes[0]) != 3 || y(keyframes[1]) != 0 {
+		t.Fatalf("actor keyframes: raised kept, underground grounded; got %v %v", y(keyframes[0]), y(keyframes[1]))
+	}
+	points := objects[0]["motionPath"].(map[string]any)["points"].([]any)
+	if numberValue(points[0].([]any)[1], -99) != 0 || numberValue(points[1].([]any)[1], -99) != 2 {
+		t.Fatalf("actor path: underground grounded, raised kept; got %v", points)
+	}
+}
+
+// Agent 把演员放上桌面（Y=0.76）后，写入、落地规则与校验都不得把高度改回 0。
+func TestCloudAgentPrevisPatchKeepsRaisedActorHeight(t *testing.T) {
+	scene, err := cloudAgentPrevisSceneCreateTemplate(cloudAgentPrevisSceneCreateArgs{SceneID: "raise", Title: "站上桌子", TemplateID: "empty"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	update := []float64{0.5, 0.76, -0.2}
+	ops := []cloudAgentPrevisPatchOperation{
+		// 省略 position：演员默认站在地面，而不是几何体默认的 0.5m。
+		{Type: "object_add", ID: "hero", Name: strPtr("主角"), Kind: "actor"},
+		{Type: "object_update", ID: "hero", Position: &update},
+		{Type: "object_keyframe_upsert", ID: "hero", Time: float64Ptr(1), Position: &[]float64{0.5, 1.2, -0.2}},
+	}
+	for index, op := range ops {
+		if _, err := cloudAgentPrevisApplyPatchOperation(scene, op, index); err != nil {
+			t.Fatalf("op %d (%s) failed: %v", index, op.Type, err)
 		}
+		if index == 0 {
+			added, _ := cloudAgentPrevisNumberVec3(cloudAgentPrevisMapTransform(cloudAgentPrevisFindByID(creationMaps(scene["objects"]), "hero"))["position"])
+			if added[1] != 0 {
+				t.Fatalf("actor added without position must stand on the ground, got %v", added)
+			}
+		}
+	}
+	cloudAgentPrevisGroundScene(scene)
+	if err := cloudAgentPrevisValidateScene(scene); err != nil {
+		t.Fatalf("scene invalid: %v", err)
+	}
+	hero := cloudAgentPrevisFindByID(creationMaps(scene["objects"]), "hero")
+	position, _ := cloudAgentPrevisNumberVec3(cloudAgentPrevisMapTransform(hero)["position"])
+	if position[1] != 0.76 {
+		t.Fatalf("actor height reset by grounding, got %v", position)
+	}
+	keyframes := creationMaps(hero["keyframes"])
+	if len(keyframes) == 0 {
+		t.Fatal("actor keyframe missing")
+	}
+	keyPosition, _ := cloudAgentPrevisNumberVec3(cloudAgentPrevisMapTransform(keyframes[len(keyframes)-1])["position"])
+	if keyPosition[1] != 1.2 {
+		t.Fatalf("actor keyframe height reset by grounding, got %v", keyPosition)
 	}
 }

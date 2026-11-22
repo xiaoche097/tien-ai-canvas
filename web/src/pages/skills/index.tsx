@@ -1,4 +1,5 @@
 import { CollectionToolbar } from "@/components/layout/collection-toolbar";
+import { useNavigate } from "react-router";
 import { AppModal } from "@/components/ui/product/app-modal";
 import { App, Button, Dropdown, Input } from "antd";
 import { Tooltip } from "@/components/ui/base/tooltip";
@@ -64,6 +65,7 @@ const sortOptions: { label: string; value: SkillSort }[] = [
 import { SkillCurationBrowser, useSkillCuration, curationQuery, groupCuratedSkills, curationIcon, effectiveCurationRoot } from "@/components/skills/skill-curation-browser";
 
 export default function SkillsPage({ embedded = false }: { embedded?: boolean } = {}) {
+    const navigate = useNavigate();
     const { curation, error: curationError, retry: retryCuration } = useSkillCuration();
     const [platformCategory, setPlatformCategory] = useState("");
     const { message, modal } = App.useApp();
@@ -749,6 +751,7 @@ export default function SkillsPage({ embedded = false }: { embedded?: boolean } 
                 onLike={(skill) => void toggleLiked(skill)}
                 onEdit={(skill) => void openEditor(skill)}
                 onSync={(skill) => void synchronizeSkill(skill)}
+                onOpenWorkbench={(skill) => navigate(`/skills/${encodeURIComponent(skill.skillId)}/edit`)}
             />
             <SkillInstallModal
                 open={installOpen}

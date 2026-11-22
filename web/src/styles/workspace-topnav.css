@@ -1,4 +1,7 @@
 /* 顶部横向导航（创作/创意中心/工作空间/应用市场/资讯 + 右侧图标区）与应用市场/资讯页样式。 */
+.app-workspace-shell {
+    --workspace-center-width: min(800px, calc(100vw - 480px));
+}
 
 .app-workspace-topbar.app-workspace-topnav {
     --workspace-nav-scale: 1.1;
@@ -12,7 +15,7 @@
     --workspace-nav-cube-left: color-mix(in srgb, var(--palette-node-frame) 65%, var(--color-neutral-0));
     --workspace-nav-cube-right: color-mix(in srgb, var(--palette-node-script) 55%, var(--color-neutral-0));
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: minmax(0, 1fr) var(--workspace-center-width) minmax(0, 1fr);
     align-items: center;
     gap: 12px;
     padding: 0 16px;
@@ -86,10 +89,13 @@
 /* 导航保留固定槽位；选中仅改变表面与图形，不缩放点击区域。 */
 .app-workspace-topnav-items {
     display: flex;
+    width: 100%;
     min-width: 0;
     align-items: center;
     gap: 9px;
     justify-self: center;
+    justify-content: space-between;
+    padding-inline: 0;
     /* 导航整体下移：56px 顶栏内居中基础上再往下偏移（缩小后 top 约 9px） */
     margin-top: 5px;
 }
@@ -254,10 +260,6 @@
 }
 
 @media (min-width: 1024px) and (max-width: 1279px) {
-    .app-workspace-topbar.app-workspace-topnav {
-        grid-template-columns: auto minmax(0, 1fr) auto;
-        gap: var(--space-2);
-    }
     .app-workspace-topnav-items {
         gap: var(--space-1);
     }
@@ -268,6 +270,16 @@
     .app-workspace-account-trigger {
         max-width: 140px;
     }
+}
+
+@media (min-width: 1024px) {
+    .app-workspace-shell .app-workspace-account-trigger { max-width: 120px; }
+    .app-workspace-shell .app-workspace-account-initial { display: none; }
+    .app-workspace-shell .app-workspace-topbar-actions { gap: var(--space-half); }
+}
+@media (min-width: 1024px) and (max-width: 1439px) {
+    .app-workspace-shell .app-workspace-account-trigger { max-width: 92px; margin-left: 0; }
+    .app-workspace-shell .app-workspace-topbar-actions > .app-workspace-topbar-icon-button { width: 28px; height: 32px; }
 }
 
 @media (max-width: 639px) {

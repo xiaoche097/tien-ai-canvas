@@ -6,6 +6,13 @@ import { getIsolatedAdminAntTheme } from "../src/pages/admin/theme/admin-ant-the
 
 describe("shared action colors and focus feedback", () => {
     for (const dark of [false, true]) {
+        test(`toast text and surface are paired in ${dark ? "dark" : "light"} mode`, () => {
+            const message = getAntThemeConfig(dark).components?.Message;
+            expect(message?.colorText).toBe(dark ? "#f5f5f5" : "#171717");
+            expect(message?.contentBg).toBe(dark ? "rgba(31, 31, 32, 1)" : "rgba(255, 255, 255, 1)");
+        });
+    }
+    for (const dark of [false, true]) {
         test(`classic solid tokens remain monochrome beneath the button fill adapter in ${dark ? "dark" : "light"} mode`, () => {
             const product = getAntThemeConfig(dark, DEFAULT_CLASSIC_SKIN);
             const admin = getIsolatedAdminAntTheme(dark, DEFAULT_CLASSIC_SKIN);

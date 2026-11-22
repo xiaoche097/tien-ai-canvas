@@ -8,7 +8,7 @@
 
 在线演示：[https://www.xcstudio.pw/](https://www.xcstudio.pw/)
 
-账号/密码：test/test123456
+演示账号请向部署者获取。
 
 
 ## 赞助商
