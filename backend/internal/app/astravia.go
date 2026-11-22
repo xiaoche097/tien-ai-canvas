@@ -172,7 +172,9 @@ func (s *Service) AstraviaCall(ctx context.Context, userID, canvasID, name strin
 		selections := []map[string]any{}
 		for _, channel := range catalog.Channels {
 			for _, item := range channel.Models {
-				if !item.Available { continue }
+				if !item.Available {
+					continue
+				}
 				selections = append(selections, map[string]any{"id": item.ID, "channelId": channel.ID, "channelModelKey": item.ModelKey, "name": item.DisplayName, "capability": item.Capability, "priceLabel": item.PriceLabel, "capabilityConfig": item.CapabilityConfig})
 			}
 		}

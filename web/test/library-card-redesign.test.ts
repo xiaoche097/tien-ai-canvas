@@ -67,19 +67,19 @@ describe("canvas library card", () => {
 
 describe("skills library", () => {
     const page = read("../src/pages/skills/index.tsx");
-    test("uses a single left rail instead of top tabs and a platform select", () => {
-        expect(page).toContain('className="skills-rail"');
+    test("uses keyboard-accessible scope tabs and platform curation", () => {
+        expect(page).toContain('role="tablist"');
+        expect(page).toContain('role="tab"');
+        expect(page).toContain("aria-selected={active}");
+        expect(page).toContain("SkillCurationBrowser");
         expect(page).not.toContain("SegmentedControl");
-        expect(page).not.toContain("SkillCurationBrowser");
-        expect(page).not.toContain("skills-tabs");
     });
-    test("cards label their stats and keep add as a compact toggle", () => {
-        expect(page).toContain("人加入");
+    test("cards expose join counts and accessible join and favorite actions", () => {
+        expect(page).toContain("人已加入");
+        expect(page).toContain("加入技能库");
         expect(page).toContain("aria-pressed={skill.isAdded}");
-        expect(page).toContain("aria-pressed={skill.isLike}");
-        expect(page).toContain("/skills/${encodeURIComponent(skill.skillId)}/edit");
-        expect(css).toMatch(/\.skill-tile:is\(:hover, :focus-within\) \.skill-tile-actions/);
-        expect(css).toMatch(/\.skill-tile-name-text \{[^}]*-webkit-line-clamp: 2;/);
-        expect(css).toMatch(/\.skill-tile-description \{[^}]*-webkit-line-clamp: 2;/);
+        expect(page).toContain('aria-label={skill.isLike ? "取消收藏" : "收藏"}');
+        expect(page).toContain("onClick={onLike}");
+        expect(page).toContain("onClick={onAdd}");
     });
 });

@@ -234,6 +234,14 @@ jobs:
         run: bun run typecheck
       - name: Lint retired Ant Design APIs
         run: bun run lint
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Prepare Motu dependencies for PSD persistence tests
+        working-directory: apps/xc-aimutu/upstream
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run prisma:generate
       - name: Run tests
         run: bun run test
       # ubuntu-latest 预装 google-chrome；脚本的解析顺序已覆盖该路径，

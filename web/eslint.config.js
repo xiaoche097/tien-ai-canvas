@@ -23,7 +23,7 @@ export default [
         ignores: ["dist/**", "node_modules/**", "coverage/**"],
     },
     {
-        files: ["src/**/*.{ts,tsx}", "test/**/*.{ts,tsx,mjs}"],
+        files: ["src/**/*.{ts,tsx}", "test/**/*.{ts,tsx,mjs}", "isolated-tests/**/*.{ts,tsx}"],
         plugins: {
             "react-hooks": commentCompatPlugin,
         },
