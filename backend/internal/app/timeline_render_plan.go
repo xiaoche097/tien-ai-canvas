@@ -47,11 +47,11 @@ type renderTrack struct {
 }
 
 type renderProject struct {
-	AspectRatio string `json:"aspectRatio,omitempty"`
-	Version    int           `json:"version"`
-	Tracks     []renderTrack `json:"tracks"`
-	Clips      []renderClip  `json:"clips"`
-	DurationMs int64         `json:"durationMs"`
+	AspectRatio string        `json:"aspectRatio,omitempty"`
+	Version     int           `json:"version"`
+	Tracks      []renderTrack `json:"tracks"`
+	Clips       []renderClip  `json:"clips"`
+	DurationMs  int64         `json:"durationMs"`
 	// Width/Height 为输出画布尺寸；缺省按 1920x1080 横屏输出。
 	Width  int `json:"width,omitempty"`
 	Height int `json:"height,omitempty"`
@@ -139,9 +139,12 @@ func buildRenderPlan(project renderProject) renderPlan {
 
 	width, height := renderWidth, renderHeight
 	switch project.AspectRatio {
-	case "9:16": width, height = 1080, 1920
-	case "1:1": width, height = 1080, 1080
-	case "4:3": width, height = 1440, 1080
+	case "9:16":
+		width, height = 1080, 1920
+	case "1:1":
+		width, height = 1080, 1080
+	case "4:3":
+		width, height = 1440, 1080
 	}
 	plan := renderPlan{SubtitleSRT: buildRenderSubtitleSRT(project), AudioOverlays: overlays, Width: width, Height: height, Fit: normalizeRenderFit(project.Fit)}
 	if project.Width >= 16 && project.Height >= 16 && project.Width <= 4096 && project.Height <= 4096 {

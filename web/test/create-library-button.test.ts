@@ -173,17 +173,16 @@ describe("creation homepage default mode", () => {
 });
 
 describe("creation thread chrome", () => {
-    test("keeps history and new creation visible without a workspace top-bar mount", () => {
+    test("mounts the creation toolbar in the workspace top bar with an inline fallback", () => {
         const workspace = readCreateWorkspaceSource();
-        const topBar = readFileSync(resolve(import.meta.dir, "../src/components/layout/workspace-top-bar.tsx"), "utf8");
         const product = readFileSync(resolve(import.meta.dir, "../src/styles/workspace-product.css"), "utf8");
 
-        expect(workspace).not.toContain("useWorkspaceTopBarMount");
-        expect(workspace).not.toContain("createPortal(toolbar, mount)");
+        expect(workspace).toContain("useWorkspaceTopBarMount");
+        expect(workspace).toContain("createPortal(toolbar, mount)");
+        expect(workspace).toContain("return toolbar;");
         expect(workspace).toContain('<header className="creation-thread-toolbar">');
-        expect(workspace).toContain("<span>新建创作</span>");
-        expect(workspace).toContain("<span>历史对话</span>");
-        expect(topBar).not.toContain("WorkspaceTopBarExtensionSlot");
+        expect(workspace).toContain('aria-label="新建创作"');
+        expect(workspace).toContain('aria-label="查看历史对话"');
         expect(product).toContain(".creation-chat-dock .creation-mode-tabs");
         expect(product).not.toContain("creation-composer-mode-row");
     });
